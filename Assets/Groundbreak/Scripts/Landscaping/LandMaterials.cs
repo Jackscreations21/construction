@@ -48,6 +48,17 @@ namespace Groundbreak
         public static Material Get(LandSurface k)
         {
             if (_cache.TryGetValue(k, out var m) && m != null) return m;
+            if (k == LandSurface.Topsoil || k == LandSurface.Sod || k == LandSurface.Sand || k == LandSurface.Straw)
+            {
+                // broad ground covers: terrain shader (anti-tiling + large-scale patch variation)
+                LandTextures.Generate(k, out var alb, out var nrm, out float bmp);
+                m = SiteLook.MakeTerrain("GBL_" + k, alb, nrm, bmp, Gloss(k), 1f / TileMeters(k));
+                m.SetFloat("_AlphaGloss", 0f); // these textures carry no smoothness in alpha
+                if (k == LandSurface.Sod) SiteLook.Style(m, new Color(1.06f, 1.02f, 0.8f), new Color(0.82f, 0.94f, 0.82f), 0.4f, Color.white);
+                else SiteLook.Style(m, new Color(1.05f, 1.0f, 0.94f), new Color(0.84f, 0.80f, 0.78f), 0.35f, Color.white);
+                _cache[k] = m;
+                return m;
+            }
             var shader = Shader.Find("Standard");
             m = new Material(shader) { name = "GBL_" + k, hideFlags = HideFlags.DontUnloadUnusedAsset };
             LandTextures.Generate(k, out var albedo, out var normal, out float bump);

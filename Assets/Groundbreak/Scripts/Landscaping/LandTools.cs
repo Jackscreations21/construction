@@ -132,6 +132,7 @@ namespace Groundbreak
             float vol = -Grade.Field.Raise(hit.point, r, -Units.In(2));
             Grade.Field.Paint(hit.point, r * 0.8f, LandCover.Dirt, c => c == LandCover.Grass || c == LandCover.Lawn || c == LandCover.Topsoil);
             Grade.DirtOnHand += Yd(vol);
+            if (vol > 1e-5f) SiteFx.Dig(hit.point);
             Sfx.Play("shovel", hit.point);
             ToolUtil.Wear(this, 0.0005f);
         }
@@ -141,6 +142,7 @@ namespace Groundbreak
             float vol = Mathf.PI * r * r * 0.5f * Units.In(2);
             if (!Grade.TakeFill(vol)) { Say("No loose dirt - dig somewhere or order fill dirt"); return; }
             Grade.Field.Raise(hit.point, r, Units.In(2));
+            SiteFx.Burst(hit.point, SiteFx.DirtColor, 6, 0.03f, 0.4f, 0.8f);
             Grade.Field.Paint(hit.point, r * 0.8f, LandCover.Dirt, c => c == LandCover.Grass || c == LandCover.Lawn);
             Sfx.Play("shovel", hit.point);
         }
