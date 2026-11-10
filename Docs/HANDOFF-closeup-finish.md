@@ -2,7 +2,7 @@
 
 Built by the lead closeup-finish session (shared framework + integration) and three trade agents in worktrees whose branches are merged here:
 `worktree-agent-a4a3f6485d0d4c045` (insulation/drywall/paint), `worktree-agent-aa71295fbd846a693` (exterior), `worktree-agent-a6c44e167bc35aaca` (interior finish carpentry).
-main (M2 concrete, M4 MEP, M3 framing) is merged in. Full PlayMode suite was green after the exterior merge. Run it again after any further merge.
+main (M2 concrete, M4 MEP, M3 framing) is merged in. M6 is merged too. CloseupBridge registers the close-up rules and `InspectionBridgeTests` passes.
 
 ## Folders
 - `Scripts/Finish/Core/`: shared framework (lead).
@@ -40,7 +40,7 @@ Exact signatures, tool ids, catalog ids and rule ids are in the side-session not
 - Tool ids were checked against main: the exterior snips are `ext-snips` because MEP owns `tin-snips`. The house-wrap stapler is `cap-stapler`; roofing has `capstapler` for underlayment.
 
 ## Open items / next steps
-1. **Vinyl banding:** vinyl shows darker full-height bands on the lower face of courses in the lower half of a wall (`m5_12_vinyl.png`, `ext_vinyl_overview.png`). I sent this back to the exterior agent. It is not shadow casting and not gloss. Suspects: winding/normals on the lower face, or the Fade AO strip. When fixed, take its versions of `Exterior/VinylSiding.cs` and `ExteriorLooks.cs`, re-run, and look at the shot again.
+1. **Pre-existing on main (not M5):** `PadInLotTests` followed by `PlaythroughTests.Milestone1Playthrough` makes the playthrough fail ("aim at a surface"). It reproduces with only those two classes. Everything else passes: 32/33 in the full suite, and all 10 close-up tests plus the playthrough pass together. Vinyl banding is fixed (float tolerance in the lap profile, `68abc4c`).
 2. **Integration with site-career and framing:**
    - Wrap the `CloseupInspection` phases in site-career's `Inspections.Register(...)` (see `site-career-APIs.md`).
    - Use `RoughOpening.All` from framing, set `.Flashed`/`.Taped` when HouseWrap flashes an opening, and use `WallAssembly.All` for real walls.

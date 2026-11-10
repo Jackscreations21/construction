@@ -54,7 +54,7 @@ namespace Groundbreak
             FinishMaterials.Register(Wrap, new FinishMaterials.Spec { Gen = WrapGen, Tile = 1.0f, Gloss = 0.22f, Bump = 0.5f, NormalStrength = 1.5f });
             FinishMaterials.Register(Tape, new FinishMaterials.Spec { Gen = () => FinishMaterials.FineSurface(C(150, 178, 208), 5101, 0.02f, 64), Tile = 0.3f, Gloss = 0.6f, Bump = 0.2f });
             FinishMaterials.Register(FlashTape, new FinishMaterials.Spec { Gen = FlashGen, Tile = 0.4f, Gloss = 0.45f, Bump = 0.6f, NormalStrength = 2f });
-            FinishMaterials.Register(Vinyl, new FinishMaterials.Spec { Gen = VinylGen, Tile = 0.8f, Gloss = 0.12f, Bump = 0.35f, NormalStrength = 0.8f });
+            FinishMaterials.Register(Vinyl, new FinishMaterials.Spec { Gen = VinylGen, Tile = 0.8f, Gloss = 0.3f, Bump = 0.35f, NormalStrength = 0.8f });
             FinishMaterials.Register(FiberCement, new FinishMaterials.Spec { Gen = CedarGen, Tile = 0.6f, Gloss = 0.1f, Bump = 0.6f, NormalStrength = 1.6f });
             FinishMaterials.Register(PanelSiding, new FinishMaterials.Spec { Gen = RoughSawnGen, Tile = 0.6f, Gloss = 0.08f, Bump = 0.6f, NormalStrength = 1.8f });
             FinishMaterials.Register(Soffit, new FinishMaterials.Spec { Gen = SoffitGen, Tile = Units.In(4f), Gloss = 0.3f, Bump = 0.8f, NormalStrength = 3f });

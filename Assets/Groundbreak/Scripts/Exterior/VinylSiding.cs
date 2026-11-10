@@ -339,10 +339,15 @@ namespace Groundbreak
             return uv.y > S(w).TopLimit - Gap;
         }
 
+        /// <summary>Proud of the panel face at rel (height above the course bottom). fromBelow = evaluate as the TOP edge of a
+        /// band (belongs to the lap below a break), else as the bottom edge (lap above). The 0.1 mm bias keeps float error in
+        /// ya - V0 from putting a band edge on the wrong lap (that tilted whole 4" faces downward → dark bands in sun).</summary>
         static float Prof(float rel, bool fromBelow)
         {
-            if (rel < Lap || (fromBelow && rel <= Lap + 1e-6f)) return Butt + (LapTop - Butt) * Mathf.Clamp01(rel / Lap);
-            if (rel < Exposure || (fromBelow && rel <= Exposure + 1e-6f)) return Butt + (LapTop - Butt) * Mathf.Clamp01((rel - Lap) / Lap);
+            const float eps = 1e-4f;
+            rel += fromBelow ? -eps : eps;
+            if (rel < Lap) return Butt + (LapTop - Butt) * Mathf.Clamp01(rel / Lap);
+            if (rel < Exposure) return Butt + (LapTop - Butt) * Mathf.Clamp01((rel - Lap) / Lap);
             return HemP;
         }
 
@@ -388,7 +393,7 @@ namespace Groundbreak
                         }
                         // butts (shadow lines) at the bottom of each 4" lap
                         float rel = ya - c.V0;
-                        if (Mathf.Abs(rel) < 1e-5f || Mathf.Abs(rel - Lap) < 1e-5f)
+                        if (Mathf.Abs(rel) < 1e-4f || Mathf.Abs(rel - Lap) < 1e-4f)
                             b.AddQuad(new Vector3(iv.x, ya, zb + dz - Butt), new Vector3(iv.y, ya, zb + dz - Butt), new Vector3(iv.y, ya, zb + dz - LapTop * 0.5f), new Vector3(iv.x, ya, zb + dz - LapTop * 0.5f), 0, Vector3.down, Vector3.right);
                     }
                 }
@@ -413,8 +418,6 @@ namespace Groundbreak
             }
             var mesh = Build(b, "VinylCourse", 3);
             c.Go = w.Part("vinyl", "VinylCourse_" + (c.Index + 1), mesh, new[] { Mat(w), Materials.Get(SurfaceKind.Galvanized), FinishMaterials.Get(ExteriorLooks.AO) }, "vinyl-course", c.Index);
-            // thin lapped faces self-shadow into wide dark bands (shadow-map acne); the sheathing/framing behind still casts the wall's shadow, and the AO strip draws the lap shadow line
-            c.Go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             if (!c.Locked)
             {
                 // unzipped: the bottom lock swings out, hinged at the nail hem
