@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Groundbreak
 {
     /// <summary>Base for exterior tools: resolves the aimed wall / face point / eave.</summary>
-    public abstract class ExteriorTool : FinishTool
+    public abstract class ExteriorTool : CloseupTool
     {
         protected static ExteriorWall WallAt(RaycastHit hit, out Vector2 uv)
         {
