@@ -11,7 +11,8 @@ You are the coordinating session for Groundbreak (see `CLAUDE.md`, spec link ins
 | shell-framing | local_f9be44bb-57b2-4dca-a2ca-b20d2ad9401c | M3 support graph, floor, walls/tilt-up, rough openings, stairs, roof framing, shingles |
 | mep-systems | local_24f83b33-ad88-439a-a073-e80509d31ccc | M4 plumbing, electrical (circuit sim), HVAC, `Scripts/Networks/` |
 | closeup-finish | local_0e3be36c-0455-4bc9-9e7e-6fa63167d4bb | M5 insulation, drywall, siding/brick veneer, interior finish |
-| site-career | local_f6448317-3025-47c2-b2e4-b9915a46285c | M6 landscaping, `Inspections.Register`, `SaveSystem.RegisterExtension`, career, audio, UI skin |
+| site-career | local_f6448317-3025-47c2-b2e4-b9915a46285c (HANDOFF READY @ 3da1789, idle) | M6 landscaping, `Inspections.Register`, `SaveSystem.RegisterExtension`, career, audio, UI skin |
+| site-career-2 | proposed card task_f71c9c5a — needs USER click to start (app blocks auto-start from automated/peer turns); merges claude/site-career-92d50d first, terrain option 2 | M6 continuation |
 
 Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude/mep-systems-8b0d35`, `claude/closeup-finish-2a5558`, `claude/site-career-92d50d` (worktrees under `.claude/worktrees/`).
 
@@ -38,3 +39,9 @@ Tests: `PlaythroughTests.Milestone1Playthrough`, `PlaythroughTests.Showroom`, `C
 
 ## Merged milestones
 - M2 concrete-forms → main @ ee1ecc9 (2026-11-09). Session done. Docs/CONCRETE.md.
+
+## Lead decisions
+- Terrain (2026-11-09): `Grade` (site-career) owns the lot; `SiteGround` (concrete, 4" cells) is the 60'x60' building pad inside a hole in Grade;
+  `Grade.HeightAt` defers to SiteGround inside the pad; SaveSystem key "siteground" for SiteGround.H/Cover.
+- App limitation: replacement sessions cannot be auto-started from cron/peer-message turns; they appear as proposal cards the user must click
+  (or the user tells the lead "start it"). Proposal cards drop `source_branch`, so briefs must begin with `git merge --no-ff <old branch>`.
