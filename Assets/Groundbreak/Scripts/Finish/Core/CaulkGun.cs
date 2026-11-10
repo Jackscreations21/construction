@@ -23,7 +23,7 @@ namespace Groundbreak
     /// <summary>Caulk gun (shared by every trade). Each trade registers a tube type with <see cref="RegisterTube"/>:
     /// fire caulk at plate penetrations, exterior sealant at trim/siding joints, painter's caulk on interior trim.
     /// RMB cycles the loaded tube; LMB lays a bead with the active tube's handler.</summary>
-    public class CaulkGun : FinishTool
+    public class CaulkGun : CloseupTool
     {
         public class Tube
         {

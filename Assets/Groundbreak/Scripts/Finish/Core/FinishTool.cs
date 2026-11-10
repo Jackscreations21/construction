@@ -5,7 +5,7 @@ namespace Groundbreak
 {
     /// <summary>Base for close-up/finish tools: aiming at framed faces, modes cycled with right-click, stock checks.
     /// Subclasses implement <see cref="Use"/> (left click on a face) and may override <see cref="Modes"/>.</summary>
-    public abstract class FinishTool : Tool
+    public abstract class CloseupTool : Tool
     {
         public virtual float Range => 4f;
         public virtual string[] Modes => null;
