@@ -34,5 +34,9 @@ namespace Groundbreak
         Mortar,            // gray sand-cement
         Rebar,             // rusty steel, ribbed (ribs come from normal map along U)
         PaperBag,          // kraft paper bag
+        WetConcrete,       // fresh plastic concrete, dark + glossy (Concrete feature, generator in Scripts/Concrete)
+        TroweledConcrete,  // cured, steel-troweled slab (Concrete feature)
+        BroomedConcrete,   // cured, broom-finished slab (Concrete feature)
+        VaporBarrier,      // 6 mil poly sheeting (Concrete feature)
     }
 }
