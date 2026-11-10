@@ -22,3 +22,4 @@
 crashlytics-buildid.txt
 sysinfo.txt
 .DS_Store
+/.claude/worktrees/

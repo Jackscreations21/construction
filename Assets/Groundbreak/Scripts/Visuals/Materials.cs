@@ -62,6 +62,7 @@ namespace Groundbreak
         /// <summary>Real-world size (meters) one texture tile covers.</summary>
         public static float TileMeters(SurfaceKind kind)
         {
+            if (CustomTileMeters.TryGetValue(kind, out float custom)) return custom;
             switch (kind)
             {
                 case SurfaceKind.Osb:
@@ -97,10 +98,16 @@ namespace Groundbreak
             }
         }
 
+        /// <summary>Extension point: feature modules supply the material for SurfaceKinds they appended (built from their own textures).
+        /// Register from [RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]; the factory runs lazily on first Get.</summary>
+        public static readonly Dictionary<SurfaceKind, System.Func<Material>> Custom = new Dictionary<SurfaceKind, System.Func<Material>>();
+        /// <summary>Extension point: tile size (meters) for appended SurfaceKinds.</summary>
+        public static readonly Dictionary<SurfaceKind, float> CustomTileMeters = new Dictionary<SurfaceKind, float>();
+
         public static Material Get(SurfaceKind kind)
         {
             if (_base.TryGetValue(kind, out var m) && m != null) return m;
-            m = Build(kind);
+            m = Custom.TryGetValue(kind, out var make) && make != null ? make() : Build(kind);
             _base[kind] = m;
             return m;
         }
