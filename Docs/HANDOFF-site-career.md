@@ -24,11 +24,41 @@
 - `UI/Tablet.cs`: `UISkin.Apply()` at top of OnGUI, rounded panel background, ToolShop hides career-locked tools (`Career.IsUnlocked`).
 - `UI/Hud.cs`: `UISkin.Apply()`, rounded panels for the info box, belt slots and toast.
 
+## Terrain (merged with main's Milestone 2) — Grade owns the lot, SiteGround is the pad
+- `Grade` (Landscaping) owns the lot: 0.5 m heightfield, cuts holes in the bootstrap "Ground" plane for the field AND the pad
+  (`Grade.RefreshGroundHoles`, grid decomposition, restores the plane when neither exists).
+- `SiteGround` (Concrete, 4" cells, 60'x60' at x -30'..30', z 0'..60') is the building pad. `Grade.HeightAt/CoverAt/Gradient` defer to it
+  inside `SiteGround.PadRect` (edges inclusive). Grade's field mesh clips cells that overlap the pad (draws only the strips outside),
+  field vertices on/inside the pad snap to pad height, `SetHeights` blends sloped lots to the pad edge over a 4 m apron.
+  Grade edits (`Raise/Flatten/Smooth`, `Paint`, walk/drive excavation) skip the pad — the pad is dug with the concrete tools.
+- The one shovel (`LandShovelTool`, id "shovel", registered AfterSceneLoad so it wins over concrete's) acts as concrete's `ShovelTool`
+  on the pad / in wet concrete, and as the grading shovel elsewhere.
+- Landscaping's cover enum is now **`LandCover`** (main's SiteGround owns `GroundCover {Grass, Dirt, Gravel}`).
+- Save: extension `"siteground"` (`Save/SiteGroundSave.cs`: heights, cover, compaction, base64) next to `"grade"`.
+
+### Shared-file edits in this session (small, additive)
+- `Concrete/SiteGround.cs`: removed the hide-Ground + grass skirts block (Grade owns Ground now; `Skirt()` left unused);
+  added `public static event Action<SiteGround> Created` (invoked at the end of Init) and `public static Rect PadRect`.
+- `Logistics/DeliveryService.cs`, `Concrete/ReadyMix.cs`: one line each, `TruckSounds.Attach(root)` (engine loop + back-up alarm when reversing).
+
+## Done this session (handoff steps 0-5)
+- Merge main + terrain decision (above); PlayMode test `PadInLotTests.SlabPadInsideGradedLot` (+ shots `40_pad_in_graded_lot`, `41_pad_edge_trench`).
+- `Inspection/CloseupBridge.cs`: closeup-finish rules (`Groundbreak.CloseupInspection.Rules`) bridged into `Inspections` by reflection at
+  AfterSceneLoad (ids `closeup:<id>`; Insulation/Drywall → Insulation, Exterior/Finish → Final). Call `CloseupBridge.Sync()` if rules are
+  registered later. Untested against the real finish branch (not merged into main yet) — compiles without it.
+- Visual fixes: paver walk backfilled shoulders (no edging rail), edging top 1/2" below pavers; sod rolls darker and tilted to the slope
+  (were sinking into the 6% grade = "gappy"); fence pickets have 3/8" gaps; inspector vest wraps the torso.
+- Truck audio (`Audio/TruckSounds.cs`).
+- Career test hides other tests' pieces on its lot (concrete slab forms sit on the career lot at the origin).
+
 ## State / next steps
 See the bottom of this file for the latest test status.
 
 ## Status (latest run)
-- 0 compile errors; PlayMode 6/6 pass (2 milestone-1 + SaveLoadRoundTrip, InspectionFailsThenPasses, CareerContractPaidOnFinal, LandscapingShowcase).
+- 0 compile errors; PlayMode 8/8 pass (SlabFromLayoutToCure, SlabPadInsideGradedLot, Milestone1Playthrough, Showroom,
+  CareerContractPaidOnFinal, InspectionFailsThenPasses, LandscapingShowcase, SaveLoadRoundTrip).
+- Reviewed: 20/20b inspector, 21/22 flags, 35/36/36b landscape + sod, 37 fence, 40/41 pad in lot.
+- Remaining nits: gate board grain runs sideways; trench walls on the pad keep grass cover (SiteGround marks only the rect cells Dirt).
 - Screenshots reviewed: `35_landscape_overview`, `36_walk_sod_closeup` — paver running bond, mulch bed with boxwoods/hostas, path lights, gravel drive, maple, fence read well.
 
 ## Known issues / next steps
