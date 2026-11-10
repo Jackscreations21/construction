@@ -20,18 +20,20 @@ namespace Groundbreak
         {
             if (Time.time < _nextSwing) return;
             if (Durability <= 0f) { Game.Toast("Hammer is broken"); return; }
-            var p = ToolUtil.AimPiece(Range, out _);
+            var p = ToolUtil.AimPiece(Range, out RaycastHit hit);
             if (p == null || p.State != PieceState.Loose) return;
             _nextSwing = Time.time + Cooldown;
             if (p != _target) { _target = p; _swings = 0; }
             var belt = Game.Belt;
             if (belt == null || belt.Nails <= 0) { Game.Toast("Nail pouch empty - press E near a pile"); return; }
             _swings++;
+            FastenFeedback.Kick(0.5f);
             ToolUtil.Wear(this, 0.0005f);
             if (_swings < SwingsPerNail) return;
             _swings = 0;
             belt.Nails--;
             p.Nails++;
+            FastenFeedback.Nailed(p, hit, 0.3f);
             if (p.Nails >= NailsToFasten) { p.Fasten(); Game.Toast($"{p.Def.Name} fastened"); _target = null; }
         }
 
