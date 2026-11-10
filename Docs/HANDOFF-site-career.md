@@ -39,6 +39,16 @@ See the bottom of this file for the latest test status.
 5. Autosave every 5 game minutes = every ~4 real seconds at 20 min/day (spec literal); `SaveSystem.AutosaveGameMinutes` is tunable.
 
 ## Exact next steps for the next session (in order)
+0. **LEAD DECISION (terrain, overrides the terrain options in step 1): option 2: Grade owns the lot, SiteGround is the building pad.**
+   - `git merge main` first.
+   - Main's `SiteGround` stays as the high-res (4") 60'x60' building pad. **Grade** owns everything else on the lot.
+   - Grade cuts a hole in its own mesh where the pad is (skip/clip cells inside the SiteGround rect in `GradeField.BuildChunk`; keep the
+     Ground-plane hole for the whole field). **SiteGround stops touching the "Ground" plane** (remove its hide/replace of Ground; Grade handles that).
+   - `Grade.HeightAt(x,z)` (and `CoverAt`, `Gradient`) defer to `SiteGround.I.HeightAt` inside the pad rect. Edits (`Raise`/`Paint`) inside the pad go to
+     SiteGround's Dig/Fill/SetSurface, or are ignored there. Make the pad-edge vertices of Grade match SiteGround's edge heights so there's no seam.
+   - SaveSystem: register `SiteGround.H` / cover under key `"siteground"` (RegisterExtension, base64 like Grade.Save).
+   - Add a PlayMode test: a graded lot with a slab pad (SiteGround) inside it. Assert `Grade.HeightAt` matches SiteGround inside the pad and the field outside,
+     that save/load round-trips both, and take a screenshot of the pad within the graded lot (look at it).
 1. `git merge main` (has Milestone 2 at ee1ecc9). Expected conflicts/overlaps:
    - **Terrain**: main's `SiteGround` (Scripts/Concrete/SiteGround.cs, see Docs/CONCRETE.md) hides the bootstrap "Ground" plane and adds a 60'x60' diggable patch.
      My `Grade` also replaces Ground (it cuts a hole in the "Ground" mesh). Pick ONE terrain: preferred is to make `Grade` a thin adapter over `SiteGround`
