@@ -101,9 +101,24 @@ namespace Groundbreak
             Tablet.AddHelp("Pour: chute/wheelbarrow, rake, vibrate, screed, bull float; wait out bleed water; edge, groove joints, trowel or broom.");
         }
 
+        /// <summary>Tells the framing support graph (shell-framing branch) that set concrete is foundation, via reflection so
+        /// neither branch needs the other to compile: SupportGraph.FoundationProbe = p => on top of a ConcreteElement.</summary>
+        static void HookFraming()
+        {
+            var t = Type.GetType("Groundbreak.SupportGraph");
+            if (t == null) foreach (var asm in AppDomain.CurrentDomain.GetAssemblies()) { t = asm.GetType("Groundbreak.SupportGraph"); if (t != null) break; }
+            if (t == null) return;
+            Func<Vector3, bool> probe = p => ConcreteElement.TryGetTop(p, out float y) && p.y <= y + 0.02f;
+            var f = t.GetField("FoundationProbe", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (f != null && f.FieldType == typeof(Func<Vector3, bool>)) { f.SetValue(null, probe); return; }
+            var pr = t.GetProperty("FoundationProbe", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (pr != null && pr.CanWrite && pr.PropertyType == typeof(Func<Vector3, bool>)) pr.SetValue(null, probe);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
+            HookFraming();
             if (UnityEngine.Object.FindAnyObjectByType<ConcreteSite>() != null) return;
             new GameObject("ConcreteSite").AddComponent<ConcreteSite>();
         }

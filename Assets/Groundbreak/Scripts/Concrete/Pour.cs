@@ -63,7 +63,7 @@ namespace Groundbreak
         public static PourSystem Begin(FormOutline o)
         {
             if (o.Pour != null) return o.Pour;
-            var go = new GameObject("ConcretePour");
+            var go = new GameObject("Concrete Slab");   // name lets framing's default foundation probe recognise it
             var ps = go.AddComponent<PourSystem>();
             ps.Init(o);
             All.Add(ps);
