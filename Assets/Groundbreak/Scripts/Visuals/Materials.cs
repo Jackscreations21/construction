@@ -26,10 +26,10 @@ namespace Groundbreak
         {
             switch (k)
             {
-                case SurfaceKind.PineLumber: return new Look(0.15f, 0f, 0.6f);
+                case SurfaceKind.PineLumber: return new Look(0.10f, 0f, 0.6f);
                 case SurfaceKind.PineEndGrain: return new Look(0.08f, 0f, 0.9f);
                 case SurfaceKind.TreatedLumber: return new Look(0.12f, 0f, 0.8f);
-                case SurfaceKind.Osb: return new Look(0.10f, 0f, 1.0f);
+                case SurfaceKind.Osb: return new Look(0.08f, 0f, 0.75f);
                 case SurfaceKind.Plywood: return new Look(0.14f, 0f, 0.6f);
                 case SurfaceKind.PaintedWhite: return new Look(0.45f, 0f, 0.25f);
                 case SurfaceKind.PaintedSteel: return new Look(0.55f, 0f, 0.25f);
