@@ -35,12 +35,13 @@ Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude
 ## State of main
 Milestone 1 complete: snap grid/angles, tool belt + tools, tablet (store with category tabs, tool shop, deliveries, bank, help),
 76-item catalog with real models + procedural textures, extension points (`Catalog.Register`, `ToolFactory.Register`, `Tablet.RegisterApp/AddHelp`).
-Tests: 18/18 passing after M3 merge (M1, concrete, MEP x4, shell, roofing, stairs).
+Tests: 24/24 passing after M6 merge (M1, concrete, MEP, shell/roof/stairs, save, inspections, career, landscaping, pad-in-lot, bridges).
 
 ## Merged milestones
 - M2 concrete-forms → main @ ee1ecc9 (2026-11-09). Session done. Docs/CONCRETE.md.
 - M4 mep-systems → main @ 75a838c (2026-11-09). Session done. Docs/MEP-BRIEF.md. Follow-up: bridge MepInspection rules into Inspections.Register(RoughMEP) (site-career-2).
 - M3 shell-framing → main @ 0d0c5aa (2026-11-09). Session done. APIs: side-session-notes/shell-framing-api.md. Left: gable-end sheathing above plates, I-joist floor, valleys (API only), FramingInspection.Run() not yet registered with Inspections (site-career-2).
+- M6 site-career(-2) → main @ 19a14bc (2026-11-09). Sessions idle/done. Shared inspection types renamed InspectionItem/InspectionFlags (framing owns InspectionIssue/InspectionMarkers). Bridges: Closeup (reflection, untested vs real M5), Mep, Framing. Nits: 40_pad_in_graded_lot shot too far away; gate grain sideways; pad trench walls keep grass cover.
 - Tutorials (user request): session local_1a7a0a35-5219-4bb0-9c3b-f63de2e38681, tablet "Tutorials" app with captured pictures per step; needs M5/M6 pictures after those merge.
 
 ## Lead decisions

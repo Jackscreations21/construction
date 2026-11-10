@@ -124,14 +124,12 @@ namespace Groundbreak
         void OnGUI()
         {
             if (!IsOpen) return;
+            UISkin.Apply(); // site-career: shared rounded skin
             EnsureStyles();
 
             float w = Screen.width * 0.7f, h = Screen.height * 0.7f;
             var rect = new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h);
-            var prev = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.85f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = prev;
+            UISkin.Panel(rect, new Color(0.07f, 0.09f, 0.11f, 0.93f));
 
             GUILayout.BeginArea(new Rect(rect.x + 12, rect.y + 10, rect.width - 24, rect.height - 20));
             GUILayout.BeginHorizontal();
@@ -246,6 +244,7 @@ namespace Groundbreak
             var belt = Game.Belt;
             foreach (var item in ToolFactory.ShopItems)
             {
+                if (!Career.IsUnlocked(item.Id)) { GUILayout.Label($"{item.Name} - locked ({Career.UnlockHint(item.Id)})", _label); continue; }
                 bool owned = false;
                 if (belt != null && belt.Owned != null)
                     foreach (var t in belt.Owned) if (t != null && t.Id == item.Id) { owned = true; break; }
