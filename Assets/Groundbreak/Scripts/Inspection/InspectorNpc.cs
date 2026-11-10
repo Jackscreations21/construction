@@ -137,11 +137,14 @@ namespace Groundbreak
             int mSkin = k.M(skin), mJeans = k.M(jeans), mShirt = k.M(shirt), mVest = k.M(vest), mStripe = k.M(stripe), mHat = k.M(SurfaceKind.PaintedWhite), mDark = k.M(SurfaceKind.MatteBlack);
             k.B.AddBevelBox(new Vector3(0, 0.98f, 0), new Vector3(0.34f, 0.17f, 0.20f), Quaternion.Euler(90, 0, 0), 0.04f, mJeans);
             k.B.AddFrustum(new Vector3(0, 1.08f, 0), Quaternion.identity, 0.03f, 0.03f, 0.04f, 10, mDark); // belt hint
-            k.B.AddLathe(new Vector3(0, 1.25f, 0), Quaternion.identity, new[] {
+            // torso: chest wider than deep (elliptical), the vest shell sits just outside it all the way round
+            k.B.Transform = Matrix4x4.TRS(new Vector3(0, 1.25f, 0), Quaternion.identity, new Vector3(1f, 1f, 0.70f));
+            k.B.AddLathe(Vector3.zero, Quaternion.identity, new[] {
                 new Vector2(0.001f, -0.20f), new Vector2(0.165f, -0.20f), new Vector2(0.175f, -0.05f), new Vector2(0.19f, 0.12f),
                 new Vector2(0.20f, 0.19f), new Vector2(0.12f, 0.25f), new Vector2(0.06f, 0.26f), new Vector2(0.001f, 0.26f) }, 14, mShirt);
+            k.B.ResetTransform();
             // vest shell over the torso + reflective bands
-            k.B.Transform = Matrix4x4.TRS(new Vector3(0, 1.25f, 0), Quaternion.identity, new Vector3(1.06f, 1f, 0.72f));
+            k.B.Transform = Matrix4x4.TRS(new Vector3(0, 1.25f, 0), Quaternion.identity, new Vector3(1.07f, 1f, 0.78f));
             k.B.AddLathe(Vector3.zero, Quaternion.identity, new[] {
                 new Vector2(0.175f, -0.17f), new Vector2(0.18f, -0.05f), new Vector2(0.195f, 0.12f), new Vector2(0.19f, 0.19f) }, 14, mVest);
             k.B.AddLathe(new Vector3(0, -0.12f, 0), Quaternion.identity, new[] { new Vector2(0.178f, -0.02f), new Vector2(0.18f, 0.02f) }, 14, mStripe);

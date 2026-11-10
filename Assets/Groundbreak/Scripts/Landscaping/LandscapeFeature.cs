@@ -313,8 +313,10 @@ namespace Groundbreak
                     if (Grade.InPad(w.x, w.z)) continue;
                     var l = inv * (w - c);
                     float ox = Mathf.Abs(l.x) - halfW, oz = Mathf.Abs(l.z) - halfL;
-                    if (ox <= Grade.Cell * 0.5f && oz <= Grade.Cell * 0.5f) continue;   // under the pavers (excavated, hidden)
-                    float out_ = Mathf.Max(ox, oz);
+                    // deep under the pavers stays excavated; the last cell inside the edge and the excavation ring outside it
+                    // come up to just under the paver top (hidden by the pavers), so no groove shows along the edging
+                    if (ox <= -Grade.Cell && oz <= -Grade.Cell) continue;
+                    float out_ = Mathf.Max(0f, Mathf.Max(ox, oz));
                     if (out_ > shoulder) continue;
                     float target = SurfaceAt(w) - Units.In(0.5f);
                     int k = z * f.V + x;
@@ -380,6 +382,13 @@ namespace Groundbreak
             bool slab = Kind == LandscapeKind.Walkway || Kind == LandscapeKind.GravelDrive;
             transform.position = slab ? Center : Kind <= LandscapeKind.Gate ? new Vector3(Center.x, BaseY, Center.z) : A;
             transform.rotation = slab ? Quaternion.LookRotation(B - A) : Kind <= LandscapeKind.Gate ? Quaternion.Euler(0, RunYaw, 0) : Quaternion.Euler(0, Yaw, 0);
+            if (Kind == LandscapeKind.Sod)
+            {
+                // a 5' roll lies on the slope (a flat 1" roll would sink into a 6% grade); seat it on the ground at its center
+                var g = Grade.Gradient(A.x, A.z);
+                transform.rotation = Quaternion.FromToRotation(Vector3.up, new Vector3(-g.x, 1f, -g.y).normalized) * Quaternion.Euler(0, Yaw, 0);
+                transform.position = new Vector3(A.x, Grade.HeightAt(A.x, A.z), A.z);
+            }
             var col = GetComponent<BoxCollider>(); if (col == null) col = gameObject.AddComponent<BoxCollider>();
             LandFeatureVisuals.Build(this, _visual.transform, col);
             if (Kind == LandscapeKind.PathLight && _light == null)

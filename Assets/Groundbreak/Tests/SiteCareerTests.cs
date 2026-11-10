@@ -133,7 +133,12 @@ namespace Groundbreak.Tests
             float until = Time.time + 40f; bool walkShot = false;
             while (npc != null && npc.Result == null && Time.time < until)
             {
-                if (!walkShot && Time.time > until - 37f) { Shot(cam, "20_inspector_walking"); walkShot = true; }
+                if (!walkShot && npc.transform.position.z > 117.5f) {
+                    Shot(cam, "20_inspector_walking"); walkShot = true;
+                    var rs = npc.GetComponentsInChildren<Renderer>();
+                    Debug.Log($"[Test] inspector at {npc.transform.position}, renderers {rs.Length}" + (rs.Length > 0 ? $", bounds {rs[0].bounds}, enabled {rs[0].enabled}" : ""));
+                    Shot(Cam(npc.transform.position + new Vector3(2.2f, 1.6f, -2.2f), npc.transform.position + Vector3.up * 1f), "20b_inspector_closeup");
+                } // in frame, by the wall
                 yield return null;
             }
             Assert.NotNull(npc.Result, "inspection never finished: " + npc.Status + " at " + npc.transform.position + " t=" + Time.time);
@@ -362,6 +367,7 @@ namespace Groundbreak.Tests
 
             Shot(Cam(house + new Vector3(-9f, 6.5f, -19f), house + new Vector3(-1f, 0, -6f)), "35_landscape_overview");
             Shot(Cam(doorStep + new Vector3(1.6f, 1.65f, -7.2f), doorStep + new Vector3(-0.5f, 0.3f, 0)), "36_walk_sod_closeup");
+            Shot(Cam(sodOrigin + new Vector3(-1.2f, 6.5f, -2.6f), sodOrigin + new Vector3(-1.2f, 0, -2.3f)), "36b_sod_topdown");
             Shot(Cam(fence.Center + new Vector3(1.5f, 1.7f, -5f), fence.Center + new Vector3(1.5f, 0.9f, 0)), "37_fence_gate");
             Shot(Cam(wallStart + new Vector3(0.6f, 1.2f, -2.2f), wallStart + new Vector3(0.6f, 0.1f, 0)), "38_retaining_wall");
             Shot(Cam(maple.A + new Vector3(3.5f, 1.7f, -4f), maple.A + Vector3.up * 1.8f), "39_maple_shrubs");

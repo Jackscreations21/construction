@@ -102,7 +102,7 @@ namespace Groundbreak
                 float len = L * edgeF;
                 foreach (float s in new[] { -1f, 1f })
                 {
-                    k.B.AddBox(new Vector3(s * (hw + Units.In(0.1f)), -Units.In(1.1f), -hl + len / 2), new Vector3(Units.In(0.2f), Units.In(2.2f), len), Quaternion.identity, blk);
+                    k.B.AddBox(new Vector3(s * (hw + Units.In(0.1f)), -Units.In(1.6f), -hl + len / 2), new Vector3(Units.In(0.2f), Units.In(2.2f), len), Quaternion.identity, blk); // top 1/2" below the pavers, soil over it
                     k.B.AddBox(new Vector3(s * (hw + Units.In(1.2f)), -PaverDepthBase(), -hl + len / 2), new Vector3(Units.In(2.2f), Units.In(0.2f), len), Quaternion.identity, blk);
                 }
             }
