@@ -224,12 +224,12 @@ namespace Groundbreak
                 int boards = Mathf.Max(2, Mathf.RoundToInt(gw / Units.In(5.5f)));
                 float bw = gw / boards;
                 for (int b = 0; b < boards; b++)
-                    k.B.AddBox(new Vector3(-post / 2 - Units.In(1.1f), y0 + gh / 2, -gw / 2 + (b + 0.5f) * bw), new Vector3(Units.In(0.625f), gh, bw - Units.In(0.1f)), Quaternion.identity, cedar, Vector3.up);
+                    k.B.AddBox(new Vector3(-post / 2 - Units.In(1.1f), y0 + gh / 2, -gw / 2 + (b + 0.5f) * bw), new Vector3(Units.In(0.625f), gh, bw - Units.In(0.1f)), Quaternion.identity, cedar, Vector3.forward); // cedar grain runs along V: U across the board = vertical grain
                 float fx = -post / 2 - Units.In(0.1f);
                 foreach (float yy in new[] { Units.In(8), Units.In(62) })
-                    k.B.AddBox(new Vector3(fx - Units.In(0.25f), y0 + yy, 0), new Vector3(Units.In(1.5f), Units.In(3.5f), gw - Units.In(1)), Quaternion.identity, cedar, Vector3.forward);
+                    k.B.AddBox(new Vector3(fx - Units.In(0.25f), y0 + yy, 0), new Vector3(Units.In(1.5f), Units.In(3.5f), gw - Units.In(1)), Quaternion.identity, cedar, Vector3.up);
                 var d0 = new Vector3(fx - Units.In(0.25f), y0 + Units.In(10), -gw / 2 + Units.In(3)); var d1 = new Vector3(fx - Units.In(0.25f), y0 + Units.In(60), gw / 2 - Units.In(3));
-                k.B.AddBox((d0 + d1) / 2, new Vector3(Units.In(1.5f), Units.In(3.5f), Vector3.Distance(d0, d1)), Quaternion.LookRotation(d1 - d0), cedar, Vector3.forward);
+                k.B.AddBox((d0 + d1) / 2, new Vector3(Units.In(1.5f), Units.In(3.5f), Vector3.Distance(d0, d1)), Quaternion.LookRotation(d1 - d0), cedar, Vector3.up);
                 foreach (float yy in new[] { Units.In(10), Units.In(60) })
                     k.B.AddBox(new Vector3(-post / 2 - Units.In(1.6f), y0 + yy, -gw / 2 + Units.In(4)), new Vector3(Units.In(0.15f), Units.In(1.5f), Units.In(12)), Quaternion.identity, blk);
                 k.B.AddBox(new Vector3(-post / 2 - Units.In(1.6f), y0 + Units.In(40), gw / 2 - Units.In(1.5f)), new Vector3(Units.In(0.4f), Units.In(1.2f), Units.In(4)), Quaternion.identity, blk);

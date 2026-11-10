@@ -49,7 +49,7 @@ namespace Groundbreak
             {
                 case SurfaceKind.WetConcrete: gloss = 0.78f; bump = 0.25f; break;
                 case SurfaceKind.TroweledConcrete: gloss = 0.42f; bump = 0.35f; break;
-                case SurfaceKind.BroomedConcrete: gloss = 0.12f; bump = 1.0f; break;
+                case SurfaceKind.BroomedConcrete: gloss = 0.12f; bump = 0.6f; break;
                 default: gloss = 0.55f; bump = 0.5f; break; // poly
             }
 
@@ -99,7 +99,7 @@ namespace Groundbreak
                             float line = VNoise2(u, wv, 5, 230, 43);          // varies across V (ridges run along U)
                             float streak = Mathf.Pow(line, 2.2f);
                             float mott = Fbm(u, v, 5, 3, 45) - 0.5f;
-                            c = new Color(0.57f, 0.565f, 0.545f) * (1f + macro * 0.12f + mott * 0.08f - streak * 0.13f + fine * 0.05f);
+                            c = new Color(0.57f, 0.565f, 0.545f) * (1f + macro * 0.14f + mott * 0.11f - streak * 0.06f + fine * 0.05f); // subtle: a broom texture is felt more than seen
                             hh = line * 0.9f + fine * 0.2f;
                             s = 0.8f + fine * 0.3f;
                             break;
@@ -136,9 +136,21 @@ namespace Groundbreak
             nor.SetPixels32(np); nor.Apply(true, true);
             alb.hideFlags = nor.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-            var m = new Material(Shader.Find("Standard")) { name = "GB_" + kind };
+            // finished slabs use the terrain shader: no visible tile repeat, plus the metre-scale mottling of real cured concrete
+            bool slab = kind == SurfaceKind.BroomedConcrete || kind == SurfaceKind.TroweledConcrete;
+            var m = new Material(slab && SiteLook.TerrainShader != null ? SiteLook.TerrainShader : Shader.Find("Standard")) { name = "GB_" + kind };
             m.hideFlags = HideFlags.DontUnloadUnusedAsset;
-            m.color = Color.white;
+            if (slab)
+            {
+                m.SetTexture("_MacroTex", SiteLook.Macro);
+                m.SetFloat("_MacroScale", 0.09f);
+                m.SetFloat("_AntiTile", kind == SurfaceKind.BroomedConcrete ? 0f : 1f); // keep the broom lines straight
+                m.SetFloat("_HPMip", 6.5f);
+                m.SetFloat("_WorldTile", 1f / Materials.TileMeters(kind));
+                m.SetColor("_TintA", new Color(1.04f, 1.02f, 0.98f)); m.SetColor("_TintB", new Color(0.90f, 0.91f, 0.93f));
+                m.SetFloat("_MacroStrength", 0.22f);
+            }
+            m.color = slab ? new Color(0.92f, 0.92f, 0.92f) : Color.white; // cured slab in full sun was clipping to white
             m.mainTexture = alb;
             m.SetFloat("_Glossiness", gloss);
             m.SetFloat("_Metallic", 0f);

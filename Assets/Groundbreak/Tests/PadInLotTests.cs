@@ -85,7 +85,7 @@ namespace Groundbreak.Tests
             Assert.AreEqual("Ground", HitName(60f, 60f));
 
             yield return Frames(3);
-            Shot(new Vector3(-26f, 9f, -14f), new Vector3(0f, -1f, 9f), "40_pad_in_graded_lot");
+            Shot(new Vector3(-17f, 4.5f, -5f), new Vector3(-6f, -0.4f, 9f), "40_pad_in_graded_lot");
             Shot(new Vector3(pad.xMin - 3.5f, 1.7f, 13.5f), new Vector3(pad.xMin + 1.5f, -0.3f, 11f), "41_pad_edge_trench");
 
             // save / load round-trips both terrains
