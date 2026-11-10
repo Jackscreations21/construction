@@ -17,6 +17,8 @@ namespace Groundbreak
         public readonly List<float> BraceT = new List<float>();
         public readonly List<Piece> Braces = new List<Piece>();
         public bool BlownOut;
+        /// <summary>Board run: starts at t = BoardStart (negative = past corner A) and covers BoardLength.</summary>
+        public float BoardStart, BoardLength;
         public Vector3 PointAt(float t) => A + Dir * t;
     }
 
@@ -146,6 +148,10 @@ namespace Groundbreak
             int n = o.Corners.Count;
             var runs = new List<FormRun>();
             var need = new Dictionary<int, List<float>>();
+            // Corner lapping: on an even outline, alternate runs carry "through" boards that pass both corners by 1 1/2"
+            // (the shorter runs, so the long runs can be full stock lengths); odd outlines lap at the B end only.
+            float L0 = (o.Corners[1] - o.Corners[0]).magnitude, L1 = (o.Corners[2 % n] - o.Corners[1]).magnitude;
+            int throughParity = L0 <= L1 ? 0 : 1;
             for (int i = 0; i < n; i++)
             {
                 var r = new FormRun { A = o.Corners[i], B = o.Corners[(i + 1) % n] };
@@ -162,8 +168,11 @@ namespace Groundbreak
                 var stock = StockFor(wi);
                 if (stock.Length == 0) return "No " + Prefix[wi] + " lumber in the catalog";
                 r.BoardDef = stock[stock.Length - 1];
+                float lap = 1.5f * Units.Inch;
+                if (n % 2 == 0) { bool through = i % 2 == throughParity; r.BoardStart = through ? -lap : 0f; r.BoardLength = r.Length + (through ? 2 * lap : 0f); }
+                else { r.BoardStart = 0f; r.BoardLength = r.Length + lap; }
                 if (!need.ContainsKey(wi)) need[wi] = new List<float>();
-                need[wi].AddRange(Segments(r.Length + 1.5f * Units.Inch, stock[stock.Length - 1].Size.z));
+                need[wi].AddRange(Segments(r.BoardLength, stock[stock.Length - 1].Size.z));
                 runs.Add(r);
             }
             // check lumber on site before cutting anything
@@ -172,14 +181,14 @@ namespace Groundbreak
                 var stock = StockFor(kv.Key);
                 var avail = new Dictionary<string, int>();
                 foreach (var d in stock) avail[d.Id] = Game.Stock.Count(d.Id);
-                foreach (var len in kv.Value)
+                foreach (var need1 in kv.Value)
                 {
                     PieceDefinition pick = null;
-                    foreach (var d in stock) if (d.Size.z >= len - 1e-4f && avail[d.Id] > 0) { pick = d; break; }
+                    foreach (var d in stock) if (d.Size.z >= need1 - 1e-4f && avail[d.Id] > 0) { pick = d; break; }
                     if (pick == null)
                     {
                         string longest = stock[stock.Length - 1].Name;
-                        return $"Not enough form lumber: need {Prefix[kv.Key].TrimEnd('x')} boards at least {Units.Format(len)} long (e.g. {longest})";
+                        return $"Not enough form lumber: need {Prefix[kv.Key].TrimEnd('x')} boards at least {Units.Format(need1)} long (e.g. {longest})";
                     }
                     avail[pick.Id]--;
                 }
@@ -189,12 +198,14 @@ namespace Groundbreak
             foreach (var r in runs)
             {
                 var stock = StockFor(System.Array.FindIndex(Prefix, p => r.BoardDef.Id.StartsWith(p)));
-                float t = 0;
-                foreach (var len in Segments(r.Length + 1.5f * Units.Inch, r.BoardDef.Size.z))
+                float t = r.BoardStart;
+                foreach (var cutLen in Segments(r.BoardLength, r.BoardDef.Size.z))
                 {
                     PieceDefinition pick = null;
-                    foreach (var d in stock) if (d.Size.z >= len - 1e-4f && Game.Stock.Count(d.Id) > 0) { pick = d; break; }
+                    foreach (var d in stock) if (d.Size.z >= cutLen - 1e-4f && Game.Stock.Count(d.Id) > 0) { pick = d; break; }
                     Game.Stock.TryTake(pick.Id);
+                    // up to 2' of overhang past the corner is left on (keeps the board reusable); more gets cut off
+                    float len = pick.Size.z - cutLen <= 24f * Units.Inch ? pick.Size.z : cutLen;
                     if (pick.Size.z - len > 0.01f) Game.Stock.Scrap.Add((pick.Id, pick.Size.z - len));
                     float w = pick.Size.x;
                     Vector3 c = r.A + r.Dir * (t + len * 0.5f) + r.Out * (0.75f * Units.Inch);
@@ -204,7 +215,7 @@ namespace Groundbreak
                     piece.gameObject.AddComponent<FormPart>().Run = r;
                     piece.GetComponent<FormPart>().Outline = o; piece.GetComponent<FormPart>().Role = "board";
                     r.Boards.Add(piece);
-                    t += len;
+                    t += cutLen;
                 }
             }
             o.Runs.AddRange(runs);
@@ -288,7 +299,7 @@ namespace Groundbreak
             float minG = float.MaxValue;
             for (float t = 0; t <= r.Length; t += 0.15f) minG = Mathf.Min(minG, SiteGround.GroundY(r.PointAt(t) - r.Out * 0.08f));
             float depth = o.TopY - minG;
-            float din = Units.ToInches(depth);
+            float din = Units.ToInches(depth) - 0.5f;   // 1/2" tolerance for settlement
             float allowed = din <= 8f ? 48f : din <= 16f ? 36f : 24f;
             float braceEvery = din <= 8f ? 0f : din <= 16f ? 72f : 48f;
             if (r.StakeT.Count == 0) { why = "no stakes"; return 1f; }

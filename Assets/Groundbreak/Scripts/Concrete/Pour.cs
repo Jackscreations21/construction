@@ -407,6 +407,9 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ queries for tools / tests
 
+        /// <summary>Concrete surface (or subgrade if empty) at a point inside the forms.</summary>
+        public float SurfaceY(Vector3 p) => Cell(p, out int i) ? _top[i] : SiteGround.GroundY(p);
+
         public float FillFraction => CapacityM3 <= 0 ? 0 : Mathf.Clamp01(PlacedM3 / CapacityM3);
         public bool Full { get { for (int i = 0; i < _in.Length; i++) if (_in[i] && _top[i] < TopY - 0.25f * Units.Inch) return false; return true; } }
 
