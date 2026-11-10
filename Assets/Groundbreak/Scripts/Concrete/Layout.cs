@@ -184,17 +184,16 @@ namespace Groundbreak
 
         public static void SprayMark(Vector3 p, Vector3 normal, Color c)
         {
+            // soft-edged spray blot (inverted can held ~8" off the ground): fuzzy overspray, speckles, paint soaks into the ground
+            const float r = 0.08f;
+            float spin = Mathf.PerlinNoise(p.x * 3.1f, p.z * 3.1f) * 360f;
             var go = CTool.Build("PaintMark", (b, m) =>
             {
-                int mat = m.C(c);
-                var pts = new List<Vector3>();
-                for (int k = 0; k < 10; k++)
-                {
-                    float a = k * 36f * Mathf.Deg2Rad, r = 0.045f * (0.8f + 0.4f * Mathf.PerlinNoise(p.x * 7 + k, p.z * 7));
-                    pts.Add(new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r));
-                }
-                b.AddPolygon(pts, mat, Vector3.up);
+                int mat = m[SprayPaint.Get(c)];
+                var q = Quaternion.Euler(0, spin, 0);
+                b.AddQuad(q * new Vector3(-r, 0, -r), q * new Vector3(-r, 0, r), q * new Vector3(r, 0, r), q * new Vector3(r, 0, -r), mat, Vector3.up, q * Vector3.right);
             }, Root);
+            foreach (var mr in go.GetComponentsInChildren<MeshRenderer>()) mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             go.transform.position = p + normal * 0.004f;
             go.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal);
             Paint.Add(go);

@@ -21,13 +21,22 @@
 - **Trench walls**: `SiteGround.Rebuild` renders grass cells steeper than ~1:2 as dirt (cut walls no longer keep grass).
 - **Gate grain**: gate boards' cedar grain now runs vertically (cedar texture grain is along V); frame rails/brace along their length.
 - `40_pad_in_graded_lot` shot moved closer.
+- **Concrete**: broomed/troweled slabs on the terrain shader (metre-scale mottling, no tile repeat; broom keeps straight lines: `_AntiTile` 0),
+  broom streaks/bump toned down, slab albedo 0.92 (was clipping in sun). `ConcreteTextures.cs`.
+- **Dirt**: Worley clod relief cut from 0.25 to 0.07 in `ProceduralTextures.Dirt` (it read as cobblestones). Small edit to a shared Visuals file.
+- **Marking paint**: soft alpha-blended spray blots with overspray (`Concrete/SprayPaint.cs`), instead of solid white polygons.
+
+## Status
+- Branch `claude/polish-site-8abb45`. Full PlayMode suite **35/35** (33 + 2 new `SiteLookTests`); 0 compile errors. Shots reviewed:
+  `look_01..06`, `40/41`, `26`, `28`, trench close-ups.
+- Known: `look_06_dig_dust` showed no particles before `cullingMode = AlwaysSimulate` was added; not re-checked after that change.
 
 ## Feel
 - `SiteLook/SiteFx.cs`: pooled world-space particles. `SiteFx.Dig(p)`, `Gravel(p)`, `Concrete(p)`, `Burst(...)`.
   Hooked into the pad shovel (dig/backfill), mini excavator (dig/gravel), grading shovel (dig/fill), and the chute discharge (slurry spatter).
 
 ## Shared-file edits
-None in Core. In my area: `Concrete/SiteGround.cs`, `Concrete/Excavation.cs`, `Concrete/Pour.cs` (1-line hooks), `Landscaping/*`.
+None in Core. `Visuals/ProceduralTextures.cs` (Dirt clod relief, 2 numbers). In my area: `Concrete/SiteGround.cs`, `Concrete/Excavation.cs`, `Concrete/Pour.cs` (1-line hooks), `Landscaping/*`.
 
 ## Ideas not done
 - Colour grading / tonemapping pass (would need a CommandBuffer on every camera; built-in pipeline has no post stack here).
