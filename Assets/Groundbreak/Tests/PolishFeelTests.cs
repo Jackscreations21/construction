@@ -11,7 +11,26 @@ namespace Groundbreak.Tests
     /// new synthesized sounds, and screenshots of the first-person view with the HUD and the tablet.</summary>
     public class PolishFeelTests
     {
-        [UnityTearDown] public IEnumerator TearDownScene() { if (Tablet.I != null && Tablet.I.IsOpen) Tablet.I.Close(); yield return CleanScene(); }
+        Tool[] _savedSlots; int _savedActive;
+
+        [UnitySetUp] public IEnumerator SaveBelt()
+        {
+            yield return null;
+            if (Game.Belt != null) { _savedSlots = (Tool[])Game.Belt.Slots.Clone(); _savedActive = Game.Belt.ActiveIndex; }
+        }
+
+        [UnityTearDown] public IEnumerator TearDownScene()
+        {
+            if (Tablet.I != null && Tablet.I.IsOpen) Tablet.I.Close();
+            Time.captureDeltaTime = 0f;
+            // put the belt back exactly as it was (later tests look tools up by slot)
+            if (Game.Belt != null && _savedSlots != null)
+            {
+                for (int i = 0; i < ToolBelt.SlotCount; i++) Game.Belt.Slots[i] = _savedSlots[i];
+                Game.Belt.Select(_savedActive);
+            }
+            yield return CleanScene();
+        }
 
         static string ShotDir { get { var d = Path.Combine(Application.dataPath, "..", "Logs", "shots"); Directory.CreateDirectory(d); return d; } }
 
