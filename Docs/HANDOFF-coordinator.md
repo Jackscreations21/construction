@@ -12,7 +12,7 @@ You are the coordinating session for Groundbreak (see `CLAUDE.md`, spec link ins
 | mep-systems | local_24f83b33-ad88-439a-a073-e80509d31ccc | M4 plumbing, electrical (circuit sim), HVAC, `Scripts/Networks/` |
 | closeup-finish | local_0e3be36c-0455-4bc9-9e7e-6fa63167d4bb | M5 insulation, drywall, siding/brick veneer, interior finish |
 | site-career | local_f6448317-3025-47c2-b2e4-b9915a46285c (HANDOFF READY @ 9267544, idle) | M6 landscaping, `Inspections.Register`, `SaveSystem.RegisterExtension`, career, audio, UI skin |
-| site-career-2 | proposed card task_f71c9c5a — needs USER click to start (app blocks auto-start from automated/peer turns); merges claude/site-career-92d50d first, terrain option 2 | M6 continuation |
+| site-career-2 | local_bf70d6ea-f984-47e2-ae51-4180f4a5c30d (branch `claude/festive-babbage-09d89f`, merges claude/site-career-92d50d first, terrain option 2) | M6 continuation |
 
 Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude/mep-systems-8b0d35`, `claude/closeup-finish-2a5558`, `claude/site-career-92d50d` (worktrees under `.claude/worktrees/`).
 
@@ -35,10 +35,11 @@ Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude
 ## State of main
 Milestone 1 complete: snap grid/angles, tool belt + tools, tablet (store with category tabs, tool shop, deliveries, bank, help),
 76-item catalog with real models + procedural textures, extension points (`Catalog.Register`, `ToolFactory.Register`, `Tablet.RegisterApp/AddHelp`).
-Tests: `PlaythroughTests.Milestone1Playthrough`, `PlaythroughTests.Showroom`, `ConcreteSlabTests.SlabFromLayoutToCure` (3/3 passing).
+Tests: 7/7 passing after M4 merge (Milestone1Playthrough, Showroom, SlabFromLayoutToCure, WireRoom, DuctRoom, FlatCondensateAndAtticExhaustFail, PlumbBathroom).
 
 ## Merged milestones
 - M2 concrete-forms → main @ ee1ecc9 (2026-11-09). Session done. Docs/CONCRETE.md.
+- M4 mep-systems → main @ 75a838c (2026-11-09). Session done. Docs/MEP-BRIEF.md. Follow-up: bridge MepInspection rules into Inspections.Register(RoughMEP) (site-career-2).
 
 ## Lead decisions
 - Terrain (2026-11-09): `Grade` (site-career) owns the lot; `SiteGround` (concrete, 4" cells) is the 60'x60' building pad inside a hole in Grade;
