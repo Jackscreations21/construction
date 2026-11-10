@@ -15,6 +15,13 @@ namespace Groundbreak
         public bool Active { get; set; }
         public string StatusLine { get; private set; } = "";
 
+        /// <summary>Extension point (Milestone 3): extra validation of a ghost (def, center, rotation, size) →
+        /// 0 = ok, 1 = warning (yellow ghost, still placeable), 2 = blocked (red). Reason shown in the status line.</summary>
+        public static System.Func<PieceDefinition, Vector3, Quaternion, Vector3, (int level, string reason)> ExternalCheck;
+        /// <summary>Extension point: called after a piece is placed by the player.</summary>
+        public static System.Action<Piece> PiecePlaced;
+        bool _warn;
+
         float _yaw, _pitch;
         GameObject _ghost;
         Renderer _ghostRenderer;
@@ -191,7 +198,7 @@ namespace Groundbreak
             _ghost.transform.localScale = size;
 
             _valid = Validate(pos, rot, size, out _reason);
-            _ghostRenderer.sharedMaterial = MaterialLibrary.Ghost(_valid ? new Color(0.2f, 0.5f, 1f) : new Color(1f, 0.2f, 0.2f));
+            _ghostRenderer.sharedMaterial = MaterialLibrary.Ghost(!_valid ? new Color(1f, 0.2f, 0.2f) : _warn ? new Color(1f, 0.85f, 0.1f) : new Color(0.2f, 0.5f, 1f));
         }
 
         /// <summary>Sit exactly on the hit face (done) and align ends/edges with the piece along its other local axes.</summary>
@@ -234,6 +241,13 @@ namespace Groundbreak
             if (Game.Stock.Count(Selected.Id) <= 0) { reason = "none on site"; return false; }
             if (Overlaps(pos, rot, size)) { reason = "blocked"; return false; }
             reason = "";
+            _warn = false;
+            if (ExternalCheck != null)
+            {
+                var r = ExternalCheck(Selected, pos, rot, size);
+                if (r.level >= 2) { reason = r.reason; return false; }
+                if (r.level == 1) { _warn = true; reason = r.reason; }
+            }
             return true;
         }
 
@@ -266,6 +280,7 @@ namespace Groundbreak
             if (!Game.Stock.TryTake(Selected.Id)) { Game.Toast("No " + Selected.Name + " on site"); return false; }
             float len = CurrentLength;
             var piece = Piece.Create(Selected, len, pos, rot);
+            PiecePlaced?.Invoke(piece);
             float offcut = 0f;
             if (CutLength > 0f && CutLength < StockLength - 0.0005f)
             {
@@ -378,7 +393,7 @@ namespace Groundbreak
                 if (!_hasAim) s += " · aim at a surface";
                 else
                 {
-                    s += _valid ? " · VALID" : " · INVALID (" + _reason + ")";
+                    s += !_valid ? " · INVALID (" + _reason + ")" : _warn ? " · WARNING (" + _reason + ")" : " · VALID";
                     Vector3 d = _aimPoint - Game.Snap.Origin;
                     Vector3 local = Quaternion.Inverse(Quaternion.Euler(0f, Game.Snap.OriginYaw, 0f)) * d;
                     s += " · from origin " + Units.Format(new Vector2(d.x, d.z).magnitude)
