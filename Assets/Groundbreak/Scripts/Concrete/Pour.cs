@@ -146,12 +146,14 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ placing concrete
 
+        float _nextSplash;
         /// <summary>Chute discharge for dt real seconds (~1/4 yd per game minute, a typical chute pour rate).</summary>
         public float Discharge(ReadyMixTruck truck, Vector3 at, float dt)
         {
             float rate = 0.25f * 1440f / GameClock.RealSecondsPerDay;   // yd per real second
             float yd = truck.Discharge(rate * dt);
             if (yd > 0) AddConcrete(at, yd / FormSystem.YardsPerM3, truck.Order);
+            if (yd > 0 && Time.time >= _nextSplash) { _nextSplash = Time.time + 0.1f; SiteFx.Concrete(at); } // slurry spatter where the chute lands
             return yd;
         }
 

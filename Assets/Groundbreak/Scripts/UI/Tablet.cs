@@ -33,6 +33,17 @@ namespace Groundbreak
         public GUIStyle LabelStyle => _label;
         public GUIStyle HeaderStyle => _header;
         public GUIStyle ButtonStyle => _button;
+        /// <summary>Open the tablet on the named app (e.g. from a tutorial's "show me where"). Unknown names just open the tablet.</summary>
+        public void ShowApp(string name)
+        {
+            int i = System.Array.IndexOf(AppNames(), name);
+            if (i >= 0 && i != _app) { _app = i; _scroll = Vector2.zero; _message = ""; }
+            if (!IsOpen) Open();
+        }
+
+        /// <summary>Name of the app currently shown.</summary>
+        public string CurrentApp { get { var n = AppNames(); return n.Length > 0 ? n[Mathf.Clamp(_app, 0, n.Length - 1)] : ""; } }
+
         /// <summary>Show a status message at the bottom of the tablet.</summary>
         public void ShowMessage(string m) => _message = m;
 

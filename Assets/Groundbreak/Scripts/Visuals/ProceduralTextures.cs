@@ -828,10 +828,10 @@ namespace Groundbreak
                     float peb = isPeb * (1f - Smooth(prad * 0.7f, prad, pf1));
                     Color col = Color.Lerp(dryC, darkC, m * 0.7f + md * 0.3f);
                     col *= 1f - 0.25f * Smooth(0.55f, 0.8f, dp);
-                    col *= 0.9f + 0.2f * Hf(x, y, 407) + 0.08f * (clod - 0.5f);
+                    col *= 0.9f + 0.2f * Hf(x, y, 407) + 0.03f * (clod - 0.5f);
                     col = Color.Lerp(col, pebbleC * (0.8f + 0.4f * Hf(pid, 2, 406)), peb);
                     c.Set(i, col);
-                    c.H[i] = m * 0.4f + md * 0.3f + clod * 0.25f + peb * 0.6f;
+                    c.H[i] = m * 0.4f + md * 0.3f + clod * 0.07f + peb * 0.6f; // low clod relief: strong cell edges read as cobblestones
                     c.S[i] = 1f + 0.8f * Smooth(0.55f, 0.8f, dp) + peb * 0.5f;
                 }
             }

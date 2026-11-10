@@ -258,8 +258,15 @@ namespace Groundbreak
             for (int z = 0; z < N; z++)
                 for (int x = 0; x < N; x++)
                 {
-                    var l = t[(int)Cover[CI(x, z)]];
                     int a = VI(x, z), b = VI(x + 1, z), c = VI(x + 1, z + 1), d = VI(x, z + 1);
+                    var cov = Cover[CI(x, z)];
+                    // a cut wall (corner heights spread > 2" over a 4" cell, i.e. steeper than ~1:2) can't hold sod: show bare dirt
+                    if (cov == GroundCover.Grass)
+                    {
+                        float lo = Mathf.Min(Mathf.Min(H[a], H[b]), Mathf.Min(H[c], H[d])), hi = Mathf.Max(Mathf.Max(H[a], H[b]), Mathf.Max(H[c], H[d]));
+                        if (hi - lo > 0.05f) cov = GroundCover.Dirt;
+                    }
+                    var l = t[(int)cov];
                     l.Add(a); l.Add(d); l.Add(c); l.Add(a); l.Add(c); l.Add(b);
                 }
             _mesh.Clear();

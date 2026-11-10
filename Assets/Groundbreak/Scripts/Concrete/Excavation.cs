@@ -50,7 +50,7 @@ namespace Groundbreak
             var pour = hit.collider.GetComponentInParent<PourSystem>();
             if (pour != null && pour.Plastic) { pour.Apply(FinishOp.Rake, hit.point); return; }
             if (SiteGround.I == null || !SiteGround.InPatch(hit.point)) { Game.Toast("Dig inside the staked site"); return; }
-            SiteGround.I.DigBy(hit.point, 0.13f, 2f * Units.Inch);
+            if (SiteGround.I.DigBy(hit.point, 0.13f, 2f * Units.Inch) > 1e-5f) SiteFx.Dig(hit.point);
             ToolUtil.Wear(this, 0.0005f);
         }
 
@@ -58,6 +58,7 @@ namespace Groundbreak
         {
             if (!CTool.Aim(out var hit) || SiteGround.I == null || !SiteGround.InPatch(hit.point)) return;
             SiteGround.I.RaiseTo(hit.point, 0.13f, SiteGround.GroundY(hit.point) + 2f * Units.Inch, GroundCover.Dirt);
+            SiteFx.Burst(hit.point, SiteFx.DirtColor, 6, 0.03f, 0.4f, 0.8f);
         }
     }
 
@@ -88,7 +89,7 @@ namespace Groundbreak
             if (!Ready(0.12f) || !CTool.Aim(out var hit, 9f) || SiteGround.I == null || !SiteGround.InPatch(hit.point)) return;
             Park(hit.point);
             float cut = SiteGround.I.DigTo(hit.point, 0.16f, SiteLayout.BenchmarkY - _depth);
-            if (cut > 0) _dig = 1f;
+            if (cut > 0) { _dig = 1f; SiteFx.Burst(hit.point, SiteFx.DirtColor, 18, 0.05f, 1.2f, 2.2f); }
         }
 
         void SecondaryHeld()
@@ -96,6 +97,7 @@ namespace Groundbreak
             if (!Ready(0.12f) || !CTool.Aim(out var hit, 9f) || !SiteGround.InPatch(hit.point)) return;
             Park(hit.point);
             GravelBase.Spread(hit.point, 0.3f, SiteLayout.BenchmarkY);
+            SiteFx.Gravel(hit.point);
             _dig = 1f;
         }
 
