@@ -87,7 +87,7 @@ namespace Groundbreak
                                 swirl += Mathf.Pow(Mathf.Abs(Mathf.Sin(r * 60f + k)), 18f) * Mathf.Clamp01(1f - r * 2.2f);
                             }
                             float mott = Fbm(u, v, 6, 4, 31) - 0.5f;
-                            c = new Color(0.66f, 0.655f, 0.635f) * (1f + macro * 0.14f + mott * 0.10f + fine * 0.025f - swirl * 0.07f);
+                            c = new Color(0.56f, 0.555f, 0.535f) * (1f + macro * 0.14f + mott * 0.10f + fine * 0.025f - swirl * 0.07f);
                             s = 1f + mott * 0.5f + swirl * 0.4f;
                             hh = macro * 0.05f + fine * 0.03f;
                             break;
@@ -99,7 +99,7 @@ namespace Groundbreak
                             float line = VNoise2(u, wv, 5, 230, 43);          // varies across V (ridges run along U)
                             float streak = Mathf.Pow(line, 2.2f);
                             float mott = Fbm(u, v, 5, 3, 45) - 0.5f;
-                            c = new Color(0.69f, 0.68f, 0.655f) * (1f + macro * 0.12f + mott * 0.08f - streak * 0.13f + fine * 0.05f);
+                            c = new Color(0.57f, 0.565f, 0.545f) * (1f + macro * 0.12f + mott * 0.08f - streak * 0.13f + fine * 0.05f);
                             hh = line * 0.9f + fine * 0.2f;
                             s = 0.8f + fine * 0.3f;
                             break;
@@ -108,7 +108,7 @@ namespace Groundbreak
                         {
                             // 6 mil clear-ish poly: translucent milky sheet with wrinkles
                             float wr = Mathf.Abs(Fbm(u, v * 0.4f, 5, 4, 51) - 0.5f) * 2f;
-                            c = new Color(0.80f, 0.83f, 0.85f) * (0.88f + 0.12f * wr + fine * 0.02f);
+                            c = new Color(0.60f, 0.64f, 0.67f) * (0.88f + 0.12f * wr + fine * 0.02f);
                             hh = (1f - wr) * 0.6f;
                             s = 1f;
                             break;

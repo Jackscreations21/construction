@@ -407,9 +407,26 @@ namespace Groundbreak
                 r.Boards.Clear(); r.Stakes.Clear(); r.Braces.Clear();
             }
             foreach (var mk in o.Markers) if (mk != null) Object.Destroy(mk);
+            Backfill(o);
             o.Stripped = true;
             o.Pour?.OnFormsStripped();
             return $"Forms stripped: {reused} boards reusable, {scrap} to scrap, {stakes} stakes back" + (o.Oiled ? "" : " (unoiled boards stuck to the concrete)");
+        }
+
+        /// <summary>After stripping: backfill and tamp the form trench against the slab edge back up to grade.</summary>
+        static void Backfill(FormOutline o)
+        {
+            var g = SiteGround.I; if (g == null) return;
+            float grade = SiteLayout.BenchmarkY;
+            foreach (var r in o.Runs)
+                for (float t = -0.3f; t <= r.Length + 0.3f; t += 0.1f)
+                    for (float off = 0.06f; off <= 0.36f; off += 0.1f)
+                    {
+                        Vector3 p = r.PointAt(t) + r.Out * off;
+                        if (o.Contains(p)) continue;
+                        g.RaiseTo(p, 0.08f, grade, GroundCover.Dirt);
+                    }
+            g.Rebuild();
         }
 
         public static FormRun NearestRun(FormOutline o, Vector3 p, out float t)

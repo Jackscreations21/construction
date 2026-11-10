@@ -111,7 +111,7 @@ namespace Groundbreak
         }
 
         /// <summary>Green concrete reads darker (moisture) and lightens as it dries over the first days.</summary>
-        float CureTint() => Mathf.Round(Mathf.Lerp(0.72f, 1f, Mathf.Clamp01(AgeDays / 5f)) * 20f) / 20f;
+        float CureTint() => Mathf.Round(Mathf.Lerp(0.66f, 0.86f, Mathf.Clamp01(AgeDays / 5f)) * 20f) / 20f;
 
         public void ApplyLook(MeshRenderer mr)
         {
