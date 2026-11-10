@@ -34,7 +34,7 @@ namespace Groundbreak
                 case SurfaceKind.PaintedWhite: return new Look(0.45f, 0f, 0.25f);
                 case SurfaceKind.PaintedSteel: return new Look(0.55f, 0f, 0.25f);
                 case SurfaceKind.BrushedSteel: return new Look(0.55f, 0.9f, 0.35f);
-                case SurfaceKind.Galvanized: return new Look(0.55f, 0.85f, 0.3f);
+                case SurfaceKind.Galvanized: return new Look(0.52f, 0.62f, 0.3f);
                 case SurfaceKind.DarkPlastic: return new Look(0.35f, 0f, 0.3f);
                 case SurfaceKind.Glass: return new Look(0.95f, 0f, 0f);
                 case SurfaceKind.Nickel: return new Look(0.6f, 0.9f, 0.3f);

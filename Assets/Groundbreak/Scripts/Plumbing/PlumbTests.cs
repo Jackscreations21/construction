@@ -361,7 +361,7 @@ namespace Groundbreak
                 mm.Band(c - d * 0.001f, c + d * s.Width * 0.3f, MepMesh.Circle(s.Radius * 1.022f, 32), 0);
                 if (hub) mm.Band(c - d * s.Width * 0.14f, c + d * 0.0005f, MepMesh.Circle(s.Radius * 1.16f, 32), 0);
             }
-            mm.Spawn(n.transform, "Primer", new[] { MepLook.Get(SurfaceKind.PaintedWhite, MepLook.PrimerPurple) });
+            mm.Spawn(n.transform, "Primer", new[] { MepPrint.Primer });
         }
 
         static int CapMask(NetNode n) { int m = 0; for (int i = 0; i < n.Ports.Count; i++) if (n.Ports[i].Run == null && n.Ports[i].Capped) m |= 1 << i; return m; }

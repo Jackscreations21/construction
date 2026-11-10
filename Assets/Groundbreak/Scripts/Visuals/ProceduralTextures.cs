@@ -1134,7 +1134,7 @@ namespace Groundbreak
                     Worley(uu, vv, 32, 903, 1f, out float f1, out float f2, out int id, out float ndx, out float ndy);
                     float th = Hf(id, 1, 904) * Mathf.PI;
                     float ct = Mathf.Cos(th), st = Mathf.Sin(th);
-                    float tone = 0.80f + 0.22f * Hf(id, 2, 904);
+                    float tone = 0.86f + 0.12f * Hf(id, 2, 904);
                     float across = -ndx * st + ndy * ct;
                     float feather = Noise1(across * 14f + id * 3.1f, 905) - 0.5f;
                     float facet = ndx * ct + ndy * st;

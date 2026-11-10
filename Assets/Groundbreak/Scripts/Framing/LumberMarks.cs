@@ -198,7 +198,7 @@ namespace Groundbreak
             ['.'] = new[] { ".....", ".....", ".....", ".....", ".....", ".##..", ".##.." },
         };
 
-        static string[] Glyph(char ch) => Font.TryGetValue(char.ToUpperInvariant(ch), out var g) ? g : null;
+        public static string[] Glyph(char ch) => Font.TryGetValue(char.ToUpperInvariant(ch), out var g) ? g : null;
 
         // ------------------------------------------------------------------ nail heads
 

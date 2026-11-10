@@ -52,14 +52,14 @@ namespace Groundbreak
                         mm.Band(c + d * s.Width * 0.25f, c + d * s.Width * 0.75f, MepMesh.Circle(s.Radius * 1.18f), Mat(MepLook.Get(SurfaceKind.Brass, MepLook.Copper)));
                         break;
                     case JoinMethod.Solvent:
-                        mm.Band(c - d * s.Width * 0.05f, c + d * s.Width * 0.22f, MepMesh.Circle(s.Radius * 1.015f), Mat(MepLook.Get(SurfaceKind.PaintedWhite, MepLook.PrimerPurple)));
+                        mm.Band(c - d * s.Width * 0.05f, c + d * s.Width * 0.22f, MepMesh.Circle(s.Radius * 1.015f), Mat(MepPrint.Primer));
                         break;
                     case JoinMethod.Sweat:
                         mm.Band(c - d * 0.001f, c + d * s.Width * 0.12f, MepMesh.Circle(s.Radius * 1.05f), Mat(MepLook.Get(SurfaceKind.Nickel)));
                         break;
                     case JoinMethod.Tape:
-                        if (s.Shape == RunShape.Rect) mm.Band(c - d * 0.03f, c + d * 0.03f, MepMesh.Rect(s.Width * 1.02f, s.Height * 1.02f), Mat(MepLook.Get(SurfaceKind.BrushedSteel)));
-                        else mm.Band(c - d * 0.03f, c + d * 0.03f, MepMesh.Circle(s.Radius * 1.02f, 24), Mat(MepLook.Get(SurfaceKind.BrushedSteel)));
+                        if (s.Shape == RunShape.Rect) mm.Band(c - d * 0.03f, c + d * 0.03f, MepMesh.Rect(s.Width * 1.02f, s.Height * 1.02f), Mat(MepPrint.FoilTape));
+                        else mm.Band(c - d * 0.03f, c + d * 0.03f, MepMesh.Circle(s.Radius * 1.02f, 24), Mat(MepPrint.FoilTape));
                         break;
                 }
             }
