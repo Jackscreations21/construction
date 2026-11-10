@@ -39,6 +39,7 @@ namespace Groundbreak
         void OnGUI()
         {
             if (Game.UIOpen) return;
+            UISkin.Apply(); // site-career: shared rounded skin
             EnsureStyles();
             float sw = Screen.width, sh = Screen.height;
             float line = _label.fontSize * 1.5f;
@@ -55,7 +56,7 @@ namespace Groundbreak
                             + $"${Game.Wallet.Money:N0}";
                 float bw = _label.fontSize * 20, bh = line * 3 + 10;
                 var r = new Rect(sw - bw - 12, 12, bw, bh);
-                Fill(r, new Color(0, 0, 0, 0.5f));
+                UISkin.Panel(r);
                 GUI.Label(new Rect(r.x + 8, r.y + 5, r.width - 16, r.height - 10), text, _boxText);
             }
 
@@ -72,7 +73,7 @@ namespace Groundbreak
                     var r = new Rect(x0 + i * slotW + 2, y0, slotW - 4, slotH);
                     bool active = i == belt.ActiveIndex;
                     bool continuation = t != null && i > 0 && belt.Slots[i - 1] == t;
-                    Fill(r, active ? new Color(1f, 0.6f, 0.1f, 0.75f) : new Color(0, 0, 0, 0.5f));
+                    UISkin.Panel(r, active ? new Color(1f, 0.6f, 0.1f, 0.8f) : UISkin.PanelColor);
                     GUI.Label(new Rect(r.x + 4, r.y + 2, 30, line), (i + 1).ToString(), _label);
                     if (t != null)
                     {
@@ -110,7 +111,7 @@ namespace Groundbreak
             {
                 float tw = sw * 0.6f, th = line * 2;
                 var r = new Rect((sw - tw) / 2f, sh * 0.25f, tw, th);
-                Fill(r, new Color(0, 0, 0, 0.55f));
+                UISkin.Panel(r);
                 GUI.Label(r, Game.ToastText, _center);
             }
         }
