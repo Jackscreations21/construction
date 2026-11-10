@@ -13,7 +13,7 @@ You are the coordinating session for Groundbreak (see `CLAUDE.md`, spec link ins
 | closeup-finish | local_0e3be36c-0455-4bc9-9e7e-6fa63167d4bb | M5 insulation, drywall, siding/brick veneer, interior finish |
 | site-career | local_f6448317-3025-47c2-b2e4-b9915a46285c | M6 landscaping, `Inspections.Register`, `SaveSystem.RegisterExtension`, career, audio, UI skin |
 
-Find their branches with `git worktree list` / `git branch -a` (names contain the slugs above).
+Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude/mep-systems-8b0d35`, `claude/closeup-finish-2a5558`, `claude/site-career-92d50d` (worktrees under `.claude/worktrees/`).
 
 ## User rules (must enforce)
 - Pause everything if any plan limit (`get_usage` → plan.windows[].percentUsed) reaches **90%**.
