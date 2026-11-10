@@ -248,7 +248,7 @@ namespace Groundbreak
                     if (f == null) Grade.Ensure(Center);
                     float t0 = i / (float)st.Steps, t1 = (i + 1) / (float)st.Steps;
                     Vector3 a = Vector3.Lerp(A, B, t0), b = Vector3.Lerp(A, B, t1);
-                    Grade.Field?.PaintRect((a + b) / 2, new Vector2(Width / 2 + 0.15f, Vector3.Distance(a, b) / 2 + 0.05f), RunYaw, GroundCover.Dirt);
+                    Grade.Field?.PaintRect((a + b) / 2, new Vector2(Width / 2 + 0.15f, Vector3.Distance(a, b) / 2 + 0.05f), RunYaw, LandCover.Dirt);
                     break;
                 }
             }
@@ -258,9 +258,13 @@ namespace Groundbreak
         {
             switch (Kind)
             {
+                case LandscapeKind.Walkway when stage == 4:
+                    BackfillShoulders(Width / 2, 0.8f); // topsoil against the edging so the lawn meets the paver edge
+                    break;
                 case LandscapeKind.GravelDrive when stage == 3:
+
                     LowerRun(A, B, Width / 2, 0f, false);
-                    Grade.Field?.PaintRect(Center, new Vector2(Width / 2, Length / 2), RunYaw, GroundCover.Gravel);
+                    Grade.Field?.PaintRect(Center, new Vector2(Width / 2, Length / 2), RunYaw, LandCover.Gravel);
                     break;
                 case LandscapeKind.Fence when stage == 2:
                 case LandscapeKind.Gate when stage == 2:
@@ -268,7 +272,7 @@ namespace Groundbreak
                     break;
                 case LandscapeKind.Plant when stage == 3:
                     WateredDay = Day;
-                    if (Plant.Tree) { Grade.Ensure(A); Grade.Field?.Paint(A, 0.75f, GroundCover.Mulch); }
+                    if (Plant.Tree) { Grade.Ensure(A); Grade.Field?.Paint(A, 0.75f, LandCover.Mulch); }
                     break;
                 case LandscapeKind.Sod when stage == 0:
                     WateredDay = Day;
@@ -292,6 +296,33 @@ namespace Groundbreak
             return Mathf.Abs(l.x) <= Width / 2 && Mathf.Abs(l.z) <= Length / 2;
         }
 
+        /// <summary>Raises/lowers the ground beside the run to just under its finished surface (1/2" lip), blending back to the
+        /// existing grade over `shoulder` meters, so a walk on uneven ground doesn't show its edge above the lawn.</summary>
+        void BackfillShoulders(float halfW, float shoulder)
+        {
+            var f = Grade.Field; if (f == null) return;
+            Vector3 c = Flat(Center); float halfL = Length / 2;
+            var inv = Quaternion.Inverse(Quaternion.Euler(0, RunYaw, 0));
+            float r = Mathf.Sqrt((halfW + shoulder) * (halfW + shoulder) + (halfL + shoulder) * (halfL + shoulder)) + Grade.Cell;
+            int x0 = Mathf.FloorToInt((c.x - r - f.X0) / Grade.Cell), x1 = Mathf.CeilToInt((c.x + r - f.X0) / Grade.Cell);
+            int z0 = Mathf.FloorToInt((c.z - r - f.Z0) / Grade.Cell), z1 = Mathf.CeilToInt((c.z + r - f.Z0) / Grade.Cell);
+            for (int z = Mathf.Max(1, z0); z <= Mathf.Min(f.Cells - 1, z1); z++)
+                for (int x = Mathf.Max(1, x0); x <= Mathf.Min(f.Cells - 1, x1); x++)
+                {
+                    var w = new Vector3(f.X0 + x * Grade.Cell, 0, f.Z0 + z * Grade.Cell);
+                    if (Grade.InPad(w.x, w.z)) continue;
+                    var l = inv * (w - c);
+                    float ox = Mathf.Abs(l.x) - halfW, oz = Mathf.Abs(l.z) - halfL;
+                    if (ox <= Grade.Cell * 0.5f && oz <= Grade.Cell * 0.5f) continue;   // under the pavers (excavated, hidden)
+                    float out_ = Mathf.Max(ox, oz);
+                    if (out_ > shoulder) continue;
+                    float target = SurfaceAt(w) - Units.In(0.5f);
+                    int k = z * f.V + x;
+                    f.H[k] = Mathf.Lerp(target, f.H[k], Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(out_ / shoulder)));
+                }
+            f.MarkAllDirty();
+        }
+
         /// <summary>Sets field vertices on the run segment a→b (half width) to the run surface + offset (lowerOnly: only if higher). Returns m³ removed.</summary>
         float LowerRun(Vector3 a, Vector3 b, float halfW, float offset, bool lowerOnly)
         {
@@ -306,6 +337,7 @@ namespace Groundbreak
                 for (int x = Mathf.Max(1, x0); x <= Mathf.Min(f.Cells - 1, x1); x++)
                 {
                     var w = new Vector3(f.X0 + x * Grade.Cell, 0, f.Z0 + z * Grade.Cell);
+                    if (Grade.InPad(w.x, w.z)) continue; // never cut the building pad (SiteGround)
                     var l = inv * (w - c);
                     // include the vertex ring just outside so the excavation reads; it is hidden under the finished surface
                     if (Mathf.Abs(l.x) > halfW + Grade.Cell * 0.5f || Mathf.Abs(l.z) > halfL + Grade.Cell * 0.5f) continue;

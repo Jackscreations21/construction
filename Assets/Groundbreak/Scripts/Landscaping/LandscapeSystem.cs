@@ -55,7 +55,7 @@ namespace Groundbreak
                 if (rain) s.watered = day;
                 if (day - s.sown >= need && s.watered >= day - 2 && Grade.Field != null)
                 {
-                    Grade.Field.Paint(s.p, s.r, GroundCover.Lawn, c => c == GroundCover.Seeded);
+                    Grade.Field.Paint(s.p, s.r, LandCover.Lawn, c => c == LandCover.Seeded);
                     _patches.RemoveAt(i);
                 }
             }
@@ -76,7 +76,7 @@ namespace Groundbreak
         public static void KnitSod(LandscapeFeature f)
         {
             Grade.Ensure(f.A);
-            Grade.Field?.PaintRect(f.A, new Vector2(Landscape.SodW / 2, Landscape.SodL / 2), f.Yaw, GroundCover.Lawn);
+            Grade.Field?.PaintRect(f.A, new Vector2(Landscape.SodW / 2, Landscape.SodL / 2), f.Yaw, LandCover.Lawn);
             Destroy(f.gameObject);
         }
 

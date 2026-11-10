@@ -34,7 +34,7 @@ namespace Groundbreak
         {
             Grade.Ensure(p);
             var cover = Grade.CoverAt(p.x, p.z);
-            if (cover != GroundCover.Dirt && cover != GroundCover.Topsoil) { msg = "Sod goes on raked bare soil - strip the turf and spread topsoil first"; return null; }
+            if (cover != LandCover.Dirt && cover != LandCover.Topsoil) { msg = "Sod goes on raked bare soil - strip the turf and spread topsoil first"; return null; }
             // snap to the nearest roll's running-bond pattern
             LandscapeFeature near = null; float best = 2.2f;
             foreach (var f in LandscapeFeature.All)
@@ -71,7 +71,7 @@ namespace Groundbreak
             else
             {
                 Grade.Ensure(p);
-                if (Grade.CoverAt(p.x, p.z) != GroundCover.Gravel && !GameSettings.Relaxed) { msg = "Set the first course on a compacted gravel leveling pad (wheelbarrow gravel)"; return null; }
+                if (Grade.CoverAt(p.x, p.z) != LandCover.Gravel && !GameSettings.Relaxed) { msg = "Set the first course on a compacted gravel leveling pad (wheelbarrow gravel)"; return null; }
                 pos = OnGround(p) + Vector3.down * Units.In(1); // first course partly buried
                 // continue a course: snap beside the nearest block at the same level
                 foreach (var f in LandscapeFeature.All)

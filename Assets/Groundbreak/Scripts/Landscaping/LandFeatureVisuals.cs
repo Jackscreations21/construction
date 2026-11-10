@@ -204,7 +204,7 @@ namespace Groundbreak
                 var rng = new System.Random(f.GetHashCode());
                 for (int bay = 0; bay < baysPicketed; bay++)
                 {
-                    int n = Mathf.CeilToInt(sp / pw - 1e-3f);
+                    int n = Mathf.Max(1, Mathf.FloorToInt(sp / (pw + Units.In(0.375f)))); // ~3/8" gaps: boards shrink, and the gaps read as shadow lines
                     float za = Local(bay);
                     for (int p = 0; p < n; p++)
                     {

@@ -93,17 +93,44 @@ namespace Groundbreak
 
     // ---------------------------------------------------------------------- hand tools
 
-    public class ShovelTool : LandTool
+    /// <summary>The one shovel: on the lot it grades (Grade); on the building pad or in wet concrete it is the concrete
+    /// crew's shovel (Concrete/ShovelTool on SiteGround's 4" cells).</summary>
+    public class LandShovelTool : LandTool
     {
         public override string Id => "shovel";
         public override string Name => "Round-point Shovel";
-        public override string Hint => "LMB dig (lower 2\") · RMB fill from loose dirt / fill-dirt stock · works holes & excavation";
+        public override string Hint => "LMB dig (lower 2\") · RMB fill from loose dirt / fill-dirt stock · works holes & excavation · on the pad: trenches, push wet concrete";
+        readonly ShovelTool _pad = new ShovelTool();
+
+        bool OnPad(out RaycastHit hit)
+        {
+            if (!Aim(out hit, out var f) || f != null) return false;
+            if (hit.collider.GetComponentInParent<PourSystem>() != null) return true;
+            return Grade.InPad(hit.point.x, hit.point.z);
+        }
+
+        public override void Primary()
+        {
+            if (OnPad(out var hit)) { _pad.Primary(); Sfx.Play("shovel", hit.point); ToolUtil.Wear(this, 0.0005f); return; }
+            base.Primary();
+        }
+
+        public override void Secondary()
+        {
+            if (OnPad(out var hit)) { _pad.Secondary(); Sfx.Play("shovel", hit.point); return; }
+            base.Secondary();
+        }
+
+        // registered after the concrete milestone's BeforeSceneLoad "shovel" so this unified one wins in the Tool Shop
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void RegisterUnified() =>
+            ToolFactory.Register(new ToolShopItem { Id = "shovel", Name = "Round-point Shovel", Price = 32, Description = "Dig and fill the lot (grade readout, slope away from the house); trenches on the building pad; push wet concrete." }, () => new LandShovelTool());
         protected override void GroundPrimary(RaycastHit hit, LandscapeFeature f)
         {
             if (f != null) { Say(f.Hint); return; }
             float r = GInput.Shift ? 1.0f : 0.6f;
             float vol = -Grade.Field.Raise(hit.point, r, -Units.In(2));
-            Grade.Field.Paint(hit.point, r * 0.8f, GroundCover.Dirt, c => c == GroundCover.Grass || c == GroundCover.Lawn || c == GroundCover.Topsoil);
+            Grade.Field.Paint(hit.point, r * 0.8f, LandCover.Dirt, c => c == LandCover.Grass || c == LandCover.Lawn || c == LandCover.Topsoil);
             Grade.DirtOnHand += Yd(vol);
             Sfx.Play("shovel", hit.point);
             ToolUtil.Wear(this, 0.0005f);
@@ -114,7 +141,7 @@ namespace Groundbreak
             float vol = Mathf.PI * r * r * 0.5f * Units.In(2);
             if (!Grade.TakeFill(vol)) { Say("No loose dirt - dig somewhere or order fill dirt"); return; }
             Grade.Field.Raise(hit.point, r, Units.In(2));
-            Grade.Field.Paint(hit.point, r * 0.8f, GroundCover.Dirt, c => c == GroundCover.Grass || c == GroundCover.Lawn);
+            Grade.Field.Paint(hit.point, r * 0.8f, LandCover.Dirt, c => c == LandCover.Grass || c == LandCover.Lawn);
             Sfx.Play("shovel", hit.point);
         }
     }
@@ -127,14 +154,14 @@ namespace Groundbreak
         protected override void GroundPrimary(RaycastHit hit, LandscapeFeature f)
         {
             if (f != null) { Say(f.Hint); return; }
-            Grade.Field.Paint(hit.point, 0.4f, GroundCover.Dirt, c => c == GroundCover.Grass || c == GroundCover.Lawn);
+            Grade.Field.Paint(hit.point, 0.4f, LandCover.Dirt, c => c == LandCover.Grass || c == LandCover.Lawn);
             Sfx.Play("shovel", hit.point);
         }
         protected override void GroundSecondary(RaycastHit hit, LandscapeFeature f)
         {
             float r = 0.75f, yd = Yd(Mathf.PI * r * r * Units.In(3));
             if (!Bulk.Take("mulch", yd)) { Say("No mulch on site (Garden Center: bulk)"); return; }
-            Grade.Field.Paint(hit.point, r, GroundCover.Mulch);
+            Grade.Field.Paint(hit.point, r, LandCover.Mulch);
             Sfx.Play("gravel", hit.point, 0.5f);
         }
     }
@@ -155,7 +182,7 @@ namespace Groundbreak
             float r = 1.0f, vol = Mathf.PI * r * r * 0.5f * Units.In(2);
             if (!Bulk.Take("topsoil", Yd(vol))) { Say("No topsoil on site (Garden Center: bulk)"); return; }
             Grade.Field.Raise(hit.point, r, Units.In(2));
-            Grade.Field.Paint(hit.point, r, GroundCover.Topsoil, c => c != GroundCover.Gravel && c != GroundCover.Mulch);
+            Grade.Field.Paint(hit.point, r, LandCover.Topsoil, c => c != LandCover.Gravel && c != LandCover.Mulch);
             Sfx.Play("rake", hit.point, 0.6f);
         }
     }
@@ -168,7 +195,7 @@ namespace Groundbreak
         protected override void GroundPrimary(RaycastHit hit, LandscapeFeature f)
         {
             if (f != null) { Say(f.Hint); return; }
-            Grade.Field.Paint(hit.point, 0.5f, GroundCover.Dirt, c => c == GroundCover.Grass || c == GroundCover.Lawn);
+            Grade.Field.Paint(hit.point, 0.5f, LandCover.Dirt, c => c == LandCover.Grass || c == LandCover.Lawn);
             Sfx.Play("shovel", hit.point, 0.5f);
         }
         protected override void GroundSecondary(RaycastHit hit, LandscapeFeature f) => SowAt(hit.point, out var m, this);
@@ -177,11 +204,11 @@ namespace Groundbreak
         public static bool SowAt(Vector3 p, out string msg, LandTool say = null)
         {
             var cover = Grade.CoverAt(p.x, p.z);
-            if (cover != GroundCover.Dirt && cover != GroundCover.Topsoil) { msg = "Seed needs bare raked soil (strip/till and spread topsoil first)"; say?.SayPublic(msg); return false; }
+            if (cover != LandCover.Dirt && cover != LandCover.Topsoil) { msg = "Seed needs bare raked soil (strip/till and spread topsoil first)"; say?.SayPublic(msg); return false; }
             float r = 1.2f, sqft = Mathf.PI * r * r * 10.764f, units = sqft / 1000f;
             if (Bulk.OnHand("grass-seed") < units || Bulk.OnHand("straw-bale") < units) { msg = "Need grass seed and a straw bale on site"; say?.SayPublic(msg); return false; }
             Bulk.Take("grass-seed", units); Bulk.Take("straw-bale", units);
-            Grade.Field.Paint(p, r, GroundCover.Seeded, c => c == GroundCover.Dirt || c == GroundCover.Topsoil);
+            Grade.Field.Paint(p, r, LandCover.Seeded, c => c == LandCover.Dirt || c == LandCover.Topsoil);
             LandscapeSystem.AddSeedPatch(p, r);
             Sfx.Play("rake", p, 0.5f);
             msg = "Seeded & strawed - keep it watered (hose) ~5 days";
@@ -238,7 +265,7 @@ namespace Groundbreak
             if (!Bulk.Take(id, LandscapeFeature.LoadYd)) { Say($"No {LandCatalog.Name(id)} on site"); return; }
             float vol = LandscapeFeature.LoadYd * Grade.CubicYard, r = 0.9f;
             Grade.Field.Raise(hit.point, r, vol / (Mathf.PI * r * r * 0.5f));
-            var cover = id == "mulch" ? GroundCover.Mulch : id == "topsoil" || id == "fill-dirt" ? GroundCover.Topsoil : id == "paver-sand" ? GroundCover.Sand : GroundCover.Gravel;
+            var cover = id == "mulch" ? LandCover.Mulch : id == "topsoil" || id == "fill-dirt" ? LandCover.Topsoil : id == "paver-sand" ? LandCover.Sand : LandCover.Gravel;
             Grade.Field.Paint(hit.point, r * 0.85f, cover);
             Sfx.Play("gravel", hit.point);
         }
@@ -257,7 +284,7 @@ namespace Groundbreak
             if (f != null) { Say(f.Hint); return; }
             Vector3 fwd = Game.Player.transform.forward; fwd.y = 0;
             float yaw = Mathf.Atan2(fwd.x, fwd.z) * Mathf.Rad2Deg;
-            int n = Grade.Field.PaintRect(hit.point + fwd.normalized * 0.45f, new Vector2(Units.In(9), 0.45f), yaw, GroundCover.Dirt);
+            int n = Grade.Field.PaintRect(hit.point + fwd.normalized * 0.45f, new Vector2(Units.In(9), 0.45f), yaw, LandCover.Dirt);
             Sfx.Play("engine", hit.point, 0.7f);
             if (n == 0) Say("Nothing to strip here");
         }
@@ -272,7 +299,7 @@ namespace Groundbreak
         protected override void GroundPrimary(RaycastHit hit, LandscapeFeature f)
         {
             if (f != null) { Say(f.Hint); return; }
-            Grade.Field.Paint(hit.point, 0.9f, GroundCover.Dirt, c => c != GroundCover.Gravel && c != GroundCover.Mulch);
+            Grade.Field.Paint(hit.point, 0.9f, LandCover.Dirt, c => c != LandCover.Gravel && c != LandCover.Mulch);
             Grade.Field.Smooth(hit.point, 0.9f, 0.3f);
             Sfx.Play("engine", hit.point, 0.8f);
         }
@@ -286,7 +313,7 @@ namespace Groundbreak
         static void Register()
         {
             ToolFactory.Register(new ToolShopItem { Id = "landhands", Name = "Landscaping Layout Kit", Price = 19, Description = "Stakes, mason's line, marking paint. Lay out walks, drives, fences, beds; set plants, sod, blocks, lights. RMB = item, scroll = rotate." }, () => new LandHandsTool());
-            ToolFactory.Register(new ToolShopItem { Id = "shovel", Name = "Round-point Shovel", Price = 32, Description = "Dig and fill; grade readout with slope away from the house." }, () => new ShovelTool());
+            ToolFactory.Register(new ToolShopItem { Id = "shovel", Name = "Round-point Shovel", Price = 32, Description = "Dig and fill; grade readout with slope away from the house." }, () => new LandShovelTool());
             ToolFactory.Register(new ToolShopItem { Id = "spade", Name = "Edging Spade", Price = 34, Description = "Cut bed edges, excavate walk beds, spread mulch." }, () => new SpadeTool());
             ToolFactory.Register(new ToolShopItem { Id = "rake", Name = "Landscape Rake", Price = 29, Description = "Smooth and level grade, spread topsoil, screed sand." }, () => new RakeTool());
             ToolFactory.Register(new ToolShopItem { Id = "hoe", Name = "Garden Hoe", Price = 22, Description = "Loosen soil; sow grass seed and straw." }, () => new HoeTool());

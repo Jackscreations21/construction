@@ -5,12 +5,12 @@ using UnityEngine;
 namespace Groundbreak
 {
     /// <summary>What covers a ground cell.</summary>
-    public enum GroundCover : byte { Grass, Dirt, Topsoil, Seeded, Mulch, Gravel, Sand, Lawn }
+    public enum LandCover : byte { Grass, Dirt, Topsoil, Seeded, Mulch, Gravel, Sand, Lawn }
 
     /// <summary>
     /// Editable terrain for the site. Created lazily around the first grading edit (or the career lot); the flat 2000' ground
     /// plane gets a matching hole so the field can be cut below zero. Heights are meters at 0.5 m vertices; each cell has a
-    /// <see cref="GroundCover"/>. Outside the field the ground is flat at y = 0.
+    /// <see cref="LandCover"/>. Outside the field the ground is flat at y = 0.
     /// </summary>
     public static class Grade
     {
@@ -18,9 +18,81 @@ namespace Groundbreak
         public const float Cell = 0.5f;
         public const int DefaultCells = 160; // 80 m = 262'
 
-        public static float HeightAt(float x, float z) => Field != null ? Field.HeightAt(x, z) : 0f;
-        public static GroundCover CoverAt(float x, float z) => Field != null ? Field.CoverAt(x, z) : GroundCover.Grass;
-        public static Vector2 Gradient(float x, float z) => Field != null ? Field.Gradient(x, z) : Vector2.zero;
+        /// <summary>Ground height anywhere: the building pad (SiteGround, 4" cells) inside its footprint, else the lot field, else 0.</summary>
+        public static float HeightAt(float x, float z)
+        {
+            if (InPad(x, z)) return PadHeight(x, z);
+            return Field != null ? Field.HeightAt(x, z) : 0f;
+        }
+
+        public static LandCover CoverAt(float x, float z)
+        {
+            if (InPad(x, z))
+            {
+                switch (SiteGround.I.CoverAt(new Vector3(x, 0, z)))
+                {
+                    case GroundCover.Dirt: return LandCover.Dirt;
+                    case GroundCover.Gravel: return LandCover.Gravel;
+                    default: return LandCover.Grass;
+                }
+            }
+            return Field != null ? Field.CoverAt(x, z) : LandCover.Grass;
+        }
+
+        /// <summary>dh/dx, dh/dz (rise per meter) sampled over +-0.5 m.</summary>
+        public static Vector2 Gradient(float x, float z)
+        {
+            const float e = 0.5f;
+            return new Vector2((HeightAt(x + e, z) - HeightAt(x - e, z)) / (2 * e), (HeightAt(x, z + e) - HeightAt(x, z - e)) / (2 * e));
+        }
+
+        // ------------------------------------------------------------------ building pad (SiteGround)
+
+        /// <summary>True when (x,z) is on the high-res building pad (edges inclusive). Grade never edits or draws there.</summary>
+        public static bool InPad(float x, float z)
+        {
+            if (SiteGround.I == null) return false;
+            var r = SiteGround.PadRect;
+            return x >= r.xMin && x <= r.xMax && z >= r.yMin && z <= r.yMax;
+        }
+
+        /// <summary>True when (x,z) is strictly inside the pad (not on its edge).</summary>
+        public static bool InPadInterior(float x, float z)
+        {
+            if (SiteGround.I == null) return false;
+            var r = SiteGround.PadRect;
+            return x > r.xMin + 1e-4f && x < r.xMax - 1e-4f && z > r.yMin + 1e-4f && z < r.yMax - 1e-4f;
+        }
+
+        /// <summary>Pad height, clamped onto the pad so its far edges are sampled too.</summary>
+        public static float PadHeight(float x, float z)
+        {
+            var r = SiteGround.PadRect;
+            const float e = 1e-4f;
+            return SiteGround.I.HeightAt(new Vector3(Mathf.Clamp(x, r.xMin, r.xMax - e), 0, Mathf.Clamp(z, r.yMin, r.yMax - e)));
+        }
+
+        /// <summary>Height of the pad edge nearest (x,z): what the lot grades into around the pad.</summary>
+        public static float PadEdgeHeight(float x, float z)
+        {
+            var r = SiteGround.PadRect;
+            return PadHeight(Mathf.Clamp(x, r.xMin, r.xMax), Mathf.Clamp(z, r.yMin, r.yMax));
+        }
+
+        /// <summary>Distance (m) from (x,z) to the pad rectangle (0 inside); +inf without a pad.</summary>
+        public static float DistanceToPad(float x, float z)
+        {
+            if (SiteGround.I == null) return float.PositiveInfinity;
+            var r = SiteGround.PadRect;
+            float dx = Mathf.Max(0f, Mathf.Max(r.xMin - x, x - r.xMax)), dz = Mathf.Max(0f, Mathf.Max(r.yMin - z, z - r.yMax));
+            return Mathf.Sqrt(dx * dx + dz * dz);
+        }
+
+        static void OnPadCreated(SiteGround g)
+        {
+            if (Field != null) { Field.SnapToPad(); Field.MarkAllDirty(); }
+            RefreshGroundHoles();
+        }
 
         /// <summary>Makes sure an editable field covers this point. Returns false if a field exists elsewhere and the point is outside it.</summary>
         public static bool Ensure(Vector3 near)
@@ -41,21 +113,31 @@ namespace Groundbreak
             var go = new GameObject("GradeField");
             Field = go.AddComponent<GradeField>();
             Field.Init(x0, z0, cells);
-            CutGroundHole(new Rect(x0, z0, cells * Cell, cells * Cell));
+            RefreshGroundHoles();
         }
 
         public static void Destroy()
         {
             if (Field != null) UnityEngine.Object.Destroy(Field.gameObject);
             Field = null;
-            RestoreGround();
+            RefreshGroundHoles();
         }
 
         // ------------------------------------------------------------------ ground plane hole
 
         static Mesh _origGround;
 
-        static void CutGroundHole(Rect hole)
+        /// <summary>Re-cuts the bootstrap "Ground" plane around the lot field and the building pad (or restores it when neither exists).</summary>
+        public static void RefreshGroundHoles()
+        {
+            var holes = new List<Rect>();
+            if (Field != null) holes.Add(new Rect(Field.X0, Field.Z0, Field.Size, Field.Size));
+            if (SiteGround.I != null) holes.Add(SiteGround.PadRect);
+            if (holes.Count == 0) { RestoreGround(); return; }
+            CutGroundHoles(holes);
+        }
+
+        static void CutGroundHoles(List<Rect> holes)
         {
             var g = GameObject.Find("Ground");
             if (g == null) return;
@@ -65,16 +147,26 @@ namespace Groundbreak
             float scale = g.transform.lossyScale.x;
             float half = 5f * scale; // Unity plane is 10 units across
             float groundSize = half * 2f;
-            var b = new MeshBuilder();
-            void Rq(float ax, float az, float bx, float bz)
+            // grid decomposition: every hole edge splits the plane; keep the cells no hole covers
+            var xs = new List<float> { -half, half }; var zs = new List<float> { -half, half };
+            foreach (var h in holes)
             {
-                if (bx - ax < 0.001f || bz - az < 0.001f) return;
-                b.AddQuad(new Vector3(ax, 0, az), new Vector3(ax, 0, bz), new Vector3(bx, 0, bz), new Vector3(bx, 0, az), 0, Vector3.up);
+                xs.Add(Mathf.Clamp(h.xMin, -half, half)); xs.Add(Mathf.Clamp(h.xMax, -half, half));
+                zs.Add(Mathf.Clamp(h.yMin, -half, half)); zs.Add(Mathf.Clamp(h.yMax, -half, half));
             }
-            Rq(-half, -half, half, hole.yMin);
-            Rq(-half, hole.yMax, half, half);
-            Rq(-half, hole.yMin, hole.xMin, hole.yMax);
-            Rq(hole.xMax, hole.yMin, half, hole.yMax);
+            xs.Sort(); zs.Sort();
+            var b = new MeshBuilder();
+            for (int iz = 0; iz < zs.Count - 1; iz++)
+                for (int ix = 0; ix < xs.Count - 1; ix++)
+                {
+                    float ax = xs[ix], bx = xs[ix + 1], az = zs[iz], bz = zs[iz + 1];
+                    if (bx - ax < 0.001f || bz - az < 0.001f) continue;
+                    float cx = (ax + bx) * 0.5f, cz = (az + bz) * 0.5f;
+                    bool covered = false;
+                    foreach (var h in holes) if (h.Contains(new Vector2(cx, cz))) { covered = true; break; }
+                    if (covered) continue;
+                    b.AddQuad(new Vector3(ax, 0, az), new Vector3(ax, 0, bz), new Vector3(bx, 0, bz), new Vector3(bx, 0, az), 0, Vector3.up);
+                }
             var mesh = b.Build("GroundWithHole");
             // match the plane's material tiling: its texture repeats groundSize/TileMeters times over UV 0..1
             var v = mesh.vertices; var uv = new Vector2[v.Length];
@@ -146,7 +238,12 @@ namespace Groundbreak
         static void StaticReset() { Field = null; _origGround = null; DirtOnHand = 0; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Init() => SaveSystem.RegisterExtension("grade", Save, Load);
+        static void Init()
+        {
+            SaveSystem.RegisterExtension("grade", Save, Load);
+            SiteGround.Created -= OnPadCreated;
+            SiteGround.Created += OnPadCreated;
+        }
     }
 
     /// <summary>The heightfield mesh (chunks of 20x20 cells, each with a MeshCollider and one submesh per ground cover).</summary>
@@ -159,7 +256,7 @@ namespace Groundbreak
         const int Chunk = 20;
         int _chunksPerSide;
         MeshFilter[] _mf; MeshCollider[] _mc; MeshRenderer[] _mr; bool[] _dirty;
-        static readonly int CoverCount = Enum.GetValues(typeof(GroundCover)).Length;
+        static readonly int CoverCount = Enum.GetValues(typeof(LandCover)).Length;
         Material[] _coverMats;
 
         public float Size => Cells * Grade.Cell;
@@ -174,7 +271,7 @@ namespace Groundbreak
             int n = _chunksPerSide * _chunksPerSide;
             _mf = new MeshFilter[n]; _mc = new MeshCollider[n]; _mr = new MeshRenderer[n]; _dirty = new bool[n];
             _coverMats = new Material[CoverCount];
-            for (int i = 0; i < CoverCount; i++) _coverMats[i] = CoverMaterial((GroundCover)i);
+            for (int i = 0; i < CoverCount; i++) _coverMats[i] = CoverMaterial((LandCover)i);
             for (int i = 0; i < n; i++)
             {
                 var go = new GameObject("GradeChunk" + i);
@@ -184,20 +281,33 @@ namespace Groundbreak
                 _mc[i] = go.AddComponent<MeshCollider>();
                 _dirty[i] = true;
             }
+            SnapToPad();
             RebuildDirty();
         }
 
-        public static Material CoverMaterial(GroundCover c)
+        /// <summary>Vertices on/inside the building pad take the pad's height, so the lot meets the pad without a seam.</summary>
+        public void SnapToPad()
+        {
+            if (SiteGround.I == null) return;
+            for (int z = 0; z <= Cells; z++)
+                for (int x = 0; x <= Cells; x++)
+                {
+                    float wx = X0 + x * Grade.Cell, wz = Z0 + z * Grade.Cell;
+                    if (Grade.InPad(wx, wz)) H[z * V + x] = Grade.PadHeight(wx, wz);
+                }
+        }
+
+        public static Material CoverMaterial(LandCover c)
         {
             switch (c)
             {
-                case GroundCover.Grass: return Materials.Get(SurfaceKind.Grass);
-                case GroundCover.Dirt: return Materials.Get(SurfaceKind.Dirt);
-                case GroundCover.Topsoil: return LandMaterials.Get(LandSurface.Topsoil);
-                case GroundCover.Seeded: return LandMaterials.Get(LandSurface.Straw);
-                case GroundCover.Mulch: return LandMaterials.Get(LandSurface.Mulch);
-                case GroundCover.Gravel: return Materials.Get(SurfaceKind.Gravel);
-                case GroundCover.Sand: return LandMaterials.Get(LandSurface.Sand);
+                case LandCover.Grass: return Materials.Get(SurfaceKind.Grass);
+                case LandCover.Dirt: return Materials.Get(SurfaceKind.Dirt);
+                case LandCover.Topsoil: return LandMaterials.Get(LandSurface.Topsoil);
+                case LandCover.Seeded: return LandMaterials.Get(LandSurface.Straw);
+                case LandCover.Mulch: return LandMaterials.Get(LandSurface.Mulch);
+                case LandCover.Gravel: return Materials.Get(SurfaceKind.Gravel);
+                case LandCover.Sand: return LandMaterials.Get(LandSurface.Sand);
                 default: return LandMaterials.Get(LandSurface.Sod);
             }
         }
@@ -245,19 +355,57 @@ namespace Groundbreak
                 }
             var tris = new List<int>[CoverCount];
             for (int k = 0; k < CoverCount; k++) tris[k] = new List<int>();
+            bool pad = SiteGround.I != null;
+            Rect pr = pad ? SiteGround.PadRect : default;
+            List<Vector3> xv = null; List<Vector3> xn = null; List<Vector2> xu = null; // extra verts for cells clipped by the pad
             for (int z = 0; z < d - 1; z++)
                 for (int x = 0; x < w - 1; x++)
                 {
                     int cover = C[(cz0 + z) * Cells + cx0 + x];
-                    int a = z * w + x, b = a + 1, c = a + w, e = c + 1;
                     var t = tris[cover];
+                    if (pad)
+                    {
+                        float ax = X0 + (cx0 + x) * Grade.Cell, az = Z0 + (cz0 + z) * Grade.Cell, bx = ax + Grade.Cell, bz = az + Grade.Cell;
+                        float ix0 = Mathf.Max(ax, pr.xMin), ix1 = Mathf.Min(bx, pr.xMax), iz0 = Mathf.Max(az, pr.yMin), iz1 = Mathf.Min(bz, pr.yMax);
+                        if (ix1 - ix0 > 1e-4f && iz1 - iz0 > 1e-4f)
+                        {
+                            // the cell overlaps the pad: draw only the parts outside it (up to 4 strips), heights pad-aware
+                            if (xv == null) { xv = new List<Vector3>(); xn = new List<Vector3>(); xu = new List<Vector2>(); }
+                            int baseIndex = w * d;
+                            void Piece(float px0, float pz0, float px1, float pz1)
+                            {
+                                if (px1 - px0 < 1e-4f || pz1 - pz0 < 1e-4f) return;
+                                int s0 = baseIndex + xv.Count;
+                                foreach (var q in new[] { new Vector2(px0, pz0), new Vector2(px1, pz0), new Vector2(px0, pz1), new Vector2(px1, pz1) })
+                                {
+                                    float hy = Grade.HeightAt(q.x, q.y);
+                                    var gr = Grade.Gradient(q.x, q.y);
+                                    xv.Add(new Vector3(q.x, hy, q.y)); xn.Add(new Vector3(-gr.x, 1f, -gr.y).normalized); xu.Add(q);
+                                }
+                                t.Add(s0); t.Add(s0 + 2); t.Add(s0 + 3); t.Add(s0); t.Add(s0 + 3); t.Add(s0 + 1);
+                            }
+                            Piece(ax, az, bx, iz0);          // south strip
+                            Piece(ax, iz1, bx, bz);          // north strip
+                            Piece(ax, iz0, ix0, iz1);        // west
+                            Piece(ix1, iz0, bx, iz1);        // east
+                            continue;
+                        }
+                    }
+                    int a = z * w + x, b = a + 1, c = a + w, e = c + 1;
                     t.Add(a); t.Add(c); t.Add(e); t.Add(a); t.Add(e); t.Add(b);
                 }
+            if (xv != null)
+            {
+                var av = new List<Vector3>(verts); av.AddRange(xv); verts = av.ToArray();
+                var an = new List<Vector3>(norms); an.AddRange(xn); norms = an.ToArray();
+                var au = new List<Vector2>(uvs); au.AddRange(xu); uvs = au.ToArray();
+            }
             var mats = new List<Material>(); var used = new List<int>();
             for (int k = 0; k < CoverCount; k++) if (tris[k].Count > 0) { used.Add(k); mats.Add(_coverMats[k]); }
             var mesh = _mf[i].sharedMesh;
             if (mesh == null) { mesh = new Mesh { name = "GradeChunk" }; _mf[i].sharedMesh = mesh; }
             mesh.Clear();
+            if (verts.Length > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             mesh.vertices = verts; mesh.normals = norms; mesh.uv = uvs;
             mesh.subMeshCount = used.Count;
             for (int s = 0; s < used.Count; s++) mesh.SetTriangles(tris[used[s]], s, false);
@@ -288,11 +436,11 @@ namespace Groundbreak
             return new Vector2((HeightAt(x + e, z) - HeightAt(x - e, z)) / (2 * e), (HeightAt(x, z + e) - HeightAt(x, z - e)) / (2 * e));
         }
 
-        public GroundCover CoverAt(float x, float z)
+        public LandCover CoverAt(float x, float z)
         {
             int cx = Mathf.FloorToInt((x - X0) / Grade.Cell), cz = Mathf.FloorToInt((z - Z0) / Grade.Cell);
-            if (cx < 0 || cz < 0 || cx >= Cells || cz >= Cells) return GroundCover.Grass;
-            return (GroundCover)C[cz * Cells + cx];
+            if (cx < 0 || cz < 0 || cx >= Cells || cz >= Cells) return LandCover.Grass;
+            return (LandCover)C[cz * Cells + cx];
         }
 
         // ------------------------------------------------------------------ edits
@@ -310,6 +458,7 @@ namespace Groundbreak
                     float wx = X0 + x * Grade.Cell, wz = Z0 + z * Grade.Cell;
                     float d = Mathf.Sqrt((wx - c.x) * (wx - c.x) + (wz - c.z) * (wz - c.z));
                     if (d > radius) continue;
+                    if (Grade.InPad(wx, wz)) continue; // the building pad is SiteGround's (concrete tools dig it)
                     float w = 0.5f + 0.5f * Mathf.Cos(Mathf.PI * d / radius);
                     f(x, z, w);
                     MarkDirtyCell(Mathf.Min(x, Cells - 1), Mathf.Min(z, Cells - 1));
@@ -349,12 +498,18 @@ namespace Groundbreak
                 {
                     float edge = Mathf.Min(Mathf.Min(x, z), Mathf.Min(Cells - x, Cells - z)) * Grade.Cell;
                     float fade = Mathf.Clamp01(edge / 6f); // blend to 0 over the outer 6 m
-                    H[z * V + x] = h(X0 + x * Grade.Cell, Z0 + z * Grade.Cell) * fade;
+                    float wx = X0 + x * Grade.Cell, wz = Z0 + z * Grade.Cell;
+                    float v = h(wx, wz) * fade;
+                    // grade the lot into the building pad: blend to the pad edge height over a 4 m apron
+                    float pd = Grade.DistanceToPad(wx, wz);
+                    if (pd < 4f) v = Mathf.Lerp(Grade.PadEdgeHeight(wx, wz), v, Mathf.SmoothStep(0f, 1f, pd / 4f));
+                    H[z * V + x] = v;
                 }
+            SnapToPad();
             MarkAllDirty();
         }
 
-        public int Paint(Vector3 c, float radius, GroundCover cover, Func<GroundCover, bool> onlyOver = null)
+        public int Paint(Vector3 c, float radius, LandCover cover, Func<LandCover, bool> onlyOver = null)
         {
             int n = 0;
             int x0 = Mathf.FloorToInt((c.x - radius - X0) / Grade.Cell), x1 = Mathf.FloorToInt((c.x + radius - X0) / Grade.Cell);
@@ -364,7 +519,8 @@ namespace Groundbreak
                 {
                     float wx = X0 + (x + 0.5f) * Grade.Cell, wz = Z0 + (z + 0.5f) * Grade.Cell;
                     if ((wx - c.x) * (wx - c.x) + (wz - c.z) * (wz - c.z) > radius * radius) continue;
-                    var cur = (GroundCover)C[z * Cells + x];
+                    if (Grade.InPadInterior(wx, wz)) continue;
+                    var cur = (LandCover)C[z * Cells + x];
                     if (cur == cover || (onlyOver != null && !onlyOver(cur))) continue;
                     C[z * Cells + x] = (byte)cover; n++;
                     MarkDirtyCell(x, z);
@@ -373,7 +529,7 @@ namespace Groundbreak
         }
 
         /// <summary>Paints every cell whose center lies inside the oriented rectangle (center, half extents, yaw degrees).</summary>
-        public int PaintRect(Vector3 center, Vector2 half, float yaw, GroundCover cover)
+        public int PaintRect(Vector3 center, Vector2 half, float yaw, LandCover cover)
         {
             int n = 0; var inv = Quaternion.Euler(0, -yaw, 0);
             float r = half.magnitude + Grade.Cell;

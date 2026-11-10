@@ -75,7 +75,7 @@ namespace Groundbreak
                 {
                     if (hit.collider.GetComponentInParent<Piece>() != null) kind = "step-wood";
                     else if (hit.collider.GetComponentInParent<LandscapeFeature>() != null) kind = "step-hard";
-                    else { var c = Grade.CoverAt(hit.point.x, hit.point.z); if (c == GroundCover.Gravel) kind = "gravel"; }
+                    else { var c = Grade.CoverAt(hit.point.x, hit.point.z); if (c == LandCover.Gravel) kind = "gravel"; }
                 }
                 Play(kind, pos, kind == "gravel" ? 0.25f : 0.35f);
             }

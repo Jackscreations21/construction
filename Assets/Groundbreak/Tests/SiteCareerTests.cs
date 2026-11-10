@@ -183,6 +183,9 @@ namespace Groundbreak.Tests
             Assert.IsFalse(Career.Contracts.Find(c => c.Id == "garage") is var g && Career.CanTake(g), "can't take a second job");
 
             var lot = Site.Lot.Value;
+            // tests share one world: hide pieces other tests left on this lot (e.g. the concrete slab's forms) so only our shed counts
+            var others = Site.Pieces();
+            foreach (var o in others) o.gameObject.SetActive(false);
             var p = Piece.Create(Catalog.Get("2x4x8"), 0, new Vector3(lot.center.x, 0.05f, lot.center.y), Quaternion.identity);
             p.Fasten();
             int paid = 0; Career.Paid += (c, amt) => paid = amt;
@@ -196,6 +199,7 @@ namespace Groundbreak.Tests
             Assert.IsNull(Career.Active);
             Assert.IsFalse(Inspections.CurrentPhase.HasValue, "all phases signed off");
             Object.Destroy(p.gameObject);
+            foreach (var o in others) if (o != null) o.gameObject.SetActive(true);
             Career.ResetState(); Inspections.ResetState();
             yield return null;
         }
@@ -284,11 +288,11 @@ namespace Groundbreak.Tests
             var drive = Landscape.LayOut(LandscapeKind.GravelDrive, house + new Vector3(hw / 2 + 3f, 0, -hd / 2 + 1f), house + new Vector3(hw / 2 + 3f, 0, -18f));
             drive.CompleteAll();
             Assert.IsTrue(drive.Done, drive.Hint);
-            Assert.AreEqual(GroundCover.Gravel, Grade.CoverAt(drive.Center.x, drive.Center.z));
+            Assert.AreEqual(LandCover.Gravel, Grade.CoverAt(drive.Center.x, drive.Center.z));
 
             // --- sod the front yard (strip, topsoil, lay staggered rolls, water) ---
             var sodOrigin = house + new Vector3(-hw / 2 + 0.6f, 0, -hd / 2 - 1.6f);
-            Grade.Field.PaintRect(sodOrigin + new Vector3(-1.4f, 0, -2.6f), new Vector2(2.6f, 3.2f), 0, GroundCover.Topsoil);
+            Grade.Field.PaintRect(sodOrigin + new Vector3(-1.4f, 0, -2.6f), new Vector2(2.6f, 3.2f), 0, LandCover.Topsoil);
             int laid = 0;
             for (int col = 0; col < 4; col++)
                 for (int row = 0; row < 3; row++)
@@ -315,8 +319,8 @@ namespace Groundbreak.Tests
             for (int i = 0; i < 5; i++) Landscape.MarkPlant("shrub-boxwood", house + new Vector3(-hw / 2 + 0.9f + i * 0.9f, 0, -hd / 2 - 0.75f)).CompleteAll();
             Landscape.MarkPlant("shrub-hydrangea", house + new Vector3(-hw / 2 - 0.6f, 0, -hd / 2 - 0.4f)).CompleteAll();
             for (int i = 0; i < 3; i++) Landscape.MarkPlant("perennial-hosta", house + new Vector3(1.6f + i * 0.6f, 0, -hd / 2 - 0.6f)).CompleteAll();
-            Grade.Field.PaintRect(house + new Vector3(0, 0, -hd / 2 - 0.75f), new Vector2(hw / 2, 0.55f), 0, GroundCover.Mulch);
-            Grade.Field.PaintRect(house + new Vector3(0.6f, 0, -hd / 2 - 0.75f), new Vector2(0.55f, 0.6f), 0, GroundCover.Mulch);
+            Grade.Field.PaintRect(house + new Vector3(0, 0, -hd / 2 - 0.75f), new Vector2(hw / 2, 0.55f), 0, LandCover.Mulch);
+            Grade.Field.PaintRect(house + new Vector3(0.6f, 0, -hd / 2 - 0.75f), new Vector2(0.55f, 0.6f), 0, LandCover.Mulch);
 
             // --- privacy fence along the side yard + gate ---
             var fenceA = house + new Vector3(-hw / 2 - 0.2f, 0, hd / 2 - 0.5f);
@@ -334,7 +338,7 @@ namespace Groundbreak.Tests
 
             // --- retaining wall on a gravel pad, path lights, mailbox ---
             var wallStart = house + new Vector3(hw / 2 + 0.8f, 0, hd / 2 + 1.2f);
-            Grade.Field.PaintRect(wallStart + new Vector3(1.0f, 0, 0), new Vector2(1.4f, 0.3f), 0, GroundCover.Gravel);
+            Grade.Field.PaintRect(wallStart + new Vector3(1.0f, 0, 0), new Vector2(1.4f, 0.3f), 0, LandCover.Gravel);
             LandscapeFeature prev = null; int blocks = 0;
             for (int i = 0; i < 6; i++) { var bl = Landscape.PlaceBlock(wallStart + new Vector3(i * Landscape.BlockW, 0, 0), 0, null, out var bm); if (bl != null) { blocks++; prev = bl; } else Debug.Log("[Test] block: " + bm); }
             var stacked = Landscape.PlaceBlock(Vector3.zero, 0, prev, out var stm);
@@ -347,9 +351,9 @@ namespace Groundbreak.Tests
 
             // --- seed + straw a back patch ---
             var seedSpot = house + new Vector3(0, 0, hd / 2 + 5f);
-            Grade.Field.PaintRect(seedSpot, new Vector2(2f, 2f), 0, GroundCover.Topsoil);
+            Grade.Field.PaintRect(seedSpot, new Vector2(2f, 2f), 0, LandCover.Topsoil);
             Assert.IsTrue(HoeTool.SowAt(seedSpot, out var sowMsg), sowMsg);
-            Assert.AreEqual(GroundCover.Seeded, Grade.CoverAt(seedSpot.x, seedSpot.z));
+            Assert.AreEqual(LandCover.Seeded, Grade.CoverAt(seedSpot.x, seedSpot.z));
 
             // --- final inspection (site rules) passes ---
             var res = Inspections.Inspect(InspectionPhase.Final);

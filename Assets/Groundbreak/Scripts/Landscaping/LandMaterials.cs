@@ -312,11 +312,11 @@ namespace Groundbreak
                     c = Fill((float u, float v, out Color col, out float h) =>
                     {
                         float n = Fbm(u, v, 5, 4, 91);
-                        col = Color.Lerp(C(34, 62, 22), C(62, 98, 36), n); h = 0;
+                        col = Color.Lerp(C(28, 54, 19), C(50, 82, 30), n); h = 0;
                     });
                     for (int i = 0; i < 5200; i++)
                     {
-                        Color s = Color.Lerp(C(54, 104, 34), C(110, 156, 62), R()) * (0.75f + R() * 0.35f); s.a = 1;
+                        Color s = Color.Lerp(C(46, 88, 29), C(88, 128, 50), R()) * (0.75f + R() * 0.3f); s.a = 1; // matched to the lawn
                         c.Stamp(R(), R(), 8 + R() * 8, 1.4f + R(), R() * 6.28f, s, 0.5f + R() * 0.6f);
                     }
                     strength = 4f; break;
