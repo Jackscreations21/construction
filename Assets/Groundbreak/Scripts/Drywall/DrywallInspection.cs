@@ -175,7 +175,7 @@ namespace Groundbreak
     /// with dry time → sand → texture → prime → 2 coats of paint. Skips game time for every dry period.</summary>
     public static class DrywallJob
     {
-        public static DrywallSurface Complete(FramePlane fp, string productId = "dw-12-4x12", string texture = "orange-peel", string color = "Linen", Sheen sheen = Sheen.Eggshell)
+        public static DrywallSurface Complete(FramePlane fp, string productId = "dw-12-4x12", string texture = "orange-peel", string color = "Linen", Sheen? sheen = null)
         {
             var s = Drywall.HangSurface(fp, productId);
             if (s == null) return null;
@@ -186,15 +186,17 @@ namespace Groundbreak
         }
 
         /// <summary>From hung + screwed to painted.</summary>
-        public static void Finish(DrywallSurface s, string texture = "orange-peel", string color = "Linen", Sheen sheen = Sheen.Eggshell)
+        /// <summary>sheen null = the trade default: flat on ceilings (hides joints under raking light), eggshell on walls.</summary>
+        public static void Finish(DrywallSurface s, string texture = "orange-peel", string color = "Linen", Sheen? sheen = null)
         {
+            Sheen sh = sheen ?? (s.IsCeiling ? Sheen.Flat : Sheen.Eggshell);
             for (int c = 1; c <= 3; c++) { Drywall.CoatAll(s, c); FinishTime.Skip(DrywallRules.Compound("dw-mud-ap").DryHours + 0.1f); }
             Drywall.SandAll(s);
             if (texture != null) { Drywall.ApplyTexture(s, texture); FinishTime.Skip((texture == "smooth" ? DrywallRules.SkimDryHours : DrywallRules.TextureDryHours) + 0.1f); }
             PaintJob.Prime(s); FinishTime.Skip(PaintRules.DryHours + 0.1f);
             var pc = PaintColors.Get(color);
-            PaintJob.Paint(s, pc, sheen); FinishTime.Skip(PaintRules.DryHours + 0.1f);
-            PaintJob.Paint(s, pc, sheen); FinishTime.Skip(PaintRules.DryHours + 0.1f);
+            PaintJob.Paint(s, pc, sh); FinishTime.Skip(PaintRules.DryHours + 0.1f);
+            PaintJob.Paint(s, pc, sh); FinishTime.Skip(PaintRules.DryHours + 0.1f);
             s.Refresh();
         }
     }

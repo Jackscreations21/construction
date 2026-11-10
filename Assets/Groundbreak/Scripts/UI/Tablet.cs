@@ -159,7 +159,7 @@ namespace Groundbreak
 
             var names = AppNames();
             if (_app >= names.Length) _app = 0;
-            int newApp = GUILayout.SelectionGrid(_app, names, Mathf.Min(names.Length, 7), _button);
+            int newApp = AppTabs(_app, names, rect.width - 24f);
             if (newApp != _app) { _app = newApp; _scroll = Vector2.zero; _message = ""; }
             GUILayout.Space(8);
 
@@ -184,6 +184,39 @@ namespace Groundbreak
             if (!string.IsNullOrEmpty(_message)) GUILayout.Label(_message, _header);
             GUILayout.EndArea();
             GUI.color = prevColor;
+        }
+
+        GUIStyle _tab; int _tabH;
+        /// <summary>App tabs sized to their names, wrapped onto as many rows as needed; the font shrinks a step
+        /// only if a single name is wider than the whole row.</summary>
+        int AppTabs(int selected, string[] names, float rowWidth)
+        {
+            if (_tab == null || _tabH != Screen.height)
+            {
+                _tabH = Screen.height;
+                _tab = new GUIStyle(GUI.skin.toggle) { alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow, fontSize = _button.fontSize };
+                _tab.padding = new RectOffset(12, 12, 6, 6);
+            }
+            float gap = _tab.margin.left + _tab.margin.right + 2f;
+            int fs = _button.fontSize;
+            for (; fs > 10; fs--)
+            {
+                _tab.fontSize = fs; bool fits = true;
+                foreach (var n in names) if (_tab.CalcSize(new GUIContent(n)).x + gap > rowWidth) { fits = false; break; }
+                if (fits) break;
+            }
+            int result = selected; float used = 0f;
+            GUILayout.BeginHorizontal();
+            for (int i = 0; i < names.Length; i++)
+            {
+                float w = Mathf.Ceil(_tab.CalcSize(new GUIContent(names[i])).x);
+                if (used > 0f && used + w + gap > rowWidth) { GUILayout.FlexibleSpace(); GUILayout.EndHorizontal(); GUILayout.BeginHorizontal(); used = 0f; }
+                if (GUILayout.Toggle(i == selected, names[i], _tab, GUILayout.Width(w)) && i != selected) result = i;
+                used += w + gap;
+            }
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            return result;
         }
 
         int CartTotal()
