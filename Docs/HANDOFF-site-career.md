@@ -37,3 +37,26 @@ See the bottom of this file for the latest test status.
 3. Fence reads as a flat brown panel from a distance — add gaps/shadow between pickets or slightly darker cedar.
 4. Not done: inspector/marker/menu screenshots not yet reviewed (`20-22_*`, `30-34`, `37-39`); truck engine/backup beeper are synthesized (`Sfx.Play("truck"/"beeper")`) but DeliveryService doesn't call them (shared file) — hook later.
 5. Autosave every 5 game minutes = every ~4 real seconds at 20 min/day (spec literal); `SaveSystem.AutosaveGameMinutes` is tunable.
+
+## Exact next steps for the next session (in order)
+1. `git merge main` (has Milestone 2 at ee1ecc9). Expected conflicts/overlaps:
+   - **Terrain**: main's `SiteGround` (Scripts/Concrete/SiteGround.cs, see Docs/CONCRETE.md) hides the bootstrap "Ground" plane and adds a 60'x60' diggable patch.
+     My `Grade` also replaces Ground (it cuts a hole in the "Ground" mesh). Pick ONE terrain: preferred is to make `Grade` a thin adapter over `SiteGround`
+     (HeightAt → SiteGround.HeightAt, Raise/Flatten → Dig/Fill, Paint/PaintRect → SetSurface; GroundCover values Topsoil/Seeded/Mulch/Sand/Lawn need
+     SiteGround surface support or a cover overlay), OR make SiteGround delegate to Grade. All my callers go through `Grade.*` / `Grade.Field.*`,
+     so only Grade.cs (+ LandscapeFeature.LowerRun which writes `Grade.Field.H` directly) needs to change. SiteGround is only 60'x60'; career lots are larger.
+   - **SurfaceKind**: main appended 4 values. I added none (landscaping uses its own `LandSurface` enum), so no conflict expected.
+   - `Hud.cs` / `Tablet.cs`: my edits are small (skin calls, rounded panels, locked tools in Tool Shop). Re-apply if main changed them.
+2. Re-run PlayMode tests; fix LandscapingShowcase/SaveLoadRoundTrip if the terrain changed (they call `Grade.Create(x0, z0, cells)` and `Grade.Field.SetHeights`).
+3. Closeup-finish bridge: their rules are in `Scripts/Finish/Core/CloseupInspection.cs` (`CloseupInspection.Rules`: Id, Phase Insulation/Drywall/Exterior/Finish,
+   Code, Description, Check → IEnumerable<Violation{RuleId, Position, Message}>). Add `Scripts/Inspection/CloseupBridge.cs` (once merged) that registers each as
+   `Inspections.Register(id, map(phase), desc, () => check().Select(v => new InspectionIssue(v.Message, v.Position)))`.
+   Phase map: Insulation→Insulation, Drywall→Insulation (or Final), Exterior→Final, Finish→Final.
+4. Visual fixes from "Known issues" above; then look at all `Logs/shots/2x_*`, `3x_*` screenshots.
+5. Hook truck sounds: a small additive call in DeliveryService (`Sfx.Play("truck", pos)` on arrival, `"beeper"` while backing up).
+
+## Gotchas
+- Tests share one world: put test content far from the origin but well inside the ±305 m ground (x=300 was at the world edge and the inspector never finished).
+- `GameSettings.ShowMenuOnBoot`: the main menu is skipped when `Application.isBatchMode` is true, so tests never see it.
+- `Object.GetInstanceID()` is a compile ERROR in this Unity (6000.6): use `GetHashCode()` or `GetEntityId()`.
+- `LandModel.Mats` (not `Materials`), because the property name would shadow the static `Materials` class.
