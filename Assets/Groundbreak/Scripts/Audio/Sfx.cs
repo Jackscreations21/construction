@@ -5,7 +5,8 @@ namespace Groundbreak
 {
     /// <summary>Synthesized sound effects (AudioClip.Create, no assets) + ambient birds/wind/rain.
     /// <c>Sfx.Play("hammer", worldPos)</c>. Names: hammer, nailgun, saw, drill, click, shovel, rake, gravel, water, engine,
-    /// step-grass, step-wood, step-hard, truck, beeper, pour, thud, error, success.</summary>
+    /// step-grass, step-wood, step-hard, truck, beeper, pour, thud, error, success,
+    /// land, equip, ui-open, ui-close, toast, staple, screw, roll, scrape, brick, caulk, spray, cut, snip, tape, knock.</summary>
     public class Sfx : MonoBehaviour
     {
         static Sfx _i;
@@ -13,7 +14,6 @@ namespace Groundbreak
         static readonly Dictionary<string, AudioClip> _clips = new Dictionary<string, AudioClip>();
         readonly List<AudioSource> _pool = new List<AudioSource>();
         AudioSource _wind, _birds, _rain;
-        Vector3 _lastStep; bool _stepInit;
 
         public static void Play(string name, Vector3 pos, float volume = 1f)
         {
@@ -21,7 +21,7 @@ namespace Groundbreak
             var clip = Clip(name); if (clip == null) return;
             var src = _i.Free();
             src.transform.position = pos; src.clip = clip; src.volume = volume * GameSettings.MasterVolume;
-            src.pitch = Random.Range(0.94f, 1.06f); src.spatialBlend = name == "click" || name == "error" || name == "success" ? 0f : 0.85f;
+            src.pitch = Random.Range(0.94f, 1.06f); src.spatialBlend = name == "click" || name == "error" || name == "success" || name == "equip" || name == "ui-open" || name == "ui-close" || name == "toast" ? 0f : 0.85f;
             src.Play();
         }
 
@@ -58,27 +58,75 @@ namespace Groundbreak
 
             var p = Game.Player;
             if (p == null) return;
-            // tool sounds for milestone-1 tools (their files are shared, so we listen here instead of editing them)
+            // Tool sounds: tools in shared/trade files don't call Sfx themselves, so we listen to the click here.
             var tool = Game.Belt != null ? Game.Belt.Active : null;
-            if (tool != null && !Game.UIOpen && Cursor.lockState == CursorLockMode.Locked && GInput.MouseDown(0))
+            bool live = tool != null && !Game.UIOpen && Cursor.lockState == CursorLockMode.Locked;
+            if (live)
             {
-                string snd = tool.Id == "hammer" ? "hammer" : tool.Id == "nailer" ? "nailgun" : tool.Id == "saw" ? "saw" : tool.Id == "place" ? "thud" : null;
-                if (snd != null) Play(snd, p.transform.position + p.transform.forward, 0.7f);
-            }
-            var pos = p.transform.position;
-            if (!_stepInit) { _lastStep = pos; _stepInit = true; }
-            if (new Vector2(pos.x - _lastStep.x, pos.z - _lastStep.z).magnitude > 0.75f)
-            {
-                _lastStep = pos;
-                string kind = "step-grass";
-                if (Physics.Raycast(pos + Vector3.up * 0.3f, Vector3.down, out var hit, 1f, ~(1 << 2), QueryTriggerInteraction.Ignore))
+                Vector3 at = p.TryAim(out var aimHit, 4f) ? aimHit.point : p.transform.position + Vector3.up * 1.4f + p.transform.forward * 0.6f;
+                if (GInput.MouseDown(0)) { var snd = ToolSound(tool.Id, out float vol); if (snd != null) Play(snd, at, vol); _holdNext = Time.time + 0.45f; }
+                else if (GInput.Mouse(0) && Time.time >= _holdNext)
                 {
-                    if (hit.collider.GetComponentInParent<Piece>() != null) kind = "step-wood";
-                    else if (hit.collider.GetComponentInParent<LandscapeFeature>() != null) kind = "step-hard";
-                    else { var c = Grade.CoverAt(hit.point.x, hit.point.z); if (c == LandCover.Gravel) kind = "gravel"; }
+                    var snd = HeldSound(tool.Id); if (snd != null) Play(snd, at, 0.45f);
+                    _holdNext = Time.time + 0.45f;
                 }
-                Play(kind, pos, kind == "gravel" ? 0.25f : 0.35f);
             }
+        }
+
+        float _holdNext;
+
+        /// <summary>One-shot sound for a tool's primary click (null = silent).</summary>
+        public static string ToolSound(string id, out float volume)
+        {
+            volume = 0.7f;
+            switch (id)
+            {
+                case "hammer": return "hammer";
+                case "staple-hammer": case "cap-stapler": volume = 0.6f; return "staple";
+                case "nailer": case "finish-nailer": case "brad-nailer": case "siding-nailer": case "flooring-nailer": volume = id == "brad-nailer" ? 0.45f : 0.65f; return "nailgun";
+                case "staple-gun": volume = 0.5f; return "staple";
+                case "saw": case "miter-saw": return "saw";
+                case "tile-saw": volume = 0.55f; return "saw";
+                case "drill": case "fin-drill": case "ra-drill": case "drywall-router": volume = 0.55f; return "drill";
+                case "screw-gun": volume = 0.5f; return "screw";
+                case "place": return "thud";
+                case "paint-roller": case "sanding-pole": volume = 0.5f; return "roll";
+                case "paint-brush": case "taping-knives": case "notched-trowel": case "grout-float": volume = 0.4f; return "scrape";
+                case "brick-trowel": volume = 0.6f; return "brick";
+                case "caulk-gun": case "foam-gun": volume = 0.5f; return "caulk";
+                case "paint-sprayer": case "spray-foam-kit": case "insulation-blower": volume = 0.45f; return "spray";
+                case "utility-knife": case "keyhole-saw": case "coping-saw": volume = 0.4f; return "cut";
+                case "ext-snips": case "tubing-cutter": case "wire-strippers": case "lineman": volume = 0.45f; return "snip";
+                case "tape": volume = 0.35f; return "tape";
+                case "level": case "speedsquare": volume = 0.3f; return "click";
+                case "pull-bar": case "prybar": volume = 0.55f; return "knock";
+            }
+            return null;
+        }
+
+        /// <summary>Repeating sound while the primary button is held (sprayers, rollers, sanding).</summary>
+        static string HeldSound(string id)
+        {
+            switch (id)
+            {
+                case "paint-roller": case "sanding-pole": return "roll";
+                case "paint-sprayer": case "spray-foam-kit": case "insulation-blower": return "spray";
+                case "drywall-router": case "drill": case "ra-drill": return "drill";
+            }
+            return null;
+        }
+
+        /// <summary>One footstep at the feet, surface-aware (driven by PlayerFeel's gait so steps land on the heel strike).</summary>
+        public static void Footstep(Vector3 pos, float loudness = 1f)
+        {
+            string kind = "step-grass";
+            if (Physics.Raycast(pos + Vector3.up * 0.3f, Vector3.down, out var hit, 1f, ~(1 << 2), QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.GetComponentInParent<Piece>() != null || hit.collider.GetComponentInParent<FinishLayer>() != null) kind = "step-wood";
+                else if (hit.collider.GetComponentInParent<LandscapeFeature>() != null) kind = "step-hard";
+                else { var c = Grade.CoverAt(hit.point.x, hit.point.z); if (c == LandCover.Gravel) kind = "gravel"; }
+            }
+            Play(kind, pos, (kind == "gravel" ? 0.25f : 0.35f) * loudness);
         }
 
         // ------------------------------------------------------------------ synthesis
@@ -139,6 +187,22 @@ namespace Groundbreak
                         return sum;
                     });
                     break;
+                case "land": c = Make(name, 0.25f, (float t, int i, ref uint s) => { float n = Noise(ref s); lp += (n - lp) * 0.15f; return (lp * 1.6f + Mathf.Sin(t * 2 * Mathf.PI * (90 - t * 100)) * 0.6f) * Mathf.Exp(-t * 18); }); break;
+                case "equip": c = Make(name, 0.16f, (float t, int i, ref uint s) => { float n = Noise(ref s); lp += (n - lp) * 0.4f; return lp * 0.6f * Mathf.Exp(-t * 30) + (t > 0.06f ? Mathf.Sin(t * 2 * Mathf.PI * 1300) * 0.12f * Mathf.Exp(-(t - 0.06f) * 70) : 0f); }); break;
+                case "ui-open": c = Make(name, 0.12f, (float t, int i, ref uint s) => Mathf.Sin(t * 2 * Mathf.PI * (900 + t * 3000)) * 0.18f * Mathf.Exp(-t * 30)); break;
+                case "ui-close": c = Make(name, 0.12f, (float t, int i, ref uint s) => Mathf.Sin(t * 2 * Mathf.PI * (1300 - t * 3000)) * 0.16f * Mathf.Exp(-t * 30)); break;
+                case "toast": c = Make(name, 0.22f, (float t, int i, ref uint s) => Mathf.Sin(t * 2 * Mathf.PI * (t < 0.07f ? 1568 : 2093)) * 0.08f * Mathf.Exp(-(t % 0.07f) * 25)); break;
+                case "staple": c = Make(name, 0.14f, (float t, int i, ref uint s) => Noise(ref s) * 0.5f * Mathf.Exp(-t * 120) + Mathf.Sin(t * 2 * Mathf.PI * 2600) * 0.3f * Mathf.Exp(-t * 60) + Mathf.Sin(t * 2 * Mathf.PI * 300) * 0.4f * Mathf.Exp(-t * 40)); break;
+                case "screw": c = Make(name, 0.45f, (float t, int i, ref uint s) => { float env = Mathf.Clamp01(t * 30) * Mathf.Clamp01((0.45f - t) * 20); float f = 900 - t * 500; return (Mathf.Sin(t * 2 * Mathf.PI * f) * 0.3f + Noise(ref s) * 0.12f) * env + (t > 0.38f ? Mathf.Sin(t * 2 * Mathf.PI * 2200) * 0.25f * Mathf.Exp(-(t - 0.38f) * 80) : 0f); }); break;
+                case "roll": c = Make(name, 0.5f, (float t, int i, ref uint s) => { float n = Noise(ref s); lp += (n - lp) * 0.5f; lp2 += (lp - lp2) * 0.3f; float tack = (s & 511) < 9 ? Noise(ref s) * 0.5f : 0f; return (lp2 * 0.9f + tack * 0.4f) * Mathf.Sin(Mathf.PI * t / 0.5f); }); break;
+                case "scrape": c = Make(name, 0.35f, (float t, int i, ref uint s) => { float n = Noise(ref s); lp += (n - lp) * 0.45f; return lp * 0.9f * Mathf.Sin(Mathf.PI * t / 0.35f) * (0.7f + 0.3f * Mathf.Sin(t * 90)); }); break;
+                case "brick": c = Make(name, 0.3f, (float t, int i, ref uint s) => { float n = Noise(ref s); lp += (n - lp) * 0.2f; return Mathf.Sin(t * 2 * Mathf.PI * 1400) * 0.25f * Mathf.Exp(-t * 35) + lp * 1.2f * Mathf.Exp(-t * 12); }); break;
+                case "caulk": c = Make(name, 0.4f, (float t, int i, ref uint s) => { float ratchet = (t % 0.13f) < 0.012f ? Noise(ref s) * 0.7f : 0f; float n = Noise(ref s); lp += (n - lp) * 0.08f; return ratchet * Mathf.Exp(-t * 3) + lp * 0.6f * Mathf.Clamp01(t * 5) * Mathf.Clamp01((0.4f - t) * 8); }); break;
+                case "spray": c = Make(name, 0.5f, (float t, int i, ref uint s) => Noise(ref s) * 0.28f * Mathf.Clamp01(t * 20) * Mathf.Clamp01((0.5f - t) * 20)); break;
+                case "cut": c = Make(name, 0.3f, (float t, int i, ref uint s) => { float n = Noise(ref s); lp += (n - lp) * 0.6f; return (n - lp) * 0.8f * Mathf.Sin(Mathf.PI * t / 0.3f); }); break;
+                case "snip": c = Make(name, 0.12f, (float t, int i, ref uint s) => (Noise(ref s) * 0.4f + Mathf.Sin(t * 2 * Mathf.PI * 3200) * 0.3f) * Mathf.Exp(-t * 60)); break;
+                case "tape": c = Make(name, 0.35f, (float t, int i, ref uint s) => ((t % 0.025f) < 0.003f ? Noise(ref s) * 0.5f : 0f) * Mathf.Exp(-t * 4) + (t > 0.3f ? Mathf.Sin(t * 2 * Mathf.PI * 1800) * 0.3f * Mathf.Exp(-(t - 0.3f) * 90) : 0f)); break;
+                case "knock": c = Make(name, 0.2f, (float t, int i, ref uint s) => (Mathf.Sin(t * 2 * Mathf.PI * 420) * 0.5f + Mathf.Sin(t * 2 * Mathf.PI * 1250) * 0.2f + Noise(ref s) * 0.3f * Mathf.Exp(-t * 80)) * Mathf.Exp(-t * 30)); break;
                 default: return null;
             }
             _clips[name] = c;

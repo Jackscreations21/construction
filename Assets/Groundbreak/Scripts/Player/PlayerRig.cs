@@ -40,6 +40,8 @@ namespace Groundbreak
             rig._cc = cc;
             rig._yaw = go.transform.eulerAngles.y;
             go.AddComponent<ToolBelt>();
+            go.AddComponent<PlayerFeel>();  // head bob, sprint FOV, landing, footsteps
+            go.AddComponent<ViewModel>();   // held tool
             return rig;
         }
 

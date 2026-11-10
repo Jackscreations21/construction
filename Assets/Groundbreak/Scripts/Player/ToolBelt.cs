@@ -117,6 +117,20 @@ namespace Groundbreak
         }
 
         int _listPick;
+        GUIStyle _rich; int _richH;
+        GUIStyle RichLabel
+        {
+            get
+            {
+                if (_rich == null || _richH != Screen.height)
+                {
+                    _richH = Screen.height;
+                    _rich = new GUIStyle(GUI.skin.label) { richText = true, wordWrap = false, alignment = TextAnchor.MiddleLeft, fontSize = Mathf.Max(12, Screen.height / 48) };
+                    _rich.normal.textColor = new Color(0.93f, 0.94f, 0.96f);
+                }
+                return _rich;
+            }
+        }
 
         void TryRefillNails()
         {
@@ -139,16 +153,21 @@ namespace Groundbreak
             if (Game.UIOpen) return;
             Active?.DrawGUI();
             if (!_showList) return;
-            float w = 280, h = 26 * (Owned.Count + 2);
+            UISkin.Apply();
+            float rowH = Mathf.Max(24f, Screen.height / 34f);
+            float w = Mathf.Max(320f, Screen.height * 0.5f), h = rowH * (Owned.Count + 1.6f);
             var r = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
-            GUI.Box(r, "Tools  (scroll = pick, 1-8 = put in slot)");
+            UISkin.Panel(r);
+            GUI.Label(new Rect(r.x + 12, r.y + 4, w - 24, rowH), "<b>Tools</b>   <color=#9aa3ad>scroll = pick · 1-8 = put in slot</color>", RichLabel);
             for (int i = 0; i < Owned.Count; i++)
             {
                 var t = Owned[i];
                 int idx = IndexOf(t);
+                var row = new Rect(r.x + 6, r.y + rowH * (i + 1.2f), w - 12, rowH - 2);
+                if (i == _listPick) UISkin.Panel(row, new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, 0.85f));
                 string slot = idx >= 0 ? $"[{idx + 1}]" : "[ - ]";
-                string line = $"{(i == _listPick ? "> " : "   ")}{slot} {t.Name}{(t.Slots > 1 ? " (2 slots)" : "")}{(t.Cordless ? $"  {Mathf.RoundToInt(t.Battery * 100)}%" : "")}";
-                GUI.Label(new Rect(r.x + 10, r.y + 26 * (i + 1), w - 20, 24), line);
+                string extra = (t.Slots > 1 ? "  <color=#9aa3ad>2 slots</color>" : "") + (t.Cordless ? $"  <color=#9fe29f>{Mathf.RoundToInt(t.Battery * 100)}%</color>" : "");
+                GUI.Label(new Rect(row.x + 8, row.y, row.width - 16, row.height), $"{slot}  {t.Name}{extra}", RichLabel);
             }
         }
     }

@@ -9,6 +9,7 @@ namespace Groundbreak
         public static Tablet I;
         public bool IsOpen { get; private set; }
         int _releaseFrame;
+        float _openedAt = -10f;
 
         static readonly string[] BuiltInApps = { "Supply Store", "Tool Shop", "Concrete Dispatch", "Deliveries", "Bank", "Help" };
         static readonly List<(string name, System.Action draw)> _extApps = new List<(string, System.Action)>();
@@ -109,6 +110,7 @@ namespace Groundbreak
 
         public void Open()
         {
+            if (!IsOpen) { _openedAt = Time.unscaledTime; Sfx.Play("ui-open", Vector3.zero, 0.8f); }
             IsOpen = true; _message = ""; _releaseFrame = 0;
             Game.UIOpen = true;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
@@ -116,6 +118,7 @@ namespace Groundbreak
 
         public void Close()
         {
+            if (IsOpen) Sfx.Play("ui-close", Vector3.zero, 0.8f);
             IsOpen = false;
             _releaseFrame = Time.frameCount;
         }
@@ -138,9 +141,24 @@ namespace Groundbreak
             UISkin.Apply(); // site-career: shared rounded skin
             EnsureStyles();
 
+            // open transition: dim the world, slide up + fade in over ~0.18 s
+            float k = Mathf.Clamp01((Time.unscaledTime - _openedAt) / 0.18f); k = 1f - (1f - k) * (1f - k) * (1f - k);
+            var prevColor = GUI.color;
+            if (Event.current.type == EventType.Repaint)
+            {
+                GUI.color = new Color(0, 0, 0, 0.35f * k);
+                GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+            }
+            GUI.color = new Color(prevColor.r, prevColor.g, prevColor.b, prevColor.a * k);
             float w = Screen.width * 0.7f, h = Screen.height * 0.7f;
-            var rect = new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h);
-            UISkin.Panel(rect, new Color(0.07f, 0.09f, 0.11f, 0.93f));
+            var rect = new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f + (1f - k) * Screen.height * 0.04f, w, h);
+            UISkin.Panel(rect, new Color(0.07f, 0.09f, 0.11f, 0.93f * k));
+            if (Event.current.type == EventType.Repaint)
+            {
+                GUI.color = new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, k);
+                GUI.DrawTexture(new Rect(rect.x + 14, rect.y + 6, rect.width - 28, 2), Texture2D.whiteTexture); // accent rule
+                GUI.color = new Color(prevColor.r, prevColor.g, prevColor.b, prevColor.a * k);
+            }
 
             GUILayout.BeginArea(new Rect(rect.x + 12, rect.y + 10, rect.width - 24, rect.height - 20));
             GUILayout.BeginHorizontal();
@@ -152,7 +170,7 @@ namespace Groundbreak
 
             var names = AppNames();
             if (_app >= names.Length) _app = 0;
-            int newApp = GUILayout.SelectionGrid(_app, names, Mathf.Min(names.Length, 7), _button);
+            int newApp = AppTabs(_app, names, rect.width - 24f);
             if (newApp != _app) { _app = newApp; _scroll = Vector2.zero; _message = ""; }
             GUILayout.Space(8);
 
@@ -176,6 +194,40 @@ namespace Groundbreak
 
             if (!string.IsNullOrEmpty(_message)) GUILayout.Label(_message, _header);
             GUILayout.EndArea();
+            GUI.color = prevColor;
+        }
+
+        GUIStyle _tab; int _tabH;
+        /// <summary>App tabs sized to their names, wrapped onto as many rows as needed; the font shrinks a step
+        /// only if a single name is wider than the whole row.</summary>
+        int AppTabs(int selected, string[] names, float rowWidth)
+        {
+            if (_tab == null || _tabH != Screen.height)
+            {
+                _tabH = Screen.height;
+                _tab = new GUIStyle(GUI.skin.toggle) { alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow, fontSize = _button.fontSize };
+                _tab.padding = new RectOffset(12, 12, 6, 6);
+            }
+            float gap = _tab.margin.left + _tab.margin.right + 2f;
+            int fs = _button.fontSize;
+            for (; fs > 10; fs--)
+            {
+                _tab.fontSize = fs; bool fits = true;
+                foreach (var n in names) if (_tab.CalcSize(new GUIContent(n)).x + gap > rowWidth) { fits = false; break; }
+                if (fits) break;
+            }
+            int result = selected; float used = 0f;
+            GUILayout.BeginHorizontal();
+            for (int i = 0; i < names.Length; i++)
+            {
+                float w = Mathf.Ceil(_tab.CalcSize(new GUIContent(names[i])).x);
+                if (used > 0f && used + w + gap > rowWidth) { GUILayout.FlexibleSpace(); GUILayout.EndHorizontal(); GUILayout.BeginHorizontal(); used = 0f; }
+                if (GUILayout.Toggle(i == selected, names[i], _tab, GUILayout.Width(w)) && i != selected) result = i;
+                used += w + gap;
+            }
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            return result;
         }
 
         int CartTotal()

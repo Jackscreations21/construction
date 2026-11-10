@@ -25,7 +25,7 @@ namespace Groundbreak
             FinishMaterials.Register(LvpPrefix + "oak", new FinishMaterials.Spec { Gen = () => Wood(FinishNoise.C(196, 160, 118), FinishNoise.C(128, 94, 62), 4131, 5.5f, 0.35f, false), Tile = 1.2192f, Gloss = 0.42f, Bump = 0.35f });
             FinishMaterials.Register(LvpPrefix + "gray", new FinishMaterials.Spec { Gen = () => Wood(FinishNoise.C(170, 162, 150), FinishNoise.C(104, 98, 90), 4141, 5.5f, 0.35f, false), Tile = 1.2192f, Gloss = 0.4f, Bump = 0.35f });
             // Solid red oak strip, natural with satin poly.
-            FinishMaterials.Register(HardwoodPrefix + "redoak", new FinishMaterials.Spec { Gen = () => Wood(FinishNoise.C(160, 116, 84), FinishNoise.C(112, 72, 48), 4151, 9f, 0.7f, true), Tile = 0.9144f, Gloss = 0.4f, Bump = 0.45f });
+            FinishMaterials.Register(HardwoodPrefix + "redoak", new FinishMaterials.Spec { Gen = () => Wood(FinishNoise.C(160, 124, 96), FinishNoise.C(110, 80, 60), 4151, 9f, 0.7f, true), Tile = 0.9144f, Gloss = 0.32f, Bump = 0.45f });
             FinishMaterials.Register(Porcelain, new FinishMaterials.Spec { Gen = PorcelainGen, Tile = 0.6096f, Gloss = 0.7f, Bump = 0.15f, NormalStrength = 1f });
             FinishMaterials.Register(Subway, new FinishMaterials.Spec { Gen = () => Painted(FinishNoise.C(244, 244, 240), 4161), Tile = 0.3f, Gloss = 0.9f, Bump = 0.25f, NormalStrength = 1.5f });
             FinishMaterials.Register(Grout, new FinishMaterials.Spec { Gen = () => Sanded(FinishNoise.C(255, 255, 255), 4171, 0.22f), Tile = 0.15f, Gloss = 0.08f, Bump = 0.8f });
