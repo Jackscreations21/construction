@@ -11,6 +11,9 @@ namespace Groundbreak.Tests
     /// studs, PVC DWV with stack vents through the roof, then the pressure test, water test and rough inspection.</summary>
     public class PlumbingTests
     {
+        [UnityEngine.TestTools.UnitySetUp] public System.Collections.IEnumerator MepSetUp() { yield return MepTestScene.Clear(); }
+        [UnityEngine.TestTools.UnityTearDown] public System.Collections.IEnumerator MepTearDown() { yield return MepTestScene.Clear(); }
+
         static readonly Vector3 O = new Vector3(40f, 0f, 40f);
         const float FL = 0.9f; // finished floor (crawlspace below)
 

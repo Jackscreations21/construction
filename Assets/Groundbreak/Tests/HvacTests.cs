@@ -13,6 +13,9 @@ namespace Groundbreak.Tests
     /// condensate to a condenser on a pad, a bath fan to a wall cap. Airflow + rough mechanical inspection.</summary>
     public class HvacTests
     {
+        [UnityEngine.TestTools.UnitySetUp] public System.Collections.IEnumerator MepSetUp() { yield return MepTestScene.Clear(); }
+        [UnityEngine.TestTools.UnityTearDown] public System.Collections.IEnumerator MepTearDown() { yield return MepTestScene.Clear(); }
+
         static readonly Vector3 O = new Vector3(-20f, 0f, 12f);
         const float C = 97.125f; // ceiling plane (bottom of the ceiling joists), inches
         static Vector3 W(float x, float y, float z) => O + new Vector3(x, y, z) * Units.Inch;

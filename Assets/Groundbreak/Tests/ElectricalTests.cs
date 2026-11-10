@@ -12,6 +12,9 @@ namespace Groundbreak.Tests
     /// open ground and working live.</summary>
     public class ElectricalTests
     {
+        [UnityEngine.TestTools.UnitySetUp] public System.Collections.IEnumerator MepSetUp() { yield return MepTestScene.Clear(); }
+        [UnityEngine.TestTools.UnityTearDown] public System.Collections.IEnumerator MepTearDown() { yield return MepTestScene.Clear(); }
+
         static IEnumerator Frames(int n) { for (int i = 0; i < n; i++) yield return null; }
         static float I(float x) => Units.In(x);
 
