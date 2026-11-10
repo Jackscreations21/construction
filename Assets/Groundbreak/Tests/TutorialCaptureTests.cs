@@ -79,7 +79,12 @@ namespace Groundbreak.Tests
         static void CopyShot(string shot, string pic)
         {
             string src = Path.Combine(ShotDir, shot + ".png");
-            Assert.IsTrue(File.Exists(src), "trade test shot missing: " + shot);
+            if (!File.Exists(src))
+            {
+                // trade test didn't run in this session (filtered run): keep the committed picture
+                Assert.IsTrue(File.Exists(Path.Combine(PicDir, pic + ".png")), "trade test shot missing: " + shot + " (run the full suite once)");
+                return;
+            }
             Directory.CreateDirectory(PicDir);
             File.Copy(src, Path.Combine(PicDir, pic + ".png"), true);
         }
@@ -111,6 +116,7 @@ namespace Groundbreak.Tests
                 var m = pmw?.GetMethod("SetCustomRenderingResolution", BindingFlags.Public | BindingFlags.Static);
                 try { m?.Invoke(null, new object[] { 1600u, 900u, "Tutorials" }); } catch (System.Exception e) { Debug.Log("[Tutorials] resolution: " + e.Message); }
             }
+            if (MainMenu.Showing) MainMenu.I.Hide(); // M6 shows the main menu on boot outside batchmode
             yield return Frames(3);
         }
 
@@ -615,6 +621,67 @@ namespace Groundbreak.Tests
             yield return MepTestScene.Clear();
         }
 
+        // ================================================================== close-up (M5) and site / career (M6)
+
+        [UnityTest, Timeout(600000)]
+        public IEnumerator F_CloseupAndSite()
+        {
+            yield return Frames(5);
+            // insulation, drywall, paint
+            CopyShot("idw_02b_insulated_wall", "fin_01_batts");
+            CopyShot("idw_02c_pipe_firecaulk", "fin_01b_firecaulk");
+            CopyShot("idw_10_attic_loosefill", "fin_02_attic");
+            CopyShot("idw_03_insulation_fail_markers", "fin_02b_ins_markers");
+            CopyShot("idw_04_hung_screwed", "fin_03_hang");
+            CopyShot("idw_06_coat1_wet", "fin_04_mud");
+            CopyShot("idw_07b_coat3_dry_overview", "fin_04b_coat3");
+            CopyShot("idw_09b_painted_overview", "fin_04c_paint");
+            // exterior
+            CopyShot("ext_wrap_icut", "fin_05_housewrap");
+            CopyShot("ext_wrapped_wall", "fin_05b_flashed");
+            CopyShot("ext_vinyl_overview", "fin_06_siding");
+            CopyShot("ext_brick_overview", "fin_06b_brick");
+            CopyShot("ext_vinyl_closeup", "fin_06c_gutter");
+            // interior finish
+            CopyShot("fin_01_door_hung_shims", "fin_07_door");
+            CopyShot("fin_02_door_casing_room", "fin_07b_casing");
+            CopyShot("fin_05_base_coped_corner", "fin_07c_base");
+            CopyShot("fin_12_kitchen", "fin_08_cabinets");
+            CopyShot("fin_10_tile_grouted", "fin_09_flooring");
+            CopyShot("fin_11_hardwood", "fin_09b_wood");
+            // inspections
+            CopyShot("20_inspector_walking", "i_04_inspector");
+            CopyShot("21_inspection_failed_flags", "i_05_failed");
+            CopyShot("fin_14_inspection_flags", "i_06_closeup_flags");
+            // landscaping
+            CopyShot("30_walk_layout", "biz_01_layout");
+            CopyShot("31_walk_excavated_base", "biz_01b_base");
+            CopyShot("33_tree_set_rootball", "biz_02_plant");
+            CopyShot("36_walk_sod_closeup", "biz_02_lawn");
+            CopyShot("37_fence_gate", "biz_02b_fence");
+
+            // tablet apps + main menu (real IMGUI)
+            PutPlayer(new Vector3(2f, 0f, -6f), 20f, 8f);
+            foreach (var (app, pic) in new[] { ("Inspections", "i_03_schedule"), ("Garden Center", "biz_00_garden"), ("Job Board", "biz_04_career") })
+            {
+                var mode = GameSettings.Mode;
+                if (app == "Job Board") GameSettings.Mode = GameMode.Career; // the board lists contracts only in career mode
+                Tablet.I.ShowApp(app);
+                yield return Frames(3);
+                Assert.AreEqual(app, Tablet.I.CurrentApp, app + " app missing");
+                yield return GuiPic(Game.Player.Cam, pic, false, true);
+                GameSettings.Mode = mode;
+            }
+            Tablet.I.Close();
+            yield return Frames(3);
+            Assert.NotNull(MainMenu.I, "main menu missing");
+            MainMenu.I.Show();
+            yield return Frames(3);
+            yield return GuiPic(Game.Player.Cam, "biz_03_save", false, false);
+            MainMenu.I.Hide();
+            yield return Frames(2);
+        }
+
         // ================================================================== the app itself
 
         [UnityTest, Timeout(300000)]
@@ -650,7 +717,7 @@ namespace Groundbreak.Tests
             yield return GuiPic(Game.Player.Cam, "tut_app_03_step_framing", false, true, true);
             TutorialApp.Show("fin-drywall", 0);
             yield return Frames(3);
-            yield return GuiPic(Game.Player.Cam, "tut_app_04_placeholder", false, true, true);
+            yield return GuiPic(Game.Player.Cam, "tut_app_04_drywall", false, true, true);
             TutorialApp.Show("start-place", 3);
             yield return Frames(3);
             yield return GuiPic(Game.Player.Cam, "tut_app_05_show_me_where", false, true, true);

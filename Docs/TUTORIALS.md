@@ -35,26 +35,11 @@ A real (Available) tutorial is never overwritten by a placeholder with the same 
 and flip `available` to true (drop the `false, "..."` arguments in `TutorialContent.Later()`).
 `Z_TutorialsApp` fails if an Available tutorial references a picture that doesn't exist.
 
-## TODO: pictures to capture once these branches merge
-Placeholder tutorials (Available = false, blueprint placeholder picture) — capture these PNGs and set them Available:
-
-| Tutorial id | Picture | What it should show | Branch |
-|---|---|---|---|
-| insp-schedule | i_03_schedule | Inspections app with the phase list / next inspection scheduled | site-career (M6) |
-| insp-schedule | i_04_failed | A failed inspection: red markers in the building + the issue list | site-career (M6) |
-| fin-insulation | fin_01_batts | Wall bays filled with R-13/R-21 batts, split around a cable/pipe | close-up (M5) |
-| fin-insulation | fin_02_attic | Attic: eave baffles + blown-in insulation to the depth rulers | close-up (M5) |
-| fin-drywall | fin_03_hang | Ceiling and wall sheets hung, staggered joints, screws | close-up (M5) |
-| fin-drywall | fin_04_mud | Taped and mudded seams, corner bead | close-up (M5) |
-| fin-siding | fin_05_housewrap | Housewrap lapped and taped, folded into an opening | close-up (M5) |
-| fin-siding | fin_06_siding | Siding courses, corner posts, J-channel at a window | close-up (M5) |
-| fin-interior | fin_07_door | Prehung interior door with casing (`DoorHanging.Hang` + `Casing.CaseDoor`) | finish (M5) |
-| fin-interior | fin_08_cabinets | Cabinet run + countertop + backsplash (`Cabinets.InstallRun`, `Countertops`) | finish (M5) |
-| fin-interior | fin_09_flooring | Tile / hardwood / LVP floor (`TileWork`, `Hardwood`, `Lvp`) | finish (M5) |
-| biz-landscape | biz_01_grade | Final grade sloping away from the foundation | site-career (M6) |
-| biz-landscape | biz_02_lawn | Lawn / sod / plants around the house | site-career (M6) |
-| biz-save | biz_03_save | Save/Load app on the tablet (IMGUI capture: `GuiPic(..., tablet: true)`) | site-career (M6) |
-| biz-career | biz_04_career | Career app: lot / contract / budget (IMGUI capture) | site-career (M6) |
-
-Also re-check the step text against the merged code (keys, tool names) when those branches land; the text was written from their API notes.
-Once M6 lands, the "Inspections" tutorial can point at the Inspections app with `openApp`.
+## Status
+All milestones (M1-M6) are on main and merged here: every tutorial is Available and every step has a real picture
+(26 tutorials, 98 pictures). The M5/M6 pictures are copies of those trades' own test shots (`F_CloseupAndSite`), plus real
+IMGUI captures of the Inspections, Garden Center and Job Board apps and the main menu.
+- `CopyShot` keeps the committed picture when the trade test didn't run in this session (filtered run).
+- `F_CloseupAndSite` switches to Career mode just for the Job Board capture (the board is empty in Free Build).
+- In the non-batchmode capture run, `SetUp` hides M6's boot main menu.
+- Known on main (not this branch): `PlaythroughTests.Milestone1Playthrough` fails when it runs after `PadInLotTests`.

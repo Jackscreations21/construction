@@ -250,35 +250,80 @@ namespace Groundbreak
                       "I run the framing inspection · aim at a flag to read it", "i_01_framing_flags")
                 .Step("Rough MEP inspection", "Plumbing, electrical and HVAC each have a rough inspection: joints made, tests passed, studs not over-bored, cables stapled. Red markers show exactly where.",
                       "MEP Plans app: Inspect", "i_02_mep_markers", "MEP Plans");
-            Tutorials.New("insp-schedule", INSP, "Scheduling inspections", "Footing, under-slab, framing, rough MEP, insulation, final.", false, "site-career (M6)")
-                .Step("Call the inspector", "Each phase has to pass before you cover it up: footing before the pour, framing and rough MEP before insulation, insulation before drywall, and the final before move-in.",
-                      "Inspections app: schedule the next phase", "i_03_schedule")
-                .Step("Pass or fix", "A failed inspection lists every issue with a marker. Fix them and reschedule.",
-                      "Aim at a red marker to read it", "i_04_failed");
+            Tutorials.New("insp-schedule", INSP, "Scheduling inspections", "Footing, under-slab, framing, rough MEP, insulation, final.")
+                .Step("Call the inspector", "Every phase has to pass before you cover it up: footing before the pour, framing and rough MEP before insulation, insulation before drywall, and the final before move-in. The Inspections app shows the next phase and checks the rules first (a dry run).",
+                      "T · Inspections app: pick the phase · Schedule", "i_03_schedule", "Inspections")
+                .Step("The inspector walks the job", "The inspector comes out, walks every spot that matters and the building corners, then signs the card if it passes.",
+                      "Stay out of the way · the result shows in the Inspections app", "i_04_inspector")
+                .Step("Fix the red flags", "A failed inspection plants a red flag at each problem; walk up to one to read the note. Fix them all, then reschedule. A re-inspection costs $" + Groundbreak.Inspections.ReinspectionFee + " and a day.",
+                      "Walk to a red flag to read it · Inspections app: Schedule again", "i_05_failed", "Inspections")
+                .Step("Close-up inspections", "Insulation, drywall, exterior and finish work have their own checks (gaps, compressed batts, screw spacing, flashing, trim). Red flags show every failed item.",
+                      "Close-up Inspections app: Inspect", "i_06_closeup_flags", "Close-up Inspections");
         }
 
         static void Later()
         {
-            Tutorials.New("fin-insulation", FIN, "Insulation", "Batts in the walls, blown-in in the attic.", false, "close-up (M5)")
-                .Step("Wall batts", "Friction-fit R-13 (2x4) or R-21 (2x6) batts, split around wires and pipes, no gaps or compression.", "Insulation tool: LMB a stud bay", "fin_01_batts")
-                .Step("Attic", "Baffles at the eaves to keep the soffit vents open, then blow in to the depth on the rulers.", "Insulation blower: hold LMB", "fin_02_attic");
-            Tutorials.New("fin-drywall", FIN, "Drywall", "Hang, tape, mud and sand.", false, "close-up (M5)")
-                .Step("Hang", "Ceilings first, then walls, sheets horizontal with staggered joints, screwed every 12\" into the framing.", "Drywall screw gun: LMB on each sheet", "fin_03_hang")
-                .Step("Tape and mud", "Tape every seam, three coats of mud feathered wider each time, corner bead on outside corners, then sand.", "Taping knife: hold LMB on a seam", "fin_04_mud");
-            Tutorials.New("fin-siding", FIN, "Siding and trim outside", "Housewrap, siding, corners and soffit.", false, "close-up (M5)")
-                .Step("Housewrap", "Wrap the walls, lapped shingle-style, taped at the seams and folded into the openings.", "Cap stapler on each course", "fin_05_housewrap")
-                .Step("Siding", "Start strip at the bottom, courses level, corners and J-channel at the openings.", "Siding nailer on each course", "fin_06_siding");
-            Tutorials.New("fin-interior", FIN, "Interior finish", "Doors, trim, cabinets, flooring, paint.", false, "close-up / finish (M5)")
-                .Step("Hang interior doors", "Set prehung doors plumb on shims, nail the jambs, then case both sides with a 3/16\" reveal.", "Finish nailer · miter saw · level", "fin_07_door")
-                .Step("Cabinets and counters", "Cabinets go in before the flooring: wall cabinets first, then bases, level and shimmed, then countertops and backsplash.", "Cabinet install from the plans", "fin_08_cabinets")
-                .Step("Flooring", "Tile on backer and thinset, grout after 24 h; hardwood or LVP with an expansion gap at the walls.", "Flooring tools", "fin_09_flooring");
-            Tutorials.New("biz-landscape", BIZ, "Landscaping and grading", "Grade away from the house, then lawn and plants.", false, "site-career (M6)")
-                .Step("Final grade", "The ground must slope away from the foundation (6\" in the first 10') so water runs off.", "Shovel / skid steer: grade", "biz_01_grade")
-                .Step("Lawn and plants", "Topsoil, seed or sod, and plantings.", "Landscaping tools", "biz_02_lawn");
-            Tutorials.New("biz-save", BIZ, "Saving and loading", "Keep your progress.", false, "site-career (M6)")
-                .Step("Save", "Save from the tablet; every piece, your stock and your belt are saved.", "Save app: Save / Load", "biz_03_save");
-            Tutorials.New("biz-career", BIZ, "Career mode", "Bid jobs, build to the contract, get paid.", false, "site-career (M6)")
-                .Step("Take a job", "Pick a lot and a contract. Budget the materials and the schedule, pass every inspection, and get paid at the final.", "Career app", "biz_04_career");
+            Tutorials.New("fin-insulation", FIN, "Insulation", "Batts in the walls, fire caulk, blown-in in the attic.")
+                .Step("Wall batts", "R-13 in 2x4 walls (R-21 in 2x6), friction-fit full height with no gaps and no compression. Split the batt around boxes and pipes instead of stuffing it behind them, and staple kraft flanges to the stud faces.",
+                      "Utility knife: LMB a bay (RMB = batt type), LMB again to split around a box · Staple gun on the flanges", "fin_01_batts")
+                .Step("Air-seal and fire-block", "Foam every box and penetration so air can't leak through, and fire-caulk holes through the plates so fire can't run up the wall.",
+                      "Foam gun: LMB a box or penetration · Caulk gun with 'Fire caulk': LMB a plate hole", "fin_01b_firecaulk")
+                .Step("Attic", "Baffles at the eaves keep the soffit vents open, then blow loose-fill to the depth on the attic rulers.",
+                      "Staple gun: baffles + rulers · Insulation blower: hold LMB on the attic", "fin_02_attic")
+                .Step("Insulation inspection", "The inspector flags gaps, compressed batts and unsealed penetrations before you can hang drywall.",
+                      "Close-up Inspections app · walk to a red flag to read it", "fin_02b_ins_markers", "Close-up Inspections");
+            Tutorials.New("fin-drywall", FIN, "Drywall and paint", "Hang, tape, three coats, sand, texture, prime, paint.")
+                .Step("Hang", "Ceiling first with the panel lift, then the walls top row first, sheets horizontal with staggered joints. Cut out the boxes and screw into every framing member.",
+                      "Panel lift · T-square · Router / keyhole saw for boxes · Screw gun (Shift = auto-feed a stud)", "fin_03_hang")
+                .Step("Tape and first coat", "Tape every seam and corner with the 6\" knife and bed it in mud. Each coat has to dry 24 hours.",
+                      "6\" taping knife: hold LMB on a seam", "fin_04_mud")
+                .Step("Second and third coats, sand", "Feather each coat wider (10\", then 12\") so the seam disappears, then sand smooth and texture.",
+                      "10\" knife coat 2 · 12\" knife coat 3 · sanding pole · texture", "fin_04b_coat3")
+                .Step("Prime and paint", "PVA primer first on new drywall, then two coats of paint: cut in the edges with a brush, roll the fields. The first coat always looks thin.",
+                      "Roller / brush / sprayer · [ / ] color · Shift+[ / ] sheen · Paint Colors app", "fin_04c_paint", "Paint Colors");
+            Tutorials.New("fin-siding", FIN, "Housewrap, siding and trim", "Wrap, flash the openings, then siding, soffit and gutters.")
+                .Step("Housewrap", "Wrap from the bottom up with 6\" laps so water runs out, and tape the seams. At each window, I-cut the wrap and fold it in.",
+                      "Cap stapler on each course · tape the seams", "fin_05_housewrap")
+                .Step("Flash the openings", "Flash the sill first, then the jambs, then the head, each lapped over the one below, so water is always shed to the outside.",
+                      "Flashing tape: sill, jambs, head", "fin_05b_flashed")
+                .Step("Vinyl siding", "Starter strip, corner posts and J-channel first, then courses bottom-up. Nail in the center of the slots and leave the heads loose so the vinyl can expand.",
+                      "Siding nailer · exterior snips for cuts", "fin_06_siding")
+                .Step("Or brick veneer", "Base flashing with weeps every 33\", ties every 16\" x 24\" and a 1\" air space behind the brick.",
+                      "Brick: lay courses · ties · weeps", "fin_06b_brick")
+                .Step("Soffit, fascia and gutters", "Vented soffit feeds the attic baffles; gutters and downspouts carry the water away from the foundation.",
+                      "Exterior trim on the eaves", "fin_06c_gutter");
+            Tutorials.New("fin-interior", FIN, "Interior finish", "Doors, trim, cabinets and floors.")
+                .Step("Hang interior doors", "Set the prehung door in the opening, shim behind the hinges and the strike until it's plumb with an even gap, then nail through the shims.",
+                      "Finish nailer · level · shims", "fin_07_door")
+                .Step("Casing", "Case both sides with a 3/16\" reveal on the jamb and mitered head corners.",
+                      "Miter saw · finish nailer", "fin_07b_casing")
+                .Step("Base and crown", "Run baseboard and crown; miter outside corners and cope inside corners so they stay tight. Nail off and caulk.",
+                      "Miter saw · coping saw (inside corners) · finish nailer · caulk gun", "fin_07c_base")
+                .Step("Cabinets and counters", "Cabinets go in before the floor finish: wall cabinets first, then bases, level and shimmed, then the countertop and backsplash.",
+                      "Drill: cabinets, countertop, backsplash", "fin_08_cabinets")
+                .Step("Tile", "Notched trowel and thinset, set the tile with spacers, cut with the tile saw, wait 24 hours, then grout and wipe the haze.",
+                      "Notched trowel → tile saw → wait 24 h → grout float", "fin_09_flooring")
+                .Step("Wood or LVP", "Hardwood with the flooring nailer, or click-lock LVP with a pull bar; leave an expansion gap at the walls for the base to hide.",
+                      "Flooring nailer · LVP pull bar · Finish Supply app", "fin_09b_wood", "Finish Supply");
+            Tutorials.New("biz-landscape", BIZ, "Landscaping", "Walks, plants, lawn and fences.")
+                .Step("Buy materials", "Mulch, topsoil, gravel and sand are sold by the cubic yard; plants, sod, pavers and fence parts by the piece. Landscaping tools are in the Tool Shop.",
+                      "Garden Center app · Tool Shop", "biz_00_garden", "Garden Center")
+                .Step("Lay out the job", "Stake and string a walk, bed or fence line. Each job then shows its next step and the tool it needs.",
+                      "Landscaping hands (layout kit): click the corners · aim a tool at a staked job", "biz_01_layout")
+                .Step("Dig and base", "Dig out the walk and put down a compacted gravel base and sand before the pavers, so it doesn't heave.",
+                      "Shovel / spade · wheelbarrow · compact", "biz_01b_base")
+                .Step("Plant", "Dig the hole as deep as the root ball and twice as wide, set it, backfill and water it in.",
+                      "Shovel · hose", "biz_02_plant")
+                .Step("Lawn and walk", "Sod rolls knit into the lawn in a few days (or seed and straw). The final grade must slope away from the house, 6\" in the first 10'.",
+                      "Sod cutter · rake · hose", "biz_02_lawn")
+                .Step("Fence", "Dig post holes, set and plumb the posts, then rails and pickets with a small gap.",
+                      "Post-hole digger · level · nailer", "biz_02b_fence");
+            Tutorials.New("biz-save", BIZ, "Saving and loading", "Keep your progress.")
+                .Step("Save and load", "Every piece, your stock, money, tools, the clock and the site are saved, and the game autosaves. The main menu starts a new career or free build, loads a slot, or changes settings.",
+                      "F5 quick save · F9 quick load · F10 main menu", "biz_03_save");
+            Tutorials.New("biz-career", BIZ, "Career mode", "Bid jobs, build to the contract, get paid.")
+                .Step("Take a job", "Pick a contract on the Job Board: it sets the lot, the house and the deposit. Build it, pass every inspection, and you're paid at the final. Good work raises your reputation and unlocks bigger jobs and tools.",
+                      "Job Board app: Sign a contract", "biz_04_career", "Job Board");
         }
     }
 }
