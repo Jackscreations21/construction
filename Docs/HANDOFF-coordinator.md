@@ -34,4 +34,7 @@ Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude
 ## State of main
 Milestone 1 complete: snap grid/angles, tool belt + tools, tablet (store with category tabs, tool shop, deliveries, bank, help),
 76-item catalog with real models + procedural textures, extension points (`Catalog.Register`, `ToolFactory.Register`, `Tablet.RegisterApp/AddHelp`).
-Tests: `PlaythroughTests.Milestone1Playthrough`, `PlaythroughTests.Showroom` (2/2 passing).
+Tests: `PlaythroughTests.Milestone1Playthrough`, `PlaythroughTests.Showroom`, `ConcreteSlabTests.SlabFromLayoutToCure` (3/3 passing).
+
+## Merged milestones
+- M2 concrete-forms → main @ ee1ecc9 (2026-11-09). Session done. Docs/CONCRETE.md.
