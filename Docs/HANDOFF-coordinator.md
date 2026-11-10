@@ -50,3 +50,13 @@ Tests: 32/33 after M5 merge (all milestones in). Known failure: PlaythroughTests
   `Grade.HeightAt` defers to SiteGround inside the pad; SaveSystem key "siteground" for SiteGround.H/Cover.
 - App limitation: replacement sessions cannot be auto-started from cron/peer-message turns; they appear as proposal cards the user must click
   (or the user tells the lead "start it"). Proposal cards drop `source_branch`, so briefs must begin with `git merge --no-ff <old branch>`.
+
+## Polish phase (user, 2026-11-09: "with the last of the 5 hour window have sessions refine the look and feel of everything")
+Lead session id: `local_54073d16-4b24-4e7f-9bca-a4603ff30909` (earlier briefs wrongly said local_027e6b11 = previous coordinator).
+| name | session id | scope |
+|---|---|---|
+| polish-site | local_56f26ea2-abd9-4e97-a344-29bc9195a1c1 | FIRST fix PadInLot→Milestone1Playthrough order failure; then lighting/sky/fog/ground, concrete, terrain, landscaping |
+| polish-structure | local_5224938a-60c3-4b7f-8c41-f498a71f0f5d | framing, roofing, stairs, windows/doors, MEP materials + feel |
+| polish-finish-ui | local_c28f719d-c5a3-434c-ad1c-d297805cf49e | finishes (Finish/), HUD/tablet/UISkin, player feel, view-models, audio |
+| tutorials | local_1a7a0a35-5219-4bb0-9c3b-f63de2e38681 | tablet Tutorials app with captured pictures (all milestones now on main) |
+All cut from main @ fb84616, own worktree branches. 90% plan-limit pause applies (5-hour window resets 2026-11-10 05:00 UTC).
