@@ -35,14 +35,28 @@ Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude
 ## State of main
 Milestone 1 complete: snap grid/angles, tool belt + tools, tablet (store with category tabs, tool shop, deliveries, bank, help),
 76-item catalog with real models + procedural textures, extension points (`Catalog.Register`, `ToolFactory.Register`, `Tablet.RegisterApp/AddHelp`).
-Tests: 7/7 passing after M4 merge (Milestone1Playthrough, Showroom, SlabFromLayoutToCure, WireRoom, DuctRoom, FlatCondensateAndAtticExhaustFail, PlumbBathroom).
+Tests: 32/33 after M5 merge (all milestones in). Known failure: PlaythroughTests.Milestone1Playthrough fails when run after PadInLotTests ("Place() failed · aim at a surface") — test-isolation bug, assigned to polish-site session.
 
 ## Merged milestones
 - M2 concrete-forms → main @ ee1ecc9 (2026-11-09). Session done. Docs/CONCRETE.md.
 - M4 mep-systems → main @ 75a838c (2026-11-09). Session done. Docs/MEP-BRIEF.md. Follow-up: bridge MepInspection rules into Inspections.Register(RoughMEP) (site-career-2).
+- M3 shell-framing → main @ 0d0c5aa (2026-11-09). Session done. APIs: side-session-notes/shell-framing-api.md. Left: gable-end sheathing above plates, I-joist floor, valleys (API only), FramingInspection.Run() not yet registered with Inspections (site-career-2).
+- M6 site-career(-2) → main @ 19a14bc (2026-11-09). Sessions idle/done. Shared inspection types renamed InspectionItem/InspectionFlags (framing owns InspectionIssue/InspectionMarkers). Bridges: Closeup (reflection, untested vs real M5), Mep, Framing. Nits: 40_pad_in_graded_lot shot too far away; gate grain sideways; pad trench walls keep grass cover.
+- M5 closeup-finish → main @ a98fb60 (2026-11-09). Session done. Docs/HANDOFF-closeup-finish.md. ALL FIVE MILESTONES MERGED.
+- Tutorials (user request): session local_1a7a0a35-5219-4bb0-9c3b-f63de2e38681, tablet "Tutorials" app with captured pictures per step; needs M5/M6 pictures after those merge.
 
 ## Lead decisions
 - Terrain (2026-11-09): `Grade` (site-career) owns the lot; `SiteGround` (concrete, 4" cells) is the 60'x60' building pad inside a hole in Grade;
   `Grade.HeightAt` defers to SiteGround inside the pad; SaveSystem key "siteground" for SiteGround.H/Cover.
 - App limitation: replacement sessions cannot be auto-started from cron/peer-message turns; they appear as proposal cards the user must click
   (or the user tells the lead "start it"). Proposal cards drop `source_branch`, so briefs must begin with `git merge --no-ff <old branch>`.
+
+## Polish phase (user, 2026-11-09: "with the last of the 5 hour window have sessions refine the look and feel of everything")
+Lead session id: `local_54073d16-4b24-4e7f-9bca-a4603ff30909` (earlier briefs wrongly said local_027e6b11 = previous coordinator).
+| name | session id | scope |
+|---|---|---|
+| polish-site | local_56f26ea2-abd9-4e97-a344-29bc9195a1c1 | FIRST fix PadInLot→Milestone1Playthrough order failure; then lighting/sky/fog/ground, concrete, terrain, landscaping |
+| polish-structure | local_5224938a-60c3-4b7f-8c41-f498a71f0f5d | framing, roofing, stairs, windows/doors, MEP materials + feel |
+| polish-finish-ui | local_c28f719d-c5a3-434c-ad1c-d297805cf49e | finishes (Finish/), HUD/tablet/UISkin, player feel, view-models, audio |
+| tutorials | local_1a7a0a35-5219-4bb0-9c3b-f63de2e38681 | tablet Tutorials app with captured pictures (all milestones now on main) |
+All cut from main @ fb84616, own worktree branches. 90% plan-limit pause applies (5-hour window resets 2026-11-10 05:00 UTC).
