@@ -413,6 +413,8 @@ namespace Groundbreak
             }
             var mesh = Build(b, "VinylCourse", 3);
             c.Go = w.Part("vinyl", "VinylCourse_" + (c.Index + 1), mesh, new[] { Mat(w), Materials.Get(SurfaceKind.Galvanized), FinishMaterials.Get(ExteriorLooks.AO) }, "vinyl-course", c.Index);
+            // thin lapped faces self-shadow into wide dark bands (shadow-map acne); the sheathing/framing behind still casts the wall's shadow, and the AO strip draws the lap shadow line
+            c.Go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             if (!c.Locked)
             {
                 // unzipped: the bottom lock swings out, hinged at the nail hem

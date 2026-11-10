@@ -18,6 +18,9 @@ namespace Groundbreak.Tests
         static readonly Vector3 O = new Vector3(80f, 0f, 80f);   // SW outside corner of the room
         static Vector3 P(float xIn, float yIn, float zIn) => O + new Vector3(Units.In(xIn), Units.In(yIn), Units.In(zIn));
 
+        /// <summary>Dry-time skips move the clock; wait until the next 11:00 so shots are in late-morning daylight.</summary>
+        static void Daylight() { if (GameClock.I != null) FinishTime.Skip(Mathf.Repeat(11f - GameClock.I.Hours, 24f)); } // forward only: never un-dry mud
+
         [UnityTest]
         public IEnumerator InsulateDrywallPaintTrimAndSide()
         {
@@ -62,6 +65,7 @@ namespace Groundbreak.Tests
             Insulation.AirSeal(wallA); Insulation.AirSeal(wallB);
             Debug.Log($"[M5] batts A={battsA} B={battsB}");
             Assert.Greater(battsA, 6); Assert.Greater(battsB, 6);
+            Daylight();
             yield return Frames(2);
             Shot(Cam(P(30, 40, 50), P(30, 30, 0), 60f), "m5_02_insulated_wall");
             var ins = CloseupInspection.Run(CloseupInspection.Insulation);
@@ -73,10 +77,12 @@ namespace Groundbreak.Tests
             Assert.NotNull(sCeil, "ceiling drywall");
 
             // Wall A step by step so each stage is photographed.
+            Daylight(); // start wall A in the morning so the wet first coat is photographed in daylight
             var sA = Drywall.HangSurface(wallA, "dw-12-4x12");
             Assert.NotNull(sA, "wall A drywall"); Assert.Greater(sA.Sheets.Count, 1);
             Drywall.CutOutBoxes(sA);
             Drywall.ScrewAll(sA);
+            Daylight();
             sA.Refresh(); yield return Frames(2);
             var wallCam = Cam(P(72, 56, 100), P(72, 46, 0), 60f);
             Shot(wallCam, "m5_03_hung_screwed");
@@ -86,11 +92,13 @@ namespace Groundbreak.Tests
                 if (coat == 1) { sA.Refresh(); yield return Frames(2); Shot(wallCam, "m5_04_tape_coat1_wet"); }
                 FinishTime.Skip(24.1f);
             }
+            Daylight();
             sA.Refresh(); yield return Frames(2);
             Shot(wallCam, "m5_05_coat3_dry");
             Drywall.SandAll(sA);
             Drywall.ApplyTexture(sA, "orange-peel"); FinishTime.Skip(8.1f);
             PaintJob.Prime(sA); FinishTime.Skip(2.1f);
+            Daylight();
             sA.Refresh(); yield return Frames(2);
             Shot(wallCam, "m5_06_primed");
             PaintJob.Paint(sA, PaintColors.Get("Sage Green"), Sheen.Eggshell); FinishTime.Skip(2.1f);
@@ -100,6 +108,7 @@ namespace Groundbreak.Tests
             var sB = DrywallJob.Complete(wallB, "dw-12-4x12", "orange-peel", "Sage Green", Sheen.Eggshell);
             var sC = DrywallJob.Complete(wallC, "dw-12-4x12", "orange-peel", "Linen", Sheen.Eggshell);
             Assert.NotNull(sB); Assert.NotNull(sC);
+            Daylight();
             yield return Frames(2);
             Shot(wallCam, "m5_07_painted_wall");
             var dw = CloseupInspection.Run(CloseupInspection.Drywall);
@@ -113,6 +122,7 @@ namespace Groundbreak.Tests
             Assert.Greater(casing.Count, 2, "casing pieces");
             WallTrim.RunBase(wallA); WallTrim.RunBase(wallB); WallTrim.RunBase(wallC);
             WallTrim.NailAll(); WallTrim.CaulkAll();
+            Daylight();
             yield return Frames(2);
             Shot(Cam(P(40, 60, 80), P(144, 42, 53), 60f), "m5_08_door_cased");
             Shot(roomCam, "m5_09_room");
@@ -128,12 +138,14 @@ namespace Groundbreak.Tests
             Debug.Log($"[M5] exA studs={(exA.Studs != null ? exA.Studs.ToString() : "null")} lines={exA.StudLines.Count} face={exA.Face}");
             Debug.Log($"[M5] exB studs={(exB.Studs != null ? exB.Studs.ToString() : "null")} lines={exB.StudLines.Count} face={exB.Face}");
             Assert.IsTrue(HouseWrap.WrapWall(exA), "wrap A"); Assert.IsTrue(HouseWrap.WrapWall(exB), "wrap B");
+            Daylight();
             yield return Frames(2);
             var corner = Cam(P(-150, 70, -160), P(40, 40, 40), 55f);
             Shot(corner, "m5_10_wrapped");
             Assert.IsTrue(VinylSiding.InstallAll(exA, "White"), "vinyl on A");
             Assert.IsTrue(BrickVeneer.LayAll(exB), "brick on B");
             ExteriorTrim.CaulkAll(exA); ExteriorTrim.CaulkAll(exB);
+            Daylight();
             yield return Frames(2);
             Shot(corner, "m5_11_exterior_corner");
             Shot(Cam(P(60, 64, -70), P(60, 40, 0), 55f), "m5_12_vinyl");
