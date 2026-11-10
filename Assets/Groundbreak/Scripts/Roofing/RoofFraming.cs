@@ -169,6 +169,7 @@ namespace Groundbreak
             info.Footprint = g.Fp; info.PitchRise = g.rise; info.Hip = hip; info.Trussed = trussed;
             info.EaveOverhang = I(eaveOhIn); info.RakeOverhang = hip ? info.EaveOverhang : I(rakeOhIn);
             info.FramingJob = job;
+            info.FramingTopAtWall = g.Yw; info.Slope = g.r;
             Vector3 W(float x, float y, float z) => root.TransformPoint(new Vector3(x, y, z));
             Vector3 Dir(float x, float y, float z) => root.TransformDirection(new Vector3(x, y, z)).normalized;
             float c = g.cos, sn = g.sin;
@@ -808,6 +809,7 @@ namespace Groundbreak
                     }
                 }
             }
+            if (!roof.Hip && roof.FramingTopAtWall > 0f) AddGableSheathing(job, roof, tk);
             job.Add("Install a roof anchor at the ridge (fall protection for the roofing crew)", ToolSets.Fasten, () =>
             {
                 Vector3 at = roof.HasRidge ? Vector3.Lerp(roof.Ridge.A, roof.Ridge.B, 0.5f) : roof.Planes[0].At(roof.Planes[0].EaveLength / 2, roof.Planes[0].SlopeLength - 0.3f);
@@ -819,6 +821,42 @@ namespace Groundbreak
             }).Nails = 6;
             job.Completed += () => { roof.Sheathed = true; roof.HasDeck = true; };
             return job;
+        }
+
+        /// <summary>Gable ends: 7/16" OSB on the outside face of the gable truss / gable studs, from the top plate up to the
+        /// top of the framing, sheets laid horizontally (4' rows, 8' long, joints staggered) and cut to the rake.</summary>
+        static void AddGableSheathing(FramingJob job, RoofInfo roof, float tk)
+        {
+            var fp = roof.Footprint;
+            var gr = new GameObject("Gable sheathing").transform;
+            gr.SetParent(job.transform, false);
+            gr.SetPositionAndRotation(new Vector3(fp.Origin.x, 0f, fp.Origin.z), fp.Rotation);
+            float W = fp.Width, L = fp.Length, P = fp.PlateTopY, Yw = roof.FramingTopAtWall, r = roof.Slope;
+            var gable = new List<HalfPlane> { HalfPlane.Below(Yw, r), HalfPlane.Below(Yw + r * W, -r), HalfPlane.XMin(0f), HalfPlane.XMax(W), HalfPlane.YMin(P) };
+            float apex = Yw + r * W * 0.5f;
+            for (int e = 0; e < 2; e++)
+            {
+                float xa = e == 0 ? -tk : L, xb = e == 0 ? 0f : L + tk;
+                int row = 0;
+                for (float y0 = P; y0 < apex - I(1f); y0 += I(48f), row++)
+                {
+                    float y1 = Mathf.Min(apex + 0.01f, y0 + I(48f));
+                    float z = row % 2 == 0 ? 0f : -I(48f);
+                    for (; z < W; z += I(96f))
+                    {
+                        var poly = Geo2.Clip(Geo2.Rect(Mathf.Max(0f, z), y0, Mathf.Min(W, z + I(96f)), y1), gable);
+                        if (poly.Count < 3 || Geo2.Area(poly) < 0.02f) continue;
+                        float zmin = float.MaxValue, zmax = float.MinValue, ymax = float.MinValue;
+                        foreach (var q in poly) { zmin = Mathf.Min(zmin, q.x); zmax = Mathf.Max(zmax, q.x); ymax = Mathf.Max(ymax, q.y); }
+                        var c = new Vector3((xa + xb) * 0.5f, (y0 + ymax) * 0.5f, (zmin + zmax) * 0.5f);
+                        var size = new Vector3(tk, ymax - y0, zmax - zmin);
+                        var pl = poly; float pa = xa, pb = xb;
+                        job.Add("Gable sheathing (" + (e == 0 ? "left" : "right") + " end): row " + (row + 1) + ", cut to the rake - 8d nails 6\" edges / 12\" field",
+                                ToolSets.Fasten, () => PlanarYZ(gr, "osb716", MemberRole.WallSheathing, Connector.Nailed, pl, pa, pb, new Vector2(1f, 0f), "Gable sheathing", SurfaceKind.Osb),
+                                Ghost(gr, c, size, Quaternion.identity)).Use("osb716").Use("nails8d", 24);
+                    }
+                }
+            }
         }
 
         static StructuralMember PlacePanel(Transform root, RoofPlane p, List<List<Vector2>> parts, float tk, List<float> clips, float vTopEdge, float gap)

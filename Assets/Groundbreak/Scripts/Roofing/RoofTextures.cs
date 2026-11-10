@@ -25,9 +25,10 @@ namespace Groundbreak
                 for (int x = 0; x < n; x++)
                 {
                     // large blend patches (a tab-sized area gets its own mix), medium mottling
-                    float patch = N(x, y, 128, n / 128, seed) * 0.6f + N(x, y, 64, n / 64, seed + 1) * 0.4f;
+                    float patch = N(x, y, 128, n / 128, seed) * 0.75f + N(x, y, 64, n / 64, seed + 1) * 0.25f;
                     float mott = N(x, y, 8, n / 8, seed + 2);
-                    float dark = Mathf.Clamp01(0.32f + (patch - 0.5f) * 1.1f + darkness * 0.55f + (mott - 0.5f) * 0.12f);
+                    // gentle blend drift (weathered-wood reads salt-and-pepper, not camo blotches)
+                    float dark = Mathf.Clamp01(0.34f + (patch - 0.5f) * 0.55f + darkness * 0.55f + (mott - 0.5f) * 0.10f);
                     // granules ~1-1.5 mm: 2x2 pixel clusters with per-granule color picks
                     int gx = x >> 1, gy = y >> 1;
                     float pick = H(gx + (y & 1) * 7, gy, seed + 3);
