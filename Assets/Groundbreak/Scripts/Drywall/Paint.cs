@@ -172,7 +172,7 @@ namespace Groundbreak
     }
 
     /// <summary>Shared base for roller / brush / sprayer.</summary>
-    public abstract class PaintToolBase : FinishTool
+    public abstract class PaintToolBase : CloseupTool
     {
         public override float Range => 3.5f;
         protected bool PrimerMode => ModeName == "Primer";

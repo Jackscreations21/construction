@@ -25,7 +25,7 @@ namespace Groundbreak
 
     /// <summary>Drywall T-square: measure, score &amp; snap (utility knife) and hang the next wall sheet of the layout
     /// (top row first, horizontal, butt ends on stud centers, openings cut out). RMB = sheet product.</summary>
-    public class DrywallTSquare : FinishTool
+    public class DrywallTSquare : CloseupTool
     {
         public override string Id => "drywall-tsquare";
         public override string Name => "Drywall T-Square";
@@ -59,7 +59,7 @@ namespace Groundbreak
     }
 
     /// <summary>Panel lift: raises ceiling sheets (perpendicular to the joists, ends on joist centers).</summary>
-    public class DrywallLift : FinishTool
+    public class DrywallLift : CloseupTool
     {
         public override string Id => "drywall-lift";
         public override string Name => "Drywall Panel Lift";
@@ -81,7 +81,7 @@ namespace Groundbreak
     }
 
     /// <summary>Auto-feed screw gun: LMB one screw snapped to the nearest framing line; Shift+LMB runs the whole line.</summary>
-    public class ScrewGun : FinishTool
+    public class ScrewGun : CloseupTool
     {
         public override string Id => "screw-gun";
         public override string Name => "Drywall Screw Gun";
@@ -110,7 +110,7 @@ namespace Groundbreak
     }
 
     /// <summary>Cut-out router: one pass around a covered box.</summary>
-    public class DrywallRouter : FinishTool
+    public class DrywallRouter : CloseupTool
     {
         public override string Id => "drywall-router";
         public override string Name => "Cut-out Router";
@@ -129,7 +129,7 @@ namespace Groundbreak
     }
 
     /// <summary>Keyhole (jab) saw: three passes per box.</summary>
-    public class KeyholeSaw : FinishTool
+    public class KeyholeSaw : CloseupTool
     {
         public override string Id => "keyhole-saw";
         public override string Name => "Keyhole Saw";
@@ -154,7 +154,7 @@ namespace Groundbreak
 
     /// <summary>Taping knives 6/10/12" + mud pan. Click a joint to apply its next coat (right knife required); click
     /// away from joints to spot screws. Also sets corner bead and skims (level 5).</summary>
-    public class TapingKnives : FinishTool
+    public class TapingKnives : CloseupTool
     {
         public override string Id => "taping-knives";
         public override string Name => "Taping Knives";
@@ -216,7 +216,7 @@ namespace Groundbreak
     }
 
     /// <summary>Pole sander (flats) and sanding sponge (corners).</summary>
-    public class SandingPole : FinishTool
+    public class SandingPole : CloseupTool
     {
         public override string Id => "sanding-pole";
         public override string Name => "Sanding Pole";
@@ -235,7 +235,7 @@ namespace Groundbreak
     }
 
     /// <summary>Drywall stilts: LMB put on / take off. While worn the camera and reach are 18" higher.</summary>
-    public class Stilts : FinishTool
+    public class Stilts : CloseupTool
     {
         public const float Lift = 0.4572f; // 18"
         public static bool Worn;

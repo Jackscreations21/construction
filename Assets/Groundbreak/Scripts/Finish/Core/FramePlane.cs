@@ -108,6 +108,7 @@ namespace Groundbreak
                 if ((q.transform.position - p.transform.position).sqrMagnitude > 40f * 40f) continue;
                 if (!AxisAligned(q.transform, n, q.Size, out float qh, out int axis)) continue;
                 if (axis == 2 && q.Def.Category == PieceCategory.Lumber && q != p) continue; // cut ends (end grain) aren't a nailing face
+                if (axis != 1 && q.Def.Category == PieceCategory.Sheet && q != p) continue; // a sheet's edge isn't a face (only its thin axis is)
                 if (Mathf.Abs(Vector3.Dot(q.transform.position, n) + qh - fp.FaceOffset) > 0.006f) continue;
                 cands.Add(q);
             }

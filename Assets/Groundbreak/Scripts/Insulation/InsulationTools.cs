@@ -26,7 +26,7 @@ namespace Groundbreak
 
     /// <summary>Utility knife: fits batts (score against a straightedge to the bay height/width), splits them around
     /// boxes and pipes. RMB cycles the batt product.</summary>
-    public class UtilityKnife : FinishTool
+    public class UtilityKnife : CloseupTool
     {
         public override string Id => "utility-knife";
         public override string Name => "Utility Knife";
@@ -55,7 +55,7 @@ namespace Groundbreak
     }
 
     /// <summary>T50 staple gun: kraft flanges (face / inset), eave baffles, poly vapor retarder, attic depth rulers.</summary>
-    public class StapleGun : FinishTool
+    public class StapleGun : CloseupTool
     {
         public override string Id => "staple-gun";
         public override string Name => "Staple Gun (T50)";
@@ -108,7 +108,7 @@ namespace Groundbreak
     }
 
     /// <summary>Can-foam gun: gaps & cracks foam around boxes / penetrations, low-expansion foam at window/door shims.</summary>
-    public class FoamGun : FinishTool
+    public class FoamGun : CloseupTool
     {
         public override string Id => "foam-gun";
         public override string Name => "Foam Gun";
@@ -147,7 +147,7 @@ namespace Groundbreak
     }
 
     /// <summary>Two-part closed-cell spray foam rig: each click sprays ~2" into the aimed bay.</summary>
-    public class SprayFoamKit : FinishTool
+    public class SprayFoamKit : CloseupTool
     {
         public override string Id => "spray-foam-kit";
         public override string Name => "Spray Foam Kit";
@@ -166,7 +166,7 @@ namespace Groundbreak
 
     /// <summary>Rental blowing machine: HOLD on the attic (joist tops from above, or the hung ceiling from below with the
     /// hose through the hatch) to blow loose fill. Shows the depth / R at the aim.</summary>
-    public class InsulationBlower : FinishTool
+    public class InsulationBlower : CloseupTool
     {
         public override string Id => "insulation-blower";
         public override string Name => "Insulation Blower";
