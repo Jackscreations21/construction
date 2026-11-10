@@ -65,4 +65,9 @@ All cut from main @ fb84616, own worktree branches. 90% plan-limit pause applies
 - tutorials → main @ f62cb3e (26 tutorials, 98 real pictures; HUD/tablet pictures need one non-batchmode run, see Docs/TUTORIALS.md).
 - polish-site → main @ 1e1343d. Fixed the order failure (real bug: player buried on 6% slope fell through terrain → Landscaping/GroundSafety.cs). Terrain shader, haze, day cycle, particles.
 - polish-structure → main (46/46 tests). Not done: window/door models, panel detail, duct seam line (Docs/HANDOFF-polish-structure.md).
-- polish-finish-ui: pending (tab-clipping fix + finishes/UI/feel), branch claude/polish-finish-ui-887f7a.
+- polish-finish-ui → main (50/50 tests). HUD/tablet IMGUI not screenshot-able in batchmode: needs a look in the editor.
+
+## Status 2026-11-09 (end of polish window)
+Everything merged and pushed; main 50/50 PlayMode tests, 0 compile errors. No sessions working. Open follow-ups:
+window/door models, electrical panel detail, duct seam line (structure); faint dig dust (site); HUD/tablet visual check in the editor;
+tutorial HUD/tablet pictures need one non-batchmode capture run (Docs/TUTORIALS.md).
