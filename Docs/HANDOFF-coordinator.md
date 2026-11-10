@@ -60,3 +60,9 @@ Lead session id: `local_54073d16-4b24-4e7f-9bca-a4603ff30909` (earlier briefs wr
 | polish-finish-ui | local_c28f719d-c5a3-434c-ad1c-d297805cf49e | finishes (Finish/), HUD/tablet/UISkin, player feel, view-models, audio |
 | tutorials | local_1a7a0a35-5219-4bb0-9c3b-f63de2e38681 | tablet Tutorials app with captured pictures (all milestones now on main) |
 All cut from main @ fb84616, own worktree branches. 90% plan-limit pause applies (5-hour window resets 2026-11-10 05:00 UTC).
+
+## Polish merges
+- tutorials → main @ f62cb3e (26 tutorials, 98 real pictures; HUD/tablet pictures need one non-batchmode run, see Docs/TUTORIALS.md).
+- polish-site → main @ 1e1343d. Fixed the order failure (real bug: player buried on 6% slope fell through terrain → Landscaping/GroundSafety.cs). Terrain shader, haze, day cycle, particles.
+- polish-structure → main (46/46 tests). Not done: window/door models, panel detail, duct seam line (Docs/HANDOFF-polish-structure.md).
+- polish-finish-ui: pending (tab-clipping fix + finishes/UI/feel), branch claude/polish-finish-ui-887f7a.
