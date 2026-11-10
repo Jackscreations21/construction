@@ -93,6 +93,8 @@ namespace Groundbreak
         public readonly List<RoofPlane> Planes = new List<RoofPlane>();
         public bool HasRidge;
         public RoofEdge Ridge;
+        /// <summary>Roof frame (footprint) heights: top of the framing at the outer wall line and rise per run (gable sheathing).</summary>
+        public float FramingTopAtWall, Slope;
         public readonly List<RoofEdge> Hips = new List<RoofEdge>();
         public readonly List<RoofEdge> Valleys = new List<RoofEdge>();
         public readonly List<RoofEdge> Rakes = new List<RoofEdge>();

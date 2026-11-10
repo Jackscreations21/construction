@@ -181,7 +181,7 @@ namespace Groundbreak
             transform.position = Points[0];
             var mm = new MepMesh { Origin = Points[0] };
             var path = DrawPath();
-            var mats = new List<Material> { MepLook.Of(Spec) };
+            var mats = new List<Material> { MepPrint.RunMaterial(Spec) };
             mm.Sweep(path, MepMesh.For(Spec), 0, true, true, VerticalUpHint());
             if (Spec.Shape == RunShape.Round && Spec.Kind == NetKind.Duct)
             {

@@ -22,7 +22,7 @@ namespace Groundbreak
 
             if (!TryCache(key, out Mesh mesh, out Material[] mats))
             {
-                var k = new Kit(def);
+                var k = new Kit(def) { Variant = variant };
                 if (raw) k.B.UvOffset = VariantOffset(variant);
                 BuildInto(k, def, size);
                 mesh = k.B.BuildWith(k, def != null ? def.Id : "piece");
@@ -107,6 +107,7 @@ namespace Groundbreak
             static Material fallback;
 
             public Kit(PieceDefinition d) { def = d; }
+            public int Variant;   // raw-material UV/tone variant (0..31)
 
             public int Mat(Material m)
             {
@@ -156,7 +157,7 @@ namespace Groundbreak
             switch (def.Category)
             {
                 case PieceCategory.Lumber: Lumber(k, def, s); return;
-                case PieceCategory.Sheet: k.B.AddBox(Vector3.zero, s, Quaternion.identity, k.Main(), Vector3.forward); return;
+                case PieceCategory.Sheet: Sheet(k, def, s); return;
                 case PieceCategory.Masonry: Masonry(k, def, s); return;
                 case PieceCategory.Rebar: k.B.AddRod(Vector3.zero, Quaternion.identity, Mathf.Min(s.x, s.y) * 0.5f, s.z, 8, k.Main()); return;
                 case PieceCategory.Consumable: Consumable(k, def, s); return;
@@ -179,10 +180,35 @@ namespace Groundbreak
         static void Lumber(Kit k, PieceDefinition def, Vector3 s)
         {
             SurfaceKind face = Materials.ForDefinition(def);
-            int side = k.M(face);
-            int end = face == SurfaceKind.TreatedLumber ? k.M(SurfaceKind.PineEndGrain, new Color(0.80f, 0.92f, 0.70f)) : k.M(SurfaceKind.PineEndGrain);
+            bool wood = face == SurfaceKind.PineLumber || face == SurfaceKind.TreatedLumber;
+            Color tone = wood ? LumberMarks.Tone(k.Variant) : Color.white;
+            int side = wood ? k.M(face, tone) : k.M(face);
+            int end = face == SurfaceKind.TreatedLumber ? k.M(SurfaceKind.PineEndGrain, new Color(0.80f, 0.92f, 0.70f) * tone) : k.M(SurfaceKind.PineEndGrain, tone);
             float bevel = Mathf.Min(0.003f, Mathf.Min(s.x, s.y) * 0.2f);
             k.B.AddBevelBox(Vector3.zero, s, Quaternion.identity, bevel, side, end);
+            // one mill grade stamp per board, near an end, on a wide face (primed trim stock has none)
+            if (wood && s.z > 0.6f && s.x >= I(3.4f) && s.x > s.y)
+            {
+                var st = face == SurfaceKind.TreatedLumber ? LumberMarks.Stamp.LumberTreated : LumberMarks.Stamp.LumberSpf;
+                float sgn = 1f;
+                float z = (s.z * 0.5f - 0.25f - 0.02f * (k.Variant % 7)) * ((k.Variant & 4) == 0 ? 1f : -1f);
+                LumberMarks.AddStamp(k.B, k.Mat(LumberMarks.StampMaterial(st)), st, new Vector3(0f, sgn * s.y * 0.5f, z),
+                                     Vector3.up * sgn, Vector3.forward, (k.Variant & 2) != 0);
+            }
+        }
+
+        static void Sheet(Kit k, PieceDefinition def, Vector3 s)
+        {
+            SurfaceKind face = Materials.ForDefinition(def);
+            k.B.AddBox(Vector3.zero, s, Quaternion.identity, k.Main(), Vector3.forward);
+            // OSB / plywood panel stamp on the mill face (only on sheets big enough to still carry it)
+            if ((face == SurfaceKind.Osb || face == SurfaceKind.Plywood) && s.x > 0.45f && s.z > 0.6f)
+            {
+                float sgn = 1f; // printed mill face
+                var c = new Vector3((k.Variant % 3 - 1) * s.x * 0.18f, sgn * s.y * 0.5f, ((k.Variant >> 2) % 3 - 1) * s.z * 0.2f);
+                LumberMarks.AddStamp(k.B, k.Mat(LumberMarks.StampMaterial(LumberMarks.Stamp.Sheathing)), LumberMarks.Stamp.Sheathing,
+                                     c, Vector3.up * sgn, Vector3.right, (k.Variant & 2) != 0);
+            }
         }
 
         static void Masonry(Kit k, PieceDefinition def, Vector3 s)

@@ -50,7 +50,7 @@ namespace Groundbreak
             switch (k)
             {
                 case SurfaceKind.Glass: return new TextureSet();
-                case SurfaceKind.Osb: c = Osb(); ns = 3.0f; break;
+                case SurfaceKind.Osb: c = Osb(); ns = 2.2f; break;
                 case SurfaceKind.PineLumber: c = Wood(PineSpec()); ns = 2.0f; break;
                 case SurfaceKind.TreatedLumber: c = Treated(); ns = 2.5f; break;
                 case SurfaceKind.Plywood: c = Plywood(); ns = 1.8f; break;
@@ -369,7 +369,7 @@ namespace Groundbreak
 
             // Under-layer: deeper strands seen through gaps — dark, streaky along U.
             var under = Field(256, 6, 28, 3, 0.55f, 11);
-            Color gapDark = C(112, 82, 48), gapMid = C(150, 112, 68); // voids read as shallow shade, not holes
+            Color gapDark = C(140, 106, 64), gapMid = C(172, 132, 82); // voids read as shallow shade, not holes
             for (int y = 0; y < n; y++)
             {
                 float v = (y + 0.5f) * inv;
@@ -405,7 +405,7 @@ namespace Groundbreak
                 float len = Mathf.Lerp(64f, 150f, Rnd(rng));
                 float r2 = Rnd(rng);
                 float wid = 10f + 20f * r2 * r2;
-                if (Rnd(rng) < 0.15f) { len *= 0.42f; wid *= 0.8f; } // small chips/fines
+                if (Rnd(rng) < 0.07f) { len *= 0.42f; wid *= 0.8f; } // small chips/fines
 
                 // tone
                 float pick = Rnd(rng), acc = 0f; int pi = 0;
@@ -469,7 +469,7 @@ namespace Groundbreak
                         if (asn > el) continue;
 
                         float edge = Math.Min((wl - atn) * hw, (el - asn) * hl); // px to nearest edge
-                        float eShade = edge >= 2.5f ? 1f : 0.80f + 0.08f * edge;
+                        float eShade = edge >= 2.5f ? 1f : 0.89f + 0.044f * edge;
                         float f = fiber[kt], av = along[ks];
                         float mul = (1f + 0.085f * f + 0.09f * av) * eShade;
                         int i = row + (px & mask);
@@ -480,7 +480,7 @@ namespace Groundbreak
                 }
             }
 
-            Cavity(c, 3, 2.2f, 0.45f);
+            Cavity(c, 3, 2.2f, 0.30f);
 
             // Board-scale tone drift (press/wax/moisture) and a faint warm/cool shift.
             var macro = Field(128, 4, 4, 4, 0.55f, 77);
@@ -525,8 +525,8 @@ namespace Groundbreak
         static WoodSpec PineSpec() => new WoodSpec
         {
             N = 1024, Rings = 56, WarpPx = 2, WarpPy = 5, WarpAmp = 3.2f, Late = 0.22f, Fiber = 0.035f, Blotch = 0.05f,
-            Knots = 7, KnotMin = 0.009f, KnotMax = 0.018f, ContrastMin = 0.35f, Seed = 101,
-            Early = C(230, 206, 162), LateC = C(198, 158, 106), KnotC = C(150, 96, 50)
+            Knots = 4, KnotMin = 0.008f, KnotMax = 0.016f, ContrastMin = 0.35f, Seed = 101,
+            Early = C(233, 210, 167), LateC = C(204, 164, 112), KnotC = C(168, 112, 60)
         };
 
         static WoodSpec OakSpec() => new WoodSpec
@@ -1134,7 +1134,7 @@ namespace Groundbreak
                     Worley(uu, vv, 32, 903, 1f, out float f1, out float f2, out int id, out float ndx, out float ndy);
                     float th = Hf(id, 1, 904) * Mathf.PI;
                     float ct = Mathf.Cos(th), st = Mathf.Sin(th);
-                    float tone = 0.80f + 0.22f * Hf(id, 2, 904);
+                    float tone = 0.86f + 0.12f * Hf(id, 2, 904);
                     float across = -ndx * st + ndy * ct;
                     float feather = Noise1(across * 14f + id * 3.1f, 905) - 0.5f;
                     float facet = ndx * ct + ndy * st;

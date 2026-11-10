@@ -58,13 +58,30 @@ namespace Groundbreak
 
         public IEnumerator TiltUpRoutine(float seconds = 2.5f)
         {
+            // Crew raise: a slow heave to get fingers under the top plate, walk it up hand over hand,
+            // then ease the last few degrees to plumb; it lands on the bottom plate with a small rock.
             for (float t = 0; t < seconds; t += Time.deltaTime)
             {
-                float k = t / seconds; k = k * k * (3 - 2 * k);
-                SetTilt(90f * (1f - k));
+                SetTilt(90f - RaiseAngle(t / seconds));
                 yield return null;
             }
             SetTilt(0f);
+            Sfx.Play("thud", transform.position + Vector3.up * 1.2f, 0.9f);
+            for (float t = 0; t < 0.45f; t += Time.deltaTime)
+            {
+                SetTilt(Mathf.Max(0f, 0.9f * Mathf.Sin(t * 28f) * Mathf.Exp(-t * 9f)));
+                yield return null;
+            }
+            SetTilt(0f);
+        }
+
+        /// <summary>Raised angle (0..90 deg) at normalized time k: heave (ease-in), walk-up, ease-out to plumb.</summary>
+        public static float RaiseAngle(float k)
+        {
+            k = Mathf.Clamp01(k);
+            if (k < 0.18f) { float a = k / 0.18f; return 10f * a * a; }
+            if (k < 0.78f) { float a = (k - 0.18f) / 0.60f; return 10f + 68f * (a * (2f - a) * 0.35f + a * 0.65f); }
+            float b = (k - 0.78f) / 0.22f; return 78f + 12f * (1f - Mathf.Pow(Mathf.Clamp01(1f - b), 1.4f));
         }
 
         /// <summary>How far out of plumb the wall is (inches over its height) – after tilting it's eyeballed; bracing fixes it.</summary>
