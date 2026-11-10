@@ -41,8 +41,8 @@ namespace Groundbreak
             var def = Def(defId);
             var p = Piece.Create(def, size.z, Vector3.zero, Quaternion.identity);
             p.SetSize(size);
-            var old = p.transform.Find("Visual");
-            if (old != null) Object.Destroy(old.gameObject);
+            foreach (Transform ch in p.transform)
+                if (ch.name == "Visual") { ch.gameObject.SetActive(false); Object.Destroy(ch.gameObject); }
             AttachMesh(p.transform, "Visual", visual);
             return Finish(p, parent, localCenter, localRot, role, conn, group);
         }
