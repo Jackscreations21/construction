@@ -347,7 +347,7 @@ namespace Groundbreak
             foreach (var c in Physics.OverlapBox(center, half, Rotation, ~0, QueryTriggerInteraction.Collide))
             {
                 if (seen.Contains(c)) continue; seen.Add(c);
-                if (c.bounds.size.x > 20f || c.bounds.size.z > 20f) continue; // ground / terrain
+                if (c.bounds.size.x > 20f || c.bounds.size.z > 20f || c.GetComponentInParent<SiteGround>() != null) continue; // ground / terrain
                 var p = c.GetComponentInParent<Piece>();
                 if (p != null && IsFraming(p)) continue;
                 if (c.GetComponentInParent<FinishLayer>() != null) continue;
