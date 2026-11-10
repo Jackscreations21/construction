@@ -137,6 +137,7 @@ namespace Groundbreak.Tests
                 p.StartDryIn()?.RunAll();
                 Shot(overview, "39_dried_in");
                 p.StartShingles()?.RunAll();
+                BoomTruck.RemoveAll(); // truck leaves once the trusses are set
                 yield return Frames(3);
             }
             else Debug.LogWarning("[Test] roofing module not present - roof skipped");
