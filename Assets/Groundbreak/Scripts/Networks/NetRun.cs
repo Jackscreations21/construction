@@ -182,7 +182,7 @@ namespace Groundbreak
             var mm = new MepMesh { Origin = Points[0] };
             var path = DrawPath();
             var mats = new List<Material> { MepLook.Of(Spec) };
-            mm.Sweep(path, MepMesh.For(Spec), 0);
+            mm.Sweep(path, MepMesh.For(Spec), 0, true, true, VerticalUpHint());
             if (Spec.Shape == RunShape.Round && Spec.Kind == NetKind.Duct)
             {
                 // round duct: crimped male end bead + longitudinal seam hint every 5' section
@@ -227,6 +227,23 @@ namespace Groundbreak
                 float th = Mathf.Max(Spec.Width, 0.02f);
                 bc.size = new Vector3(th, Mathf.Max(Spec.Shape == RunShape.Round ? Spec.Width : Spec.Height, 0.02f), l);
             }
+        }
+
+        /// <summary>For an all-vertical run: the profile "up" that matches the elbow it comes out of (the fitting's other,
+        /// horizontal port direction), so rect ducts don't twist between elbows.</summary>
+        Vector3 VerticalUpHint()
+        {
+            foreach (var p in new[] { A, B })
+            {
+                if (p == null || p.Node == null) continue;
+                foreach (var o in p.Node.Ports)
+                {
+                    if (o == p) continue;
+                    Vector3 d = o.WorldDir; d.y = 0;
+                    if (d.sqrMagnitude > 0.25f) return d.normalized;
+                }
+            }
+            return Vector3.zero;
         }
 
         public void AddStaple(Vector3 worldPoint)

@@ -64,18 +64,28 @@ namespace Groundbreak
 
         // ---------------------------------------------------------------- frames
         /// <summary>Frames along a path: side (profile x) and up (profile y), keeping "up" toward world up where possible.</summary>
-        static void Frames(IList<Vector3> path, out Vector3[] side, out Vector3[] up)
+        static void Frames(IList<Vector3> path, out Vector3[] side, out Vector3[] up, Vector3 upHint = default)
         {
             int c = path.Count; side = new Vector3[c]; up = new Vector3[c];
-            Vector3 prevUp = Vector3.up;
+            // first frame: "up" toward world up (or toward the next horizontal leg for vertical starts),
+            // then parallel transport so bends never pinch or twist
+            Vector3 t0 = Tangent(path, 0);
+            Vector3 u0 = Vector3.up - t0 * Vector3.Dot(Vector3.up, t0);
+            if (u0.sqrMagnitude < 0.04f)
+            {
+                Vector3 hint = upHint.sqrMagnitude > 1e-6f ? upHint : Vector3.forward;
+                if (upHint.sqrMagnitude <= 1e-6f) for (int i = 1; i < c; i++) { Vector3 d = path[i] - path[i - 1]; d.y = 0; if (d.sqrMagnitude > 1e-6f) { hint = -d.normalized; break; } }
+                u0 = hint - t0 * Vector3.Dot(hint, t0);
+                if (u0.sqrMagnitude < 1e-6f) u0 = Vector3.Cross(t0, Vector3.right);
+            }
+            u0.Normalize();
+            Vector3 prevT = t0, prevUp = u0;
             for (int i = 0; i < c; i++)
             {
                 Vector3 t = Tangent(path, i);
-                Vector3 u = Vector3.up - t * Vector3.Dot(Vector3.up, t);
-                if (u.sqrMagnitude < 0.04f) { u = prevUp - t * Vector3.Dot(prevUp, t); if (u.sqrMagnitude < 1e-6f) u = Vector3.Cross(t, Vector3.right); }
-                u.Normalize();
-                if (i > 0 && Vector3.Dot(u, prevUp) < 0f && Mathf.Abs(t.y) > 0.98f) u = -u;
-                up[i] = u; side[i] = Vector3.Cross(u, t).normalized; prevUp = u;
+                Vector3 u = Quaternion.FromToRotation(prevT, t) * prevUp;
+                u = (u - t * Vector3.Dot(u, t)).normalized;
+                up[i] = u; side[i] = Vector3.Cross(u, t).normalized; prevUp = u; prevT = t;
             }
         }
 
@@ -91,10 +101,10 @@ namespace Groundbreak
 
         // ---------------------------------------------------------------- sweep
         /// <summary>Sweeps a profile along a path (smooth path: pass pre-rounded points). Caps optional.</summary>
-        public void Sweep(IList<Vector3> path, Profile prof, int sub, bool capStart = true, bool capEnd = true)
+        public void Sweep(IList<Vector3> path, Profile prof, int sub, bool capStart = true, bool capEnd = true, Vector3 upHint = default)
         {
             int c = path.Count; if (c < 2) return;
-            Frames(path, out var side, out var up);
+            Frames(path, out var side, out var up, upHint);
             // miter scale at corners so the profile keeps thickness
             int pc = prof.P.Length;
             float perim = 0f; var vacc = new float[pc];

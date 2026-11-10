@@ -1194,7 +1194,7 @@ namespace Groundbreak
         static void Hvac(Kit k, PieceDefinition def, Vector3 s)
         {
             string id = def.Id ?? "";
-            if (id.Contains("ac") || id.Contains("hp")) { Condenser(k, s); return; }
+            if (id.StartsWith("hvac-ac") || id.StartsWith("hvac-hp") || id.Contains("condenser")) { Condenser(k, s); return; }
             if (id.Contains("furnace")) { Furnace(k, s); return; }
             if (id.Contains("airhandler")) { AirHandler(k, s); return; }
             if (id.Contains("minisplit")) { MiniSplit(k, s); return; }
