@@ -526,7 +526,7 @@ namespace Groundbreak
         {
             N = 1024, Rings = 56, WarpPx = 2, WarpPy = 5, WarpAmp = 3.2f, Late = 0.22f, Fiber = 0.035f, Blotch = 0.05f,
             Knots = 4, KnotMin = 0.008f, KnotMax = 0.016f, ContrastMin = 0.35f, Seed = 101,
-            Early = C(236, 208, 158), LateC = C(206, 162, 104), KnotC = C(168, 112, 60)
+            Early = C(233, 210, 167), LateC = C(204, 164, 112), KnotC = C(168, 112, 60)
         };
 
         static WoodSpec OakSpec() => new WoodSpec

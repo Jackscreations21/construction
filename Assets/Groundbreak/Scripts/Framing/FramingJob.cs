@@ -169,6 +169,7 @@ namespace Groundbreak
             _ghost.SetActive(true);
             _ghost.transform.SetPositionAndRotation(g.center, g.rot);
             _ghost.transform.localScale = g.size + Vector3.one * 0.004f;
+            GhostOutline.Update(_ghost);
         }
 
         public bool GhostVisible => _ghost != null && _ghost.activeSelf;

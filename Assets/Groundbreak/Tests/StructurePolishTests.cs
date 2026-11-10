@@ -91,6 +91,39 @@ namespace Groundbreak.Tests
             Shot(cam, "polish_03_osb_closeup");
         }
 
+        [Test]
+        public void TiltUp_CurveIsMonotonicAndLandsPlumb()
+        {
+            float prev = -1f;
+            for (int i = 0; i <= 200; i++)
+            {
+                float a = WallAssembly.RaiseAngle(i / 200f);
+                Assert.GreaterOrEqual(a, prev - 1e-4f, "never drops back while raising");
+                Assert.Less(a - prev, 1.6f, "no jumps");
+                prev = a;
+            }
+            Assert.AreEqual(0f, WallAssembly.RaiseAngle(0f), 1e-4f);
+            Assert.AreEqual(90f, WallAssembly.RaiseAngle(1f), 1e-4f);
+        }
+
+        [UnityTest]
+        public IEnumerator LayoutGhost_HasOutline()
+        {
+            for (int i = 0; i < 4; i++)
+                Lay("2x4x12", Units.In(92.625f), O + new Vector3(6f + i * Units.In(16f), Units.In(92.625f) * 0.5f, 0f), Quaternion.LookRotation(Vector3.up, Vector3.forward));
+            var job = FramingJob.Create("Ghost test");
+            job.transform.SetParent(_root.transform, true);
+            Vector3 gc = O + new Vector3(6f + 4 * Units.In(16f), Units.In(92.625f) * 0.5f, 0f);
+            job.Add("Nail stud", ToolSets.Any, null, () => (gc, new Vector3(Units.In(3.5f), Units.In(92.625f), Units.In(1.5f)), Quaternion.identity));
+            yield return Frames(3);
+            var outline = GameObject.Find("LayoutGhost/Outline");
+            Assert.IsNotNull(outline, "layout ghost draws an outline");
+            var cam = Cam(O + new Vector3(6.6f, 1.3f, -1.6f), O + new Vector3(6.6f, 1.1f, 0f), 55f);
+            cam.transform.SetParent(_root.transform, true);
+            Shot(cam, "polish_05_layout_ghost");
+            Object.Destroy(job.gameObject);
+        }
+
         [UnityTest]
         public IEnumerator Nailing_LeavesHeads()
         {
