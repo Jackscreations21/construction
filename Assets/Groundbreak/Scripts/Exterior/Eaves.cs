@@ -236,7 +236,7 @@ namespace Groundbreak
                 }
                 // F-channel on the wall
                 Vector3 fc = e.P(e.L * 0.5f, e.WallOff + In(0.3f), y + In(0.15f));
-                b.AddBox(fc, new Vector3(e.L, In(0.9f), In(0.6f)), Quaternion.LookRotation(e.Along, up), sAl, Vector3.forward);
+                b.AddBox(fc, new Vector3(In(0.6f), In(0.9f), e.L), Quaternion.LookRotation(e.Along, up), sAl, Vector3.forward);
             }
             if (e.Wrapped)
             {

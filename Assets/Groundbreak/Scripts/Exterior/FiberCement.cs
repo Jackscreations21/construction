@@ -144,6 +144,9 @@ namespace Groundbreak
                 {
                     // band split at hole edges; planks tilt: bottom kicked out by the plank below
                     var ys = new List<float> { c.V0, top };
+                    bool covered = k + 1 < s.Courses.Count;
+                    float aoTop = c.V0 + s.Exposure, aoBot = aoTop - In(0.7f);
+                    if (covered && aoTop < top) { ys.Add(aoBot); ys.Add(aoTop); }
                     foreach (var h in holes) { if (h.yMin > c.V0 && h.yMin < top) ys.Add(h.yMin); if (h.yMax > c.V0 && h.yMax < top) ys.Add(h.yMax); }
                     ys.Sort();
                     float Zf(float v) => zb - Thick - kick * (1f - Mathf.Clamp01((v - c.V0) / PlankH));
@@ -156,6 +159,7 @@ namespace Groundbreak
                         foreach (var iv in Subtract(p.U0, p.U1, cuts))
                         {
                             b.AddQuad(new Vector3(iv.x, ya, Zf(ya)), new Vector3(iv.y, ya, Zf(ya)), new Vector3(iv.y, yb, Zf(yb)), new Vector3(iv.x, yb, Zf(yb)), 1, Out, Vector3.right);
+                            if (covered && ya >= aoBot - 1e-5f && yb <= aoTop + 1e-5f) AoStrip(b, iv.x, iv.y, ya, Zf(ya), yb, Zf(yb), aoTop, Zf(aoTop), 4);
                             b.AddQuad(new Vector3(iv.x, ya, Zk(ya)), new Vector3(iv.x, ya, Zf(ya)), new Vector3(iv.x, yb, Zf(yb)), new Vector3(iv.x, yb, Zk(yb)), 1, Vector3.left, Vector3.up);
                             b.AddQuad(new Vector3(iv.y, ya, Zk(ya)), new Vector3(iv.y, ya, Zf(ya)), new Vector3(iv.y, yb, Zf(yb)), new Vector3(iv.y, yb, Zk(yb)), 1, Vector3.right, Vector3.up);
                             if (j == 0) b.AddQuad(new Vector3(iv.x, ya, Zf(ya)), new Vector3(iv.y, ya, Zf(ya)), new Vector3(iv.y, ya, Zk(ya)), new Vector3(iv.x, ya, Zk(ya)), 1, Vector3.down, Vector3.right);
@@ -169,9 +173,9 @@ namespace Groundbreak
                 foreach (var n in c.Nails) b.AddCylinder(new Vector3(n.x, n.y, zb - Thick * 0.4f - In(0.03f)), Quaternion.Euler(-90f, 0f, 0f), In(0.14f), In(0.05f), 8, 3);
             }
             if (b.VertexCount == 0) return;
-            var mesh = Build(b, "FiberCement", 4);
+            var mesh = Build(b, "FiberCement", 5);
             var col = ExteriorLooks.FiberColor(s.ColorName);
-            w.Part("fc", "FiberCement", mesh, new[] { FinishMaterials.Get(ExteriorLooks.Trim, new Color(0.6f, 0.6f, 0.6f)), FinishMaterials.Get(ExteriorLooks.FiberCement, col), FinishMaterials.Get(ExteriorLooks.FlashTape), Materials.Get(SurfaceKind.Galvanized) }, "fc-course");
+            w.Part("fc", "FiberCement", mesh, new[] { FinishMaterials.Get(ExteriorLooks.Trim, new Color(0.6f, 0.6f, 0.6f)), FinishMaterials.Get(ExteriorLooks.FiberCement, col), FinishMaterials.Get(ExteriorLooks.FlashTape), Materials.Get(SurfaceKind.Galvanized), FinishMaterials.Get(ExteriorLooks.AO) }, "fc-course");
         }
     }
 
@@ -238,9 +242,12 @@ namespace Groundbreak
             var holes = ExteriorTrim.Holes(w);
             if (s.Panels)
             {
-                for (float x = run.x; x < run.y - 1e-3f; x += In(48f))
+                // 4' panels with their vertical joints centered on studs (48" from the wall end)
+                for (float x = w.B.xMin; x < run.y - 1e-3f; x += In(48f))
                 {
-                    var pr = Rect.MinMaxRect(x, y0, Mathf.Min(run.y, x + In(48f)) - In(0.0625f), y1);
+                    float px0 = Mathf.Max(run.x, x + (x > w.B.xMin ? In(0.03125f) : 0f)), px1 = Mathf.Min(run.y, x + In(48f) - In(0.03125f));
+                    if (px1 - px0 < In(1f)) continue;
+                    var pr = Rect.MinMaxRect(px0, y0, px1, y1);
                     PanelMesh.AddSlab(b, pr, holes, zb - PanelT, PanelT, 0, -1, 0, Vector3.up);
                 }
             }

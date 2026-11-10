@@ -131,6 +131,27 @@ namespace Groundbreak.Tests
             yield return Frames(2);
         }
 
+        // ------------------------------------------------------------------ cleanup (other suites measure the whole scene)
+
+        HashSet<GameObject> _before;
+
+        [UnitySetUp]
+        public IEnumerator Snapshot()
+        {
+            yield return null;
+            _before = new HashSet<GameObject>(UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects());
+        }
+
+        [UnityTearDown]
+        public IEnumerator Cleanup()
+        {
+            CloseupInspection.ClearMarkers();
+            foreach (var g in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+                if (_before != null && !_before.Contains(g) && g.GetComponent<PlayerRig>() == null) Object.Destroy(g);
+            FinishStock.Unlimited = false;
+            yield return null;
+        }
+
         // ------------------------------------------------------------------ tests
 
         [UnityTest]
@@ -196,7 +217,7 @@ namespace Groundbreak.Tests
             Assert.Greater(ExteriorTrim.CaulkAll(w), 0, "window perimeter sealed");
             yield return Frames(3);
 
-            var camC = Cam(O + new Vector3(I(10f), 1.55f, -1.1f), O + new Vector3(I(40f), 1.25f, 0f), 55f);
+            var camC = Cam(O + new Vector3(I(4f), 1.5f, -1.5f), O + new Vector3(I(40f), 1.62f, 0f), 55f);
             Shot(camC, "ext_vinyl_closeup");
             var camO = Cam(O + new Vector3(I(40f), 1.7f, -5.2f), O + new Vector3(I(72f), 1.45f, 0f));
             Shot(camO, "ext_vinyl_overview");
@@ -318,7 +339,7 @@ namespace Groundbreak.Tests
             yield return Frames(3);
             Shot(Cam(O + new Vector3(I(30f), 1.5f, -1.4f), O + new Vector3(I(64f), 1.2f, 0f), 55f), "ext_fibercement_closeup");
             Shot(Cam(O + new Vector3(I(96f), 1.7f, -5.5f), O + new Vector3(I(96f), 1.3f, 0f)), "ext_fibercement");
-            Shot(Cam(O2 + new Vector3(I(10f), 1.5f, -2.2f), O2 + new Vector3(I(48f), 1.2f, 0f), 55f), "ext_boardbatten");
+            Shot(Cam(O2 + new Vector3(I(90f), 1.5f, -2.0f), O2 + new Vector3(I(44f), 1.3f, 0f), 55f), "ext_boardbatten");
             var res = CloseupInspection.Run(CloseupInspection.Exterior);
             var mine = Near(res, w); mine.AddRange(Near(res, w2));
             Assert.AreEqual(0, mine.Count, "fiber cement + B&B pass:" + Dump(mine));
@@ -352,7 +373,7 @@ namespace Groundbreak.Tests
             Assert.Less(d.BalusterGap, I(4f));
             yield return Frames(3);
             Shot(Cam(R + new Vector3(I(-40f), 2.6f, -5.6f), R + new Vector3(I(110f), 0.6f, -1.4f), 58f), "ext_deck");
-            Shot(Cam(R + new Vector3(I(70f), 0.55f, -1.9f), R + new Vector3(I(70f), 0.5f, -0.2f), 60f), "ext_deck_ledger");
+            Shot(Cam(R + new Vector3(I(40f), -0.2f, -1.7f), R + new Vector3(I(70f), 0.05f, 0f), 62f), "ext_deck_ledger");
             var res = CloseupInspection.Run(CloseupInspection.Exterior);
             var mine = new List<CloseupInspection.Violation>();
             foreach (var v in res.Violations) if (v.RuleId.StartsWith("ext-deck") && Vector3.Distance(v.Position, R) < 12f) mine.Add(v);

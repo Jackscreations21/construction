@@ -10,7 +10,7 @@ namespace Groundbreak
     public static class ExteriorLooks
     {
         public const string Wrap = "ext-wrap", Tape = "ext-tape", FlashTape = "ext-flash", Vinyl = "ext-vinyl", FiberCement = "ext-fc",
-            PanelSiding = "ext-bb", Soffit = "ext-soffit", Trim = "ext-trim", Alum = "aluminum-white";
+            PanelSiding = "ext-bb", Soffit = "ext-soffit", AO = "ext-ao", Trim = "ext-trim", Alum = "aluminum-white";
 
         /// <summary>Vinyl colors (name, sRGB).</summary>
         public static readonly (string name, Color color)[] VinylColors =
@@ -54,14 +54,32 @@ namespace Groundbreak
             FinishMaterials.Register(Wrap, new FinishMaterials.Spec { Gen = WrapGen, Tile = 1.0f, Gloss = 0.22f, Bump = 0.5f, NormalStrength = 1.5f });
             FinishMaterials.Register(Tape, new FinishMaterials.Spec { Gen = () => FinishMaterials.FineSurface(C(150, 178, 208), 5101, 0.02f, 64), Tile = 0.3f, Gloss = 0.6f, Bump = 0.2f });
             FinishMaterials.Register(FlashTape, new FinishMaterials.Spec { Gen = FlashGen, Tile = 0.4f, Gloss = 0.45f, Bump = 0.6f, NormalStrength = 2f });
-            FinishMaterials.Register(Vinyl, new FinishMaterials.Spec { Gen = VinylGen, Tile = 0.8f, Gloss = 0.32f, Bump = 0.9f, NormalStrength = 3f });
+            FinishMaterials.Register(Vinyl, new FinishMaterials.Spec { Gen = VinylGen, Tile = 0.8f, Gloss = 0.3f, Bump = 0.35f, NormalStrength = 0.8f });
             FinishMaterials.Register(FiberCement, new FinishMaterials.Spec { Gen = CedarGen, Tile = 0.6f, Gloss = 0.1f, Bump = 0.6f, NormalStrength = 1.6f });
             FinishMaterials.Register(PanelSiding, new FinishMaterials.Spec { Gen = RoughSawnGen, Tile = 0.6f, Gloss = 0.08f, Bump = 0.6f, NormalStrength = 1.8f });
             FinishMaterials.Register(Soffit, new FinishMaterials.Spec { Gen = SoffitGen, Tile = Units.In(4f), Gloss = 0.3f, Bump = 0.8f, NormalStrength = 3f });
+            FinishMaterials.Register(AO, new FinishMaterials.Spec { Gen = AoGen, Tile = AoTile, Gloss = 0f, Bump = 0f, Mode = FinishMaterials.Blend.Fade });
             FinishMaterials.Register(Trim, new FinishMaterials.Spec { Gen = () => FinishMaterials.FineSurface(C(240, 240, 236), 5111, 0.02f, 80), Tile = 0.5f, Gloss = 0.28f, Bump = 0.3f });
         }
 
+        /// <summary>Height (m) one tile of the contact-shadow gradient covers.</summary>
+        public static readonly float AoTile = Units.In(0.6f);
+
         // ================================================================== generators
+
+        /// <summary>Contact shadow under a lap butt: black, alpha strongest at texture y = 0 (just under the butt).</summary>
+        static FinishCanvas AoGen()
+        {
+            const int n = 64; var c = new FinishCanvas(n);
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    int i = y * n + x; float t = (y + 0.5f) / n;
+                    c.Set(i, new Color(0.02f, 0.02f, 0.03f));
+                    c.A[i] = 0.62f * Mathf.Pow(Mathf.Clamp01(1f - t / 0.92f), 1.6f);
+                }
+            return c;
+        }
 
         static int Wp(int i, int n) { i %= n; return i < 0 ? i + n : i; }
 
@@ -155,11 +173,11 @@ namespace Groundbreak
                 for (int x = 0; x < n; x++)
                 {
                     int i = y * n + x; float u = (x + 0.5f) / n, v = (y + 0.5f) / n;
-                    float w = (Sample(warp, 128, u, v) - 0.5f) * 0.05f;
+                    float w = (Sample(warp, 128, u, v) - 0.5f) * 0.012f;
                     float g = Sample(grain, n, u, v + w) - 0.5f, s = Sample(streak, n, u, v + w) - 0.5f;
                     float line = Mathf.Pow(1f - Mathf.Abs(s * 2f), 6f);
                     c.Set(i, Color.white * (0.97f + g * 0.04f - line * 0.03f));
-                    c.H[i] = g * 0.9f - line * 0.6f;
+                    c.H[i] = g * 0.5f - line * 0.35f;
                     c.S[i] = 1f - line * 0.3f;
                 }
             return c;
@@ -302,6 +320,18 @@ namespace Groundbreak
         }
 
         public static float In(float inches) => Units.In(inches);
+
+        /// <summary>Contact-shadow decal on a sloped face strip (x0..x1, from (ya,za) up to (yb,zb)); darkest at topY.</summary>
+        public static void AoStrip(MeshBuilder b, float x0, float x1, float ya, float za, float yb, float zb, float topY, float ztop, int sub)
+        {
+            Vector3 e1 = new Vector3(0f, yb - ya, zb - za);
+            Vector3 n = Vector3.Cross(e1, Vector3.right).normalized; if (n.z > 0f) n = -n;
+            Vector3 v = new Vector3(0f, n.z, -n.y);
+            b.UvOffset = new Vector2(0f, -(v.y * topY + v.z * ztop));
+            const float lift = 0.0003f;
+            b.AddQuad(new Vector3(x0, ya, za - lift), new Vector3(x1, ya, za - lift), new Vector3(x1, yb, zb - lift), new Vector3(x0, yb, zb - lift), sub, Out, Vector3.right);
+            b.UvOffset = Vector2.zero;
+        }
 
         public static Mesh Build(MeshBuilder b, string name, int subs)
         {

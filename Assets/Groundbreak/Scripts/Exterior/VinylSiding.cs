@@ -41,7 +41,7 @@ namespace Groundbreak
             HemH = In(1.25f), SlotLo = In(8.35f), SlotHi = In(8.6f), SlotLen = In(1.125f), SlotPitch = In(1.5f),
             PanelLen = In(150f), EndLap = In(1f), Gap = In(0.25f), NailGap = In(1f / 32f),
             PostFace = In(3f), PostProud = In(1f), PostOut = In(1f), ChannelDepth = In(0.75f),
-            JFace = In(0.875f), JProud = In(0.75f), StarterH = In(2.5f);
+            JFace = In(0.875f), JProud = In(0.75f), StarterH = In(2.5f), AoH = In(0.55f);
 
         public class Panel { public float U0, U1; public int Layer; }
         public class Nail { public float U, V, SlotOffset, HeadGap; public bool InFraming; }
@@ -171,6 +171,7 @@ namespace Groundbreak
             LayoutPanels(s, c);
             if (!FinishStock.Take(ExteriorCatalog.VinylPanel, c.Panels.Count)) return null;
             s.Courses.Add(c);
+            if (below != null) RebuildCourse(w, below);
             RebuildCourse(w, c);
             if (v0 + Exposure >= s.TopLimit - JFace) s.Complete = true; // last (ripped) course
             Game.Toast($"Course {k + 1} locked into the {(k == 0 ? "starter strip" : "course below")} — nail it in the slot centers");
@@ -358,7 +359,7 @@ namespace Groundbreak
             foreach (var p in c.Panels)
             {
                 float dz = -p.Layer * 0.0008f;
-                var ys = new List<float> { c.V0, c.V0 + Lap, c.V0 + Exposure, c.V0 + SlotLo, c.V0 + SlotHi, c.V0 + Exposure + HemH, top };
+                var ys = new List<float> { c.V0, c.V0 + Lap - AoH, c.V0 + Lap, c.V0 + Exposure - AoH, c.V0 + Exposure, c.V0 + SlotLo, c.V0 + SlotHi, c.V0 + Exposure + HemH, top };
                 foreach (var h in holes) { ys.Add(h.yMin); ys.Add(h.yMax); }
                 ys.RemoveAll(y => y < c.V0 - 1e-5f || y > top + 1e-5f);
                 ys.Sort();
@@ -376,6 +377,9 @@ namespace Groundbreak
                     foreach (var iv in Subtract(p.U0, p.U1, cuts))
                     {
                         b.AddQuad(new Vector3(iv.x, ya, za), new Vector3(iv.y, ya, za), new Vector3(iv.y, yb, zbb), new Vector3(iv.x, yb, zbb), 0, Out, Vector3.right);
+                        // contact shadow just under the next butt (lap 2 of this course, lap 1 of the next)
+                        if (ya >= c.V0 + Lap - AoH - 1e-5f && yb <= c.V0 + Lap + 1e-5f) AoStrip(b, iv.x, iv.y, ya, za, yb, zbb, c.V0 + Lap, zb + dz - LapTop, 2);
+                        else if (ya >= c.V0 + Exposure - AoH - 1e-5f && yb <= c.V0 + Exposure + 1e-5f && !(c.Index == s.Courses.Count - 1)) AoStrip(b, iv.x, iv.y, ya, za, yb, zbb, c.V0 + Exposure, zb + dz - LapTop, 2);
                         if (!slotBand)
                         {
                             // cut ends (visible at laps / inside the J and posts)
@@ -407,13 +411,13 @@ namespace Groundbreak
                 float z = zb - HemP - n.HeadGap - In(0.03f);
                 b.AddCylinder(new Vector3(n.U, n.V, z), Quaternion.Euler(-90f, 0f, 0f), In(0.19f), In(0.06f), 10, 1);
             }
-            var mesh = Build(b, "VinylCourse", 2);
-            c.Go = w.Part("vinyl", "VinylCourse_" + (c.Index + 1), mesh, new[] { Mat(w), Materials.Get(SurfaceKind.Galvanized) }, "vinyl-course", c.Index);
+            var mesh = Build(b, "VinylCourse", 3);
+            c.Go = w.Part("vinyl", "VinylCourse_" + (c.Index + 1), mesh, new[] { Mat(w), Materials.Get(SurfaceKind.Galvanized), FinishMaterials.Get(ExteriorLooks.AO) }, "vinyl-course", c.Index);
             if (!c.Locked)
             {
                 // unzipped: the bottom lock swings out, hinged at the nail hem
                 var pivot = new Vector3(0f, c.V0 + Exposure + HemH, zb);
-                var rot = Quaternion.Euler(4f, 0f, 0f);
+                var rot = Quaternion.Euler(9f, 0f, 0f);
                 c.Go.transform.localRotation = rot;
                 c.Go.transform.localPosition = pivot - rot * pivot;
             }
