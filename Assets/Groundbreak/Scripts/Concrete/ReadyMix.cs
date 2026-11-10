@@ -319,6 +319,7 @@ namespace Groundbreak
         {
             var root = new GameObject("ReadyMixTruck");
             var t = root.AddComponent<ReadyMixTruck>();
+            TruckSounds.Attach(root); // engine + back-up alarm (Audio/)
             Color cabColor = new Color(0.95f, 0.95f, 0.93f);
             Color drumRed = new Color(0.75f, 0.08f, 0.06f);
             const float rear = 0f;   // z of the rear bumper plane, everything forward is +Z

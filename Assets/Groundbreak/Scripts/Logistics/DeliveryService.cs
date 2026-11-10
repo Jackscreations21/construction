@@ -158,6 +158,7 @@ namespace Groundbreak
         {
             var root = new GameObject("DeliveryTruck");
             ProductModels.BuildFlatbedTruck(root.transform);
+            TruckSounds.Attach(root); // engine + back-up alarm (Audio/)
             return root;
         }
 

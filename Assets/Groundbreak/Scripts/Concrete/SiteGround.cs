@@ -7,7 +7,7 @@ namespace Groundbreak
 
     /// <summary>
     /// Diggable building-site ground: a 60' x 60' heightfield (4" cells) spanning x -30'..30', z 0'..60', replacing the
-    /// flat bootstrap "Ground" plane (hidden at runtime; flat grass skirts continue it outward). Heights are per vertex,
+    /// flat bootstrap "Ground" plane inside the lot terrain (Grade owns the lot and cuts a hole for this pad). Heights are per vertex,
     /// ground cover (grass/dirt/gravel) and compaction per cell. Everything else uses HeightAt / Dig / Raise.
     /// </summary>
     public class SiteGround : MonoBehaviour
@@ -48,20 +48,8 @@ namespace Groundbreak
             Cover = new GroundCover[N * N];
             Compacted = new bool[N * N];
 
-            // Hide the flat bootstrap plane and continue grass outward with four skirts.
-            var plane = GameObject.Find("Ground");
+            // The lot terrain (Landscaping/Grade) owns the bootstrap "Ground" plane and cuts a hole for this pad (see Created).
             Material grass = Materials.Get(SurfaceKind.Grass);
-            if (plane != null)
-            {
-                var r = plane.GetComponent<Renderer>(); if (r != null) r.enabled = false;
-                var c = plane.GetComponent<Collider>(); if (c != null) c.enabled = false;
-            }
-            float far = 300f;
-            float x0 = Origin.x, x1 = Origin.x + Size, z0 = Origin.z, z1 = Origin.z + Size;
-            Skirt("SkirtSouth", new Vector3(-far, 0, -far), new Vector3(far, 0, z0), grass);
-            Skirt("SkirtNorth", new Vector3(-far, 0, z1), new Vector3(far, 0, far), grass);
-            Skirt("SkirtWest", new Vector3(-far, 0, z0), new Vector3(x0, 0, z1), grass);
-            Skirt("SkirtEast", new Vector3(x1, 0, z0), new Vector3(far, 0, z1), grass);
 
             _mesh = new Mesh { name = "SiteGround", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
             _mesh.MarkDynamic();
@@ -70,7 +58,14 @@ namespace Groundbreak
             mr.sharedMaterials = new[] { grass, Materials.Get(SurfaceKind.Dirt), Materials.Get(SurfaceKind.Gravel) };
             _col = gameObject.AddComponent<MeshCollider>();
             Rebuild();
+            Created?.Invoke(this);
         }
+
+        /// <summary>Raised once the pad exists; the lot terrain (Grade) hooks this to cut the pad out of itself and the ground plane.</summary>
+        public static event System.Action<SiteGround> Created;
+
+        /// <summary>The pad footprint in world XZ (x, z, width, depth).</summary>
+        public static Rect PadRect => new Rect(Origin.x, Origin.z, Size, Size);
 
         void Skirt(string name, Vector3 min, Vector3 max, Material m)
         {
