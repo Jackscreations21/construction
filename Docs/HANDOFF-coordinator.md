@@ -19,7 +19,10 @@ Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude
 - Pause everything if any plan limit (`get_usage` → plan.windows[].percentUsed) reaches **90%**.
 - If any session's context reaches **40%**: it commits `WIP:`, writes `Docs/HANDOFF-<name>.md`, reports "HANDOFF READY"; then YOU start a fresh session
   (`start_session`, initiation user_asked, use_worktree true, `source_branch` = that session's branch) whose brief is: read the handoff file and continue.
-  Same rule applies to you: at 40% context write a new coordinator handoff and start a fresh coordinator.
+  Lead session rule (user, 2026-11-09, replaces the old coordinator-40% rule): the coordinator is the **lead session**. When the lead's own
+  context reaches **50%**, tell every running milestone session to commit WIP and write `Docs/HANDOFF-<name>.md` (on its branch), wait for
+  their HANDOFF READY, then update this file as the lead handoff, commit + push, and give the user a ready-to-paste brief for a new lead
+  session. Do NOT auto-start the next lead; the user starts it.
 - Sessions may message each other (roster above). Note: Claude Desktop limits a session to ~10 cross-session messages per user message.
 
 ## Merging procedure
