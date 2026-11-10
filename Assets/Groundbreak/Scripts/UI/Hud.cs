@@ -44,10 +44,7 @@ namespace Groundbreak
             float sw = Screen.width, sh = Screen.height;
             float line = _label.fontSize * 1.5f;
 
-            // Crosshair
-            float c = Mathf.Max(6f, sh / 90f);
-            Fill(new Rect(sw / 2 - c, sh / 2 - 1, c * 2, 2), new Color(1, 1, 1, 0.85f));
-            Fill(new Rect(sw / 2 - 1, sh / 2 - c, 2, c * 2), new Color(1, 1, 1, 0.85f));
+            DrawCrosshair(sw, sh);
 
             // Top-right: snap, clock, money
             {
@@ -106,14 +103,61 @@ namespace Groundbreak
                     ShadowLabel(new Rect(12, y, Mathf.Max(leftW, sw * 0.5f), line), pc.StatusLine, _label);
             }
 
-            // Toast
-            if (Time.time < Game.ToastUntil && !string.IsNullOrEmpty(Game.ToastText))
+            DrawToast(sw, sh, line);
+        }
+
+        // ------------------------------------------------------------------ crosshair: dark outline for contrast on white
+        // drywall, tightens and turns accent when the aim hits something within reach, pulses on click.
+        float _aimK, _pulse;
+        void DrawCrosshair(float sw, float sh)
+        {
+            if (Event.current.type == EventType.Repaint)
             {
-                float tw = sw * 0.6f, th = line * 2;
-                var r = new Rect((sw - tw) / 2f, sh * 0.25f, tw, th);
-                UISkin.Panel(r);
-                GUI.Label(r, Game.ToastText, _center);
+                bool reach = Game.Player != null && Game.Player.TryAim(out var hit, 4f);
+                _aimK = Mathf.MoveTowards(_aimK, reach ? 1f : 0f, Time.unscaledDeltaTime * 8f);
+                if (Cursor.lockState == CursorLockMode.Locked && GInput.MouseDown(0)) _pulse = 1f;
+                _pulse = Mathf.MoveTowards(_pulse, 0f, Time.unscaledDeltaTime * 6f);
             }
+            float u = Mathf.Max(1f, Mathf.Round(sh / 720f));      // 1 px at 720p, 2 px at 1440p
+            float len = Mathf.Round(Mathf.Max(5f, sh / 110f)), gap = Mathf.Round(Mathf.Lerp(len * 0.9f, len * 0.45f, _aimK) + _pulse * len * 0.8f);
+            float th = 2f * u, cx = Mathf.Round(sw / 2f), cy = Mathf.Round(sh / 2f);
+            Color fg = Color.Lerp(new Color(1f, 1f, 1f, 0.75f), new Color(1f, 0.82f, 0.55f, 0.95f), _aimK);
+            Color ol = new Color(0f, 0f, 0f, 0.55f);
+            void Arm(Rect r) { Fill(new Rect(r.x - u, r.y - u, r.width + 2 * u, r.height + 2 * u), ol); }
+            var arms = new[]
+            {
+                new Rect(cx - gap - len, cy - th / 2, len, th), new Rect(cx + gap, cy - th / 2, len, th),
+                new Rect(cx - th / 2, cy - gap - len, th, len), new Rect(cx - th / 2, cy + gap, th, len),
+            };
+            foreach (var r in arms) Arm(r);
+            var dot = new Rect(cx - th / 2, cy - th / 2, th, th);
+            Arm(dot);
+            foreach (var r in arms) Fill(r, fg);
+            Fill(dot, fg);
+        }
+
+        // ------------------------------------------------------------------ toast: slides down + fades, accent bar, soft chime
+        string _lastToast; float _toastStart;
+        void DrawToast(float sw, float sh, float line)
+        {
+            if (string.IsNullOrEmpty(Game.ToastText) || Time.time >= Game.ToastUntil) { _lastToast = null; return; }
+            if (Game.ToastText != _lastToast)
+            {
+                if (_lastToast == null || Time.time - _toastStart > 0.3f) Sfx.Play("toast", Vector3.zero, 0.6f);
+                _lastToast = Game.ToastText; _toastStart = Time.time;
+            }
+            float age = Time.time - _toastStart, left = Game.ToastUntil - Time.time;
+            float a = Mathf.Clamp01(age / 0.15f) * Mathf.Clamp01(left / 0.35f);
+            float slide = (1f - Mathf.Clamp01(age / 0.18f)); slide *= slide;
+            float tw = Mathf.Min(sw * 0.6f, _center.fontSize * 34f);
+            float th = Mathf.Max(line * 1.6f, _center.CalcHeight(new GUIContent(Game.ToastText), tw - 40) + line * 0.6f);
+            var r = new Rect((sw - tw) / 2f, sh * 0.22f - slide * line, tw, th);
+            var prev = GUI.color;
+            GUI.color = new Color(1, 1, 1, a);
+            UISkin.Panel(r, new Color(0.07f, 0.09f, 0.11f, 0.9f * a));
+            Fill(new Rect(r.x + 8, r.y + 8, 3, r.height - 16), new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, a));
+            GUI.Label(new Rect(r.x + 20, r.y, r.width - 34, r.height), Game.ToastText, _center);
+            GUI.color = prev;
         }
     }
 }
