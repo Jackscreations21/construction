@@ -37,7 +37,7 @@ namespace Groundbreak
     }
 
     /// <summary>15 ga angled finish nailer: hangs prehung doors (nails through jamb + shims) and nails off trim.</summary>
-    public class FinishNailer : FinishTool
+    public class FinishNailer : CloseupTool
     {
         public override string Id => "finish-nailer";
         public override string Name => "15 ga Finish Nailer";
@@ -81,7 +81,7 @@ namespace Groundbreak
     }
 
     /// <summary>18 ga brad nailer: small trim and casing-to-jamb brads.</summary>
-    public class BradNailer : FinishTool
+    public class BradNailer : CloseupTool
     {
         public override string Id => "brad-nailer";
         public override string Name => "18 ga Brad Nailer";
@@ -96,7 +96,7 @@ namespace Groundbreak
     }
 
     /// <summary>10" compound miter saw: cut-and-fit casing, base and crown. RMB = profile, Shift+RMB = primed / red oak.</summary>
-    public class MiterSaw : FinishTool
+    public class MiterSaw : CloseupTool
     {
         public override string Id => "miter-saw";
         public override string Name => "10\" Compound Miter Saw";
@@ -132,7 +132,7 @@ namespace Groundbreak
     }
 
     /// <summary>Coping saw: cope an inside corner (re-cut an inside miter as a cope).</summary>
-    public class CopingSaw : FinishTool
+    public class CopingSaw : CloseupTool
     {
         public override string Id => "coping-saw";
         public override string Name => "Coping Saw";
@@ -162,7 +162,7 @@ namespace Groundbreak
     }
 
     /// <summary>Pneumatic flooring nailer (2" cleats): installs solid hardwood strip in the aimed room.</summary>
-    public class FlooringNailer : FinishTool
+    public class FlooringNailer : CloseupTool
     {
         public override string Id => "flooring-nailer";
         public override string Name => "Pneumatic Flooring Nailer";
@@ -176,7 +176,7 @@ namespace Groundbreak
     }
 
     /// <summary>LVP tapping block / pull bar: installs click LVP in the aimed room.</summary>
-    public class PullBar : FinishTool
+    public class PullBar : CloseupTool
     {
         public override string Id => "pull-bar";
         public override string Name => "LVP Tapping Block & Pull Bar";
@@ -190,7 +190,7 @@ namespace Groundbreak
     }
 
     /// <summary>1/4" x 3/8" square-notch trowel: spreads thinset on cement backer.</summary>
-    public class NotchedTrowel : FinishTool
+    public class NotchedTrowel : CloseupTool
     {
         public override string Id => "notched-trowel";
         public override string Name => "Notched Trowel 1/4 x 3/8";
@@ -203,7 +203,7 @@ namespace Groundbreak
     }
 
     /// <summary>Wet tile saw: cuts and sets tile into fresh thinset; on a countertop, tiles the subway backsplash.</summary>
-    public class TileSaw : FinishTool
+    public class TileSaw : CloseupTool
     {
         public override string Id => "tile-saw";
         public override string Name => "Wet Tile Saw";
@@ -219,7 +219,7 @@ namespace Groundbreak
     }
 
     /// <summary>Rubber grout float: grout (choose color with RMB) then sponge off the haze.</summary>
-    public class GroutFloat : FinishTool
+    public class GroutFloat : CloseupTool
     {
         public override string Id => "grout-float";
         public override string Name => "Grout Float & Sponge";
@@ -234,7 +234,7 @@ namespace Groundbreak
 
     /// <summary>Cordless drill/driver: hangs cabinets (screws through the hang rail into studs), sets countertops, screws
     /// cement backer. Shift+RMB changes the cabinet width.</summary>
-    public class FinDrill : FinishTool
+    public class FinDrill : CloseupTool
     {
         public override string Id => "fin-drill";
         public override string Name => "Cordless Drill/Driver";

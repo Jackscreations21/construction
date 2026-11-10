@@ -11,6 +11,19 @@ namespace Groundbreak.Tests
     {
         public static IEnumerator Frames(int n) { for (int i = 0; i < n; i++) yield return null; }
 
+        /// <summary>Destroys every Piece, finish layer, inspection flag and test camera so later tests start from a clean
+        /// site (tests share one booted scene). Call from [UnityTearDown].</summary>
+        public static IEnumerator CleanScene()
+        {
+            foreach (var p in Object.FindObjectsByType<Piece>(FindObjectsSortMode.None)) if (p != null) Object.Destroy(p.gameObject);
+            foreach (var f in Object.FindObjectsByType<FinishLayer>(FindObjectsSortMode.None))
+                if (f != null) Object.Destroy(f.transform.root == f.transform || f.transform.root.GetComponent<Piece>() != null ? f.gameObject : f.transform.root.gameObject);
+            foreach (var c in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None)) if (c != null && c.name == "FinishTestCam") Object.Destroy(c.gameObject);
+            CloseupInspection.ClearMarkers();
+            FinishStock.Unlimited = false;
+            yield return null;
+        }
+
         public static Piece Lumber(string id, float lengthM, Vector3 center, Quaternion rot)
         {
             var p = Piece.Create(Catalog.Get(id), lengthM, center, rot);

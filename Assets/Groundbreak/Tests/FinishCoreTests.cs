@@ -9,14 +9,16 @@ namespace Groundbreak.Tests
     /// <summary>Framework checks for the close-up/finish trades: framed-face discovery, bays, openings, obstacles, panels.</summary>
     public class FinishCoreTests
     {
+        [UnityTearDown] public System.Collections.IEnumerator TearDownScene() => FinishTestKit.CleanScene();
+
         [UnityTest]
         public IEnumerator FramePlaneFindsBaysOpeningsAndBoxes()
         {
             yield return Frames(5);
             var origin = new Vector3(40f, 0f, 40f);
             // 12' wall along +X, depth toward +Z; interior face is the +Z side? Depth goes +Z, so the face toward -Z is z = origin.z
-            StudWall(origin, Vector3.right, Vector3.forward, 144f, new Opening { LeftIn = 60f, WidthIn = 38f, SillIn = 0f, HeadIn = 82.5f });
-            CeilingJoists(origin, Vector3.right, Vector3.forward, 144f, 144f);
+            var made = StudWall(origin, Vector3.right, Vector3.forward, 144f, new Opening { LeftIn = 60f, WidthIn = 38f, SillIn = 0f, HeadIn = 82.5f });
+            made.AddRange(CeilingJoists(origin, Vector3.right, Vector3.forward, 144f, 144f));
             var box = OutletBox(origin + Vector3.right * Units.In(17.5f + 1f) + Vector3.up * Units.In(16f), Vector3.back);
             yield return Frames(3);
             Physics.SyncTransforms();
@@ -54,6 +56,8 @@ namespace Groundbreak.Tests
             var mesh = mb.Build();
             Assert.Greater(mesh.vertexCount, 40);
             Object.Destroy(box);
+            foreach (var p in made) if (p != null) Object.Destroy(p.gameObject); // leave the scene clean for other tests
+            yield return null;
         }
     }
 }

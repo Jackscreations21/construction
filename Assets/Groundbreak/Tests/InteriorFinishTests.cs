@@ -11,6 +11,8 @@ namespace Groundbreak.Tests
     /// <summary>Interior finish: prehung door + casing, base (coped/mitered), crown, LVP, tile, hardwood, kitchen run.</summary>
     public class InteriorFinishTests
     {
+        [UnityTearDown] public System.Collections.IEnumerator TearDownScene() => FinishTestKit.CleanScene();
+
         static readonly string[] ToolIds = { "finish-nailer", "brad-nailer", "miter-saw", "coping-saw", "flooring-nailer", "tile-saw", "notched-trowel", "grout-float", "pull-bar", "fin-drill", "caulk-gun" };
         Func<FramePlane, Vector2, float> _provider;
         readonly List<GameObject> _lights = new List<GameObject>();
