@@ -26,3 +26,14 @@
 
 ## State / next steps
 See the bottom of this file for the latest test status.
+
+## Status (latest run)
+- 0 compile errors; PlayMode 6/6 pass (2 milestone-1 + SaveLoadRoundTrip, InspectionFailsThenPasses, CareerContractPaidOnFinal, LandscapingShowcase).
+- Screenshots reviewed: `35_landscape_overview`, `36_walk_sod_closeup` — paver running bond, mulch bed with boxwoods/hostas, path lights, gravel drive, maple, fence read well.
+
+## Known issues / next steps
+1. Paver walk on convex grade: its sloped slab follows A→B linearly, so mid-run the side/edging shows above the lawn (looks like a black rail). Fix: sample grade along the run and raise/lower the field to the walk surface on both edges (backfill shoulders) after paving.
+2. Sod: the test lays rolls on a gappy pattern (test coordinates), and the Sod texture is brighter than the lawn — darken `LandSurface.Sod`, lay contiguous rows in the test.
+3. Fence reads as a flat brown panel from a distance — add gaps/shadow between pickets or slightly darker cedar.
+4. Not done: inspector/marker/menu screenshots not yet reviewed (`20-22_*`, `30-34`, `37-39`); truck engine/backup beeper are synthesized (`Sfx.Play("truck"/"beeper")`) but DeliveryService doesn't call them (shared file) — hook later.
+5. Autosave every 5 game minutes = every ~4 real seconds at 20 min/day (spec literal); `SaveSystem.AutosaveGameMinutes` is tunable.

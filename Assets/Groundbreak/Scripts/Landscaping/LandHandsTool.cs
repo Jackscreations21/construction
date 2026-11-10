@@ -84,7 +84,7 @@ namespace Groundbreak
                 }
             }
             foreach (var f in LandscapeFeature.All)
-                if (f.Kind == LandscapeKind.RetainingBlock && Vector3.Distance(f.A, pos) < BlockW * 0.4f) { msg = "A block is already there"; return null; }
+                if (f.Kind == LandscapeKind.RetainingBlock && Mathf.Abs(f.A.y - pos.y) < BlockH * 0.5f && new Vector2(f.A.x - pos.x, f.A.z - pos.z).magnitude < BlockW * 0.4f) { msg = "A block is already there"; return null; }
             if (!Game.Stock.TryTake("retaining-block", 1)) { msg = "No retaining wall blocks on site"; return null; }
             msg = "Block set";
             Sfx.Play("thud", pos, 0.7f);
