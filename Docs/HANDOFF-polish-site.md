@@ -29,7 +29,7 @@
 ## Status
 - Branch `claude/polish-site-8abb45`. Full PlayMode suite **35/35** (33 + 2 new `SiteLookTests`); 0 compile errors. Shots reviewed:
   `look_01..06`, `40/41`, `26`, `28`, trench close-ups.
-- Known: `look_06_dig_dust` showed no particles before `cullingMode = AlwaysSimulate` was added; not re-checked after that change.
+- Known: `look_06_dig_dust` shows only a faint dust puff; clods barely read at that distance. Next: bigger/darker clods, longer-lived dust, test the shot ~0.3 s after digging.
 
 ## Feel
 - `SiteLook/SiteFx.cs`: pooled world-space particles. `SiteFx.Dig(p)`, `Gravel(p)`, `Concrete(p)`, `Burst(...)`.
