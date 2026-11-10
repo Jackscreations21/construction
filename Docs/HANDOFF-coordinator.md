@@ -35,10 +35,11 @@ Branches: `claude/concrete-forms-e5b4e0`, `claude/shell-framing-146d5f`, `claude
 ## State of main
 Milestone 1 complete: snap grid/angles, tool belt + tools, tablet (store with category tabs, tool shop, deliveries, bank, help),
 76-item catalog with real models + procedural textures, extension points (`Catalog.Register`, `ToolFactory.Register`, `Tablet.RegisterApp/AddHelp`).
-Tests: `PlaythroughTests.Milestone1Playthrough`, `PlaythroughTests.Showroom`, `ConcreteSlabTests.SlabFromLayoutToCure` (3/3 passing).
+Tests: 7/7 passing after M4 merge (Milestone1Playthrough, Showroom, SlabFromLayoutToCure, WireRoom, DuctRoom, FlatCondensateAndAtticExhaustFail, PlumbBathroom).
 
 ## Merged milestones
 - M2 concrete-forms → main @ ee1ecc9 (2026-11-09). Session done. Docs/CONCRETE.md.
+- M4 mep-systems → main @ 75a838c (2026-11-09). Session done. Docs/MEP-BRIEF.md. Follow-up: bridge MepInspection rules into Inspections.Register(RoughMEP) (site-career-2).
 
 ## Lead decisions
 - Terrain (2026-11-09): `Grade` (site-career) owns the lot; `SiteGround` (concrete, 4" cells) is the 60'x60' building pad inside a hole in Grade;
