@@ -61,7 +61,7 @@ namespace Groundbreak
                 GUILayout.Label($"Last inspection - Day {last.Day}: {last.Summary}", header);
                 foreach (var n in last.Notes) GUILayout.Label("  " + n, label);
                 foreach (var i in last.Issues) GUILayout.Label("  CORRECTION: " + i.Message, label);
-                if (InspectionMarkers.Count > 0 && GUILayout.Button("Clear red flags", button, GUILayout.Width(fs * 10))) InspectionMarkers.ClearAll();
+                if (InspectionFlags.Count > 0 && GUILayout.Button("Clear red flags", button, GUILayout.Width(fs * 10))) InspectionFlags.ClearAll();
             }
         }
 

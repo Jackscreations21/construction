@@ -8,7 +8,7 @@ namespace Groundbreak
     public enum InspectionPhase { Footing, UnderSlab, Framing, RoughMEP, Insulation, Final }
 
     /// <summary>One problem the inspector found. With a position, a red marker is planted there.</summary>
-    public struct InspectionIssue
+    public struct InspectionItem
     {
         public string Message;
         public Vector3 Position;
@@ -16,8 +16,8 @@ namespace Groundbreak
         /// <summary>Filled in by the framework: which rule produced this issue.</summary>
         public string RuleId;
 
-        public InspectionIssue(string message) { Message = message; Position = default; HasPosition = false; RuleId = null; }
-        public InspectionIssue(string message, Vector3 worldPosition) { Message = message; Position = worldPosition; HasPosition = true; RuleId = null; }
+        public InspectionItem(string message) { Message = message; Position = default; HasPosition = false; RuleId = null; }
+        public InspectionItem(string message, Vector3 worldPosition) { Message = message; Position = worldPosition; HasPosition = true; RuleId = null; }
     }
 
     /// <summary>A code requirement checked during one inspection phase. Check returns the issues found (none = pass).</summary>
@@ -26,7 +26,7 @@ namespace Groundbreak
         public string Id;
         public InspectionPhase Phase;
         public string Description;
-        public Func<IEnumerable<InspectionIssue>> Check;
+        public Func<IEnumerable<InspectionItem>> Check;
     }
 
     public class InspectionResult
@@ -35,7 +35,7 @@ namespace Groundbreak
         public bool Passed;
         public int Day;
         public int RulesChecked;
-        public readonly List<InspectionIssue> Issues = new List<InspectionIssue>();
+        public readonly List<InspectionItem> Issues = new List<InspectionItem>();
         public readonly List<string> Notes = new List<string>();
         public string Summary => Passed ? $"{Inspections.Label(Phase)} inspection PASSED ({RulesChecked} items checked)"
                                         : $"{Inspections.Label(Phase)} inspection FAILED: {Issues.Count} correction(s)";
@@ -74,7 +74,7 @@ namespace Groundbreak
             _rules.Add(rule);
         }
 
-        public static void Register(string id, InspectionPhase phase, string description, Func<IEnumerable<InspectionIssue>> check) =>
+        public static void Register(string id, InspectionPhase phase, string description, Func<IEnumerable<InspectionItem>> check) =>
             Register(new InspectionRule { Id = id, Phase = phase, Description = description, Check = check });
 
         public static bool Unregister(string id) => _rules.RemoveAll(r => r.Id == id) > 0;
@@ -122,7 +122,7 @@ namespace Groundbreak
         {
             _passed.Clear(); _fails.Clear(); History.Clear();
             RequiredPhases = new List<InspectionPhase>(AllPhases);
-            InspectionMarkers.ClearAll();
+            InspectionFlags.ClearAll();
         }
 
         // ------------------------------------------------------------------ evaluation
@@ -148,7 +148,7 @@ namespace Groundbreak
                 }
                 catch (Exception e)
                 {
-                    res.Issues.Add(new InspectionIssue($"{rule.Description}: could not verify ({e.GetType().Name})") { RuleId = rule.Id });
+                    res.Issues.Add(new InspectionItem($"{rule.Description}: could not verify ({e.GetType().Name})") { RuleId = rule.Id });
                     Debug.LogWarning($"[Inspections] rule {rule.Id} threw: {e.Message}");
                 }
                 res.Notes.Add((res.Issues.Count == before ? "OK   " : "FIX  ") + rule.Description);
@@ -172,7 +172,7 @@ namespace Groundbreak
             if (res.Passed) _passed.Add(phase);
             else _fails[phase] = FailCount(phase) + 1;
             History.Add(res);
-            InspectionMarkers.Show(phase, res.Issues);
+            InspectionFlags.Show(phase, res.Issues);
             Game.Toast(res.Summary);
             Sfx.Play(res.Passed ? "success" : "error", Game.Player != null ? Game.Player.transform.position : Vector3.zero, 0.7f);
             try { Completed?.Invoke(res); } catch (Exception e) { Debug.LogException(e); }

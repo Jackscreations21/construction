@@ -49,14 +49,19 @@
 - Visual fixes: paver walk backfilled shoulders (no edging rail), edging top 1/2" below pavers; sod rolls darker and tilted to the slope
   (were sinking into the 6% grade = "gappy"); fence pickets have 3/8" gaps; inspector vest wraps the torso.
 - Truck audio (`Audio/TruckSounds.cs`).
+- Merged main with Milestone 4 MEP (2a90386) + shell framing. **Renamed my framework types** because shell-framing owns
+  `InspectionIssue` / `InspectionMarkers` (Scripts/Framing/FramingInspection.cs): the shared framework's types are now
+  **`InspectionItem`** (issue: message + optional world position) and **`InspectionFlags`** (red wire flags).
+- `Inspection/MepBridge.cs`: every `MepInspection.Rules` entry → `Inspections.Register("mep:<id>", RoughMEP, "<Trade>: <Text>")` (31 rules).
+- `Inspection/FramingBridge.cs`: `FramingInspection.Run()` (non-Ok items) → Framing-phase rule `framing:structure`.
+- Test `InspectionBridgeTests.MepRulesAreRoughMepInspections`.
 - Career test hides other tests' pieces on its lot (concrete slab forms sit on the career lot at the origin).
 
 ## State / next steps
 See the bottom of this file for the latest test status.
 
 ## Status (latest run)
-- 0 compile errors; PlayMode 8/8 pass (SlabFromLayoutToCure, SlabPadInsideGradedLot, Milestone1Playthrough, Showroom,
-  CareerContractPaidOnFinal, InspectionFailsThenPasses, LandscapingShowcase, SaveLoadRoundTrip).
+- 0 compile errors; PlayMode 24/24 pass after merging main (concrete, MEP, framing, stairs, site-career suites).
 - Reviewed: 20/20b inspector, 21/22 flags, 35/36/36b landscape + sod, 37 fence, 40/41 pad in lot.
 - Remaining nits: gate board grain runs sideways; trench walls on the pad keep grass cover (SiteGround marks only the rect cells Dirt).
 - Screenshots reviewed: `35_landscape_overview`, `36_walk_sod_closeup` — paver running bond, mulch bed with boxwoods/hostas, path lights, gravel drive, maple, fence read well.

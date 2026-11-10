@@ -51,9 +51,9 @@ namespace Groundbreak
             return Bridged;
         }
 
-        static IEnumerable<InspectionIssue> Convert(Delegate check)
+        static IEnumerable<InspectionItem> Convert(Delegate check)
         {
-            var list = new List<InspectionIssue>();
+            var list = new List<InspectionItem>();
             if (!(check.DynamicInvoke() is IEnumerable vs)) return list;
             foreach (var v in vs)
             {
@@ -61,7 +61,7 @@ namespace Groundbreak
                 var vt = v.GetType();
                 string msg = vt.GetField("Message")?.GetValue(v) as string ?? "Close-up inspection item";
                 var pos = vt.GetField("Position")?.GetValue(v);
-                list.Add(pos is Vector3 p ? new InspectionIssue(msg, p) : new InspectionIssue(msg));
+                list.Add(pos is Vector3 p ? new InspectionItem(msg, p) : new InspectionItem(msg));
             }
             return list;
         }

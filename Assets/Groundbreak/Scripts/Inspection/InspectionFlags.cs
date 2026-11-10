@@ -5,9 +5,9 @@ namespace Groundbreak
 {
     /// <summary>Red correction flags planted by the inspector at each issue (wire-stake marking flag + a floating red
     /// pointer so it's visible from across the site). Their notes are drawn on screen when the player is near.</summary>
-    public class InspectionMarkers : MonoBehaviour
+    public class InspectionFlags : MonoBehaviour
     {
-        static InspectionMarkers _i;
+        static InspectionFlags _i;
         readonly List<(GameObject go, string note, InspectionPhase phase)> _markers = new List<(GameObject, string, InspectionPhase)>();
         static Mesh _flagMesh, _pointerMesh;
         static Material[] _flagMats, _pointerMats;
@@ -18,9 +18,9 @@ namespace Groundbreak
             get { if (_i != null) foreach (var m in _i._markers) if (m.go != null) yield return m.go.transform.position; }
         }
 
-        static InspectionMarkers Inst()
+        static InspectionFlags Inst()
         {
-            if (_i == null) _i = new GameObject("InspectionMarkers").AddComponent<InspectionMarkers>();
+            if (_i == null) _i = new GameObject("InspectionFlags").AddComponent<InspectionFlags>();
             return _i;
         }
 
@@ -32,7 +32,7 @@ namespace Groundbreak
         }
 
         /// <summary>Replaces the markers of this phase with new ones for the given issues.</summary>
-        public static void Show(InspectionPhase phase, List<InspectionIssue> issues)
+        public static void Show(InspectionPhase phase, List<InspectionItem> issues)
         {
             var me = Inst();
             for (int k = me._markers.Count - 1; k >= 0; k--)

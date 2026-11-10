@@ -144,7 +144,7 @@ namespace Groundbreak.Tests
             Assert.NotNull(npc.Result, "inspection never finished: " + npc.Status + " at " + npc.transform.position + " t=" + Time.time);
             Assert.IsFalse(npc.Result.Passed, "loose studs should fail framing");
             Assert.AreEqual(3, npc.Result.Issues.Count, "3 loose studs");
-            Assert.AreEqual(3, InspectionMarkers.Count, "one red flag per loose stud");
+            Assert.AreEqual(3, InspectionFlags.Count, "one red flag per loose stud");
             Assert.IsTrue(Inspections.NeedsReinspection(InspectionPhase.Framing));
             yield return Frames(2);
             Shot(cam, "21_inspection_failed_flags");
@@ -161,7 +161,7 @@ namespace Groundbreak.Tests
             npc.FinishNow();
             Assert.IsTrue(npc.Result.Passed, "re-inspection should pass: " + string.Join("; ", npc.Result.Notes));
             Assert.IsTrue(Inspections.IsPassed(InspectionPhase.Framing));
-            Assert.AreEqual(0, InspectionMarkers.Count, "flags cleared after passing");
+            Assert.AreEqual(0, InspectionFlags.Count, "flags cleared after passing");
             yield return Frames(2);
             Shot(cam, "22_inspection_passed");
             Object.Destroy(npc.gameObject);

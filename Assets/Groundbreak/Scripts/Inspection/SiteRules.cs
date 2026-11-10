@@ -21,7 +21,7 @@ namespace Groundbreak
                 "Address numbers posted, visible from the street (IRC R319): mailbox or numbers", Address);
         }
 
-        static IEnumerable<InspectionIssue> LooseMembers()
+        static IEnumerable<InspectionItem> LooseMembers()
         {
             int n = 0;
             foreach (var p in Site.Pieces())
@@ -30,7 +30,7 @@ namespace Groundbreak
                 if (p.Def.Category != PieceCategory.Lumber && p.Def.Category != PieceCategory.Sheet) continue;
                 if (p.transform.position.y < 0.12f && Mathf.Abs(Vector3.Dot(p.transform.forward, Vector3.up)) < 0.3f
                     && p.GetComponentInParent<MaterialPile>() != null) continue; // stacked material, not structure
-                yield return new InspectionIssue($"{p.Def.Name} not fastened", p.transform.position);
+                yield return new InspectionItem($"{p.Def.Name} not fastened", p.transform.position);
                 if (++n >= 25) yield break;
             }
         }
@@ -68,7 +68,7 @@ namespace Groundbreak
             return Grade.HeightAt(p.x, p.z);
         }
 
-        static IEnumerable<InspectionIssue> GradeAway()
+        static IEnumerable<InspectionItem> GradeAway()
         {
             if (Site.FootprintSqFt() < DwellingSqFt || !Site.BuildingBounds(out var b)) yield break;
             int n = 0;
@@ -76,18 +76,18 @@ namespace Groundbreak
             {
                 float fall = FallAt(at, outward);
                 if (fall + Units.In(0.25f) >= RequiredFall) continue;
-                yield return new InspectionIssue($"Grade falls only {Units.Format(Mathf.Max(0, fall))} in 10' (need 6\")", at + outward * 1.5f);
+                yield return new InspectionItem($"Grade falls only {Units.Format(Mathf.Max(0, fall))} in 10' (need 6\")", at + outward * 1.5f);
                 if (++n >= 8) yield break;
             }
         }
 
-        static IEnumerable<InspectionIssue> Address()
+        static IEnumerable<InspectionItem> Address()
         {
             if (Site.FootprintSqFt() < DwellingSqFt) yield break;
             foreach (var f in LandscapeFeature.All)
                 if (f != null && f.Kind == LandscapeKind.Mailbox && Site.InLot(f.transform.position)) yield break;
             Vector3 p = Site.BuildingBounds(out var b) ? new Vector3(b.center.x, 0, b.min.z - 3f) : Site.LotCenter;
-            yield return new InspectionIssue("No address numbers / mailbox at the street", p);
+            yield return new InspectionItem("No address numbers / mailbox at the street", p);
         }
     }
 }
