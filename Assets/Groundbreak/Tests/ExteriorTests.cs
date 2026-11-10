@@ -149,7 +149,7 @@ namespace Groundbreak.Tests
             foreach (var g in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
                 if (_before != null && !_before.Contains(g) && g.GetComponent<PlayerRig>() == null) Object.Destroy(g);
             FinishStock.Unlimited = false;
-            yield return null;
+            yield return FinishTestKit.CleanScene(); // also returns the player to spawn
         }
 
         // ------------------------------------------------------------------ tests

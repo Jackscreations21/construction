@@ -21,6 +21,14 @@ namespace Groundbreak.Tests
             foreach (var c in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None)) if (c != null && c.name == "FinishTestCam") Object.Destroy(c.gameObject);
             CloseupInspection.ClearMarkers();
             FinishStock.Unlimited = false;
+            // put the player back at the bootstrap spawn (finish tests teleport it to their own sites, which may be off the ground patch)
+            if (Game.Player != null)
+            {
+                var cc = Game.Player.GetComponent<CharacterController>(); if (cc != null) cc.enabled = false;
+                Game.Player.transform.position = new Vector3(0f, 0f, -4f);
+                if (cc != null) cc.enabled = true;
+                Game.Player.SetLook(0f, 0f);
+            }
             yield return null;
         }
 

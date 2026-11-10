@@ -11,6 +11,8 @@ namespace Groundbreak.Tests
     /// the plates) under 12'x12' ceiling joists. Screenshots at every stage in Logs/shots/idw_*.png.</summary>
     public class InsulationDrywallTests
     {
+        [UnityEngine.TestTools.UnityTearDown] public System.Collections.IEnumerator TearDownScene() => FinishTestKit.CleanScene();
+
         static readonly Vector3 O = new Vector3(60f, Units.In(0.75f) + 0.002f, 60f);   // outside corner of the wall on top of the 3/4" subfloor
         static Vector3 In(float x, float y, float zIntoRoom) => O + new Vector3(Units.In(x), Units.In(y), -Units.In(zIntoRoom));
 
