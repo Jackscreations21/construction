@@ -604,9 +604,10 @@ namespace Groundbreak
                     }
                 if (kind < 0 || Mathf.Abs(c) > 12f * Units.Inch) { c = 0f; kind = -1; tp = _q.HitPiece; }
 
-                float l0 = lMin + hL, bl = Mathf.Abs(l0);
+                // walls are sheathed from the bottom up: the first course sits on the bottom of the wall
+                float l0 = lMin + hL, bl = wall && !sheetL ? 0f : Mathf.Abs(l0);   // (a sheet already in this column: the next one stacks on it)
                 void TryL(float cand) { if (Mathf.Abs(cand) < bl) { bl = Mathf.Abs(cand); l0 = cand; } }
-                TryL(lMax - hL);
+                if (!wall) TryL(lMax - hL);
                 if (sheetL) { TryL(sheetHi + hL); TryL(sheetLo - hL); }
                 if (bl > 24f * Units.Inch) l0 = GridFrom(0f, lMin + hL);
 

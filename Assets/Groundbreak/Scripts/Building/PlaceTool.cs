@@ -9,7 +9,7 @@ namespace Groundbreak
         public override string Name => "Hands / Place";
 
         public override string Hint =>
-            "LMB place · RMB pick up · [ ] material · Scroll rotate · Alt+Scroll pitch · Ctrl free-snap · F repeat · Ctrl+Z undo · G grid · R angle · O origin";
+            "LMB place · RMB pick up · [ ] material · Scroll rotate · Alt+Scroll pitch · Q next fit · Ctrl free-snap · F repeat · Ctrl+Z undo · G grid · R angle · O origin";
 
         public override void OnEquip() { if (Game.Placement != null) Game.Placement.Active = true; }
         public override void OnUnequip() { if (Game.Placement != null) Game.Placement.Active = false; }
