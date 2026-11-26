@@ -5,7 +5,7 @@ namespace Groundbreak
     /// <summary>In-game HUD (IMGUI): crosshair, belt, nails, snap readout, clock, money, placement status, tool hint, toasts.</summary>
     public class Hud : MonoBehaviour
     {
-        GUIStyle _label, _small, _center, _boxText;
+        GUIStyle _label, _small, _center, _boxText, _num, _slotName, _right;
         int _styleHeight;
 
         void EnsureStyles()
@@ -18,6 +18,9 @@ namespace Groundbreak
             _small = new GUIStyle(_label) { fontSize = Mathf.Max(10, Mathf.RoundToInt(fs * 0.75f)), alignment = TextAnchor.UpperCenter, wordWrap = true };
             _center = new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(fs * 1.15f), fontStyle = FontStyle.Bold, wordWrap = true };
             _boxText = new GUIStyle(_label) { alignment = TextAnchor.UpperRight };
+            _num = new GUIStyle(_label) { fontSize = Mathf.Max(10, Mathf.RoundToInt(fs * 0.7f)), fontStyle = FontStyle.Bold };
+            _slotName = new GUIStyle(_small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            _right = new GUIStyle(_label) { alignment = TextAnchor.UpperRight };
         }
 
         static void Fill(Rect r, Color c)
@@ -39,22 +42,24 @@ namespace Groundbreak
         void OnGUI()
         {
             if (Game.UIOpen) return;
+            GUI.depth = 1; // behind overlays from other scripts (Tab tool list, tool readouts)
             UISkin.Apply(); // site-career: shared rounded skin
             EnsureStyles();
             float sw = Screen.width, sh = Screen.height;
             float line = _label.fontSize * 1.5f;
 
-            DrawCrosshair(sw, sh);
+            if (!GInput.GetKey(KeyCode.Tab)) DrawCrosshair(sw, sh); // the Tab tool list sits at screen center
 
             // Top-right: snap, clock, money
             {
                 string text = $"Grid: {Game.Snap.GridLabel}   Angle: {Game.Snap.AngleLabel}\n"
                             + (GameClock.I != null ? GameClock.I.TimeLabel + "\n" : "")
                             + $"${Game.Wallet.Money:N0}";
-                float bw = _label.fontSize * 20, bh = line * 3 + 10;
+                var size = _boxText.CalcSize(new GUIContent(text));
+                float bw = Mathf.Ceil(size.x) + 28, bh = Mathf.Ceil(size.y) + 14;
                 var r = new Rect(sw - bw - 12, 12, bw, bh);
                 UISkin.Panel(r);
-                GUI.Label(new Rect(r.x + 8, r.y + 5, r.width - 16, r.height - 10), text, _boxText);
+                GUI.Label(new Rect(r.x + 14, r.y + 7, r.width - 28, r.height - 14), text, _boxText);
             }
 
             // Bottom center: belt
@@ -71,11 +76,13 @@ namespace Groundbreak
                     bool active = i == belt.ActiveIndex;
                     bool continuation = t != null && i > 0 && belt.Slots[i - 1] == t;
                     UISkin.Panel(r, active ? new Color(1f, 0.6f, 0.1f, 0.8f) : UISkin.PanelColor);
-                    GUI.Label(new Rect(r.x + 4, r.y + 2, 30, line), (i + 1).ToString(), _label);
+                    _num.normal.textColor = active ? new Color(0.12f, 0.08f, 0.03f, 0.8f) : new Color(0.7f, 0.74f, 0.8f);
+                    _slotName.normal.textColor = active ? new Color(0.1f, 0.07f, 0.02f) : (continuation ? new Color(0.7f, 0.74f, 0.8f) : Color.white);
+                    GUI.Label(new Rect(r.x + 6, r.y + 3, 30, line), (i + 1).ToString(), _num);
                     if (t != null)
                     {
                         string name = continuation ? "(" + t.Name + ")" : t.Name;
-                        GUI.Label(new Rect(r.x + 2, r.y + line * 0.8f, r.width - 4, r.height - line), name, _small);
+                        GUI.Label(new Rect(r.x + 4, r.y + line * 0.55f, r.width - 8, r.height - line * 0.55f - 8), name, _slotName);
                         if (t.Cordless)
                         {
                             var bar = new Rect(r.x + 4, r.yMax - 8, r.width - 8, 5);
@@ -85,22 +92,25 @@ namespace Groundbreak
                         }
                     }
                 }
-                ShadowLabel(new Rect(x0, y0 - line - 2, slotW * n, line), $"Nails: {belt.Nails} / {belt.NailCapacity}", _label);
+                ShadowLabel(new Rect(x0, y0 - line - 2, slotW * n - 4, line), $"Nails: {belt.Nails} / {belt.NailCapacity}", _right);
             }
 
-            // Bottom-left: placement status + tool hint
+            // Above the belt, left-aligned with it: tool hint, placement status above that (never under the belt)
             {
-                float y = sh - 12 - line;
-                float leftW = Mathf.Max(200f, (sw - Mathf.Min(sw, _label.fontSize * 7f * 8)) / 2f - 20);
+                int n = belt != null && belt.Slots != null ? belt.Slots.Length : 8;
+                float slotW = Mathf.Min(sw / (n + 2), _label.fontSize * 7f), beltW = slotW * n, slotH = slotW * 0.7f;
+                float x = Mathf.Max(12f, (sw - beltW) / 2f + 2), y = sh - slotH - 12 - line - 2;
+                float nailsW = belt != null ? _right.CalcSize(new GUIContent($"Nails: {belt.Nails} / {belt.NailCapacity}")).x + 16 : 0f;
+                float wHint = Mathf.Max(beltW - nailsW - 4, 300f);
                 var tool = belt != null ? belt.Active : null;
                 if (tool != null && !string.IsNullOrEmpty(tool.Hint))
                 {
-                    ShadowLabel(new Rect(12, y, leftW, line), tool.Hint, _label);
+                    ShadowLabel(new Rect(x, y, wHint, line), tool.Hint, _label);
                     y -= line;
                 }
                 var pc = Game.Placement;
                 if (pc != null && pc.Active && !string.IsNullOrEmpty(pc.StatusLine))
-                    ShadowLabel(new Rect(12, y, Mathf.Max(leftW, sw * 0.5f), line), pc.StatusLine, _label);
+                    ShadowLabel(new Rect(x, y, Mathf.Max(wHint, sw - x - 12), line), pc.StatusLine, _label);
             }
 
             DrawToast(sw, sh, line);
