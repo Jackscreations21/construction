@@ -103,3 +103,9 @@ Monitor cron now every 5 min, pauses at 88% (usage climbs ~1 pt/min). After a pa
 Merge order hint: town-repairs first (others adapt to Town), then yard-fleet, crew-workers, development; ui-capture changes Tablet layout — merge it
 before the business apps if possible, else re-check tab layout after.
 User rule (2026-11-26): nested sessions run on Opus (`claude-opus-5-5`) — pass `model` when starting new ones; the 8 current sessions were switched with set_session_model (applies from each one's next turn).
+
+## PAUSED 2026-11-26 ~17:17 UTC — plan 5-hour limit hit 95% (8 sessions burn ~4 pts/min; 5-min ticks were too slow)
+All 8 sessions told to commit WIP and stop (stop_session used so the queued message runs). Resets 20:10 UTC. A one-shot cron at 15:14 local resumes
+four sessions by SendMessage and recreates the monitor (pause threshold 85%). Lesson: with 8 sessions check usage every ~2 min or run at most 4.
+Branches: check `git branch -a` for claude/town-repairs-*, yard-fleet-*, crew-workers-*, smart-placement-*, development-*, structure-extras-*,
+mep-site-details-*, ui-capture-*; none merged yet.
