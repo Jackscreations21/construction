@@ -95,7 +95,9 @@ namespace Groundbreak
             if (string.IsNullOrEmpty(jobId)) return "Yard (idle)";
             if (jobId == SiteJobId) return "My build site";
             var j = Company.ActiveJobs.Find(x => x.Id == jobId);
-            return j != null ? j.Title : "(finished job)";
+            if (j != null) return j.Title;
+            var p = Projects.Get(jobId);   // a spec house (Development) has a project id but no Job
+            return p != null && p.Lot != null ? $"Spec house {p.Lot.Address}" : "(finished job)";
         }
 
         public static Worker HireCandidate(Candidate c, out string msg)
