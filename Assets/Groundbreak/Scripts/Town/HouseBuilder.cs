@@ -296,8 +296,6 @@ namespace Groundbreak
                 Solid(new Vector3(a, F + 1.37f, zb), new Vector3(b, F + 2.13f, zb + 0.31f), box);
                 Col(new Vector3(a, F + 1.37f, zb), new Vector3(b, F + 2.13f, zb + 0.31f));
             }
-            // fridge at the end of the run
-            Furn(new Vector3(x1 + 0.05f, F, zb), new Vector3(x1 + 0.96f, F + 1.78f, zb + 0.76f), new Color(0.78f, 0.79f, 0.80f));
         }
 
         static void Bath(float hd)
