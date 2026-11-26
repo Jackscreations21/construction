@@ -14,6 +14,8 @@ namespace Groundbreak
         public Bounds WorldBounds;
         readonly List<GameObject> _parked = new List<GameObject>();
         public IReadOnlyList<GameObject> ParkedVehicles => _parked;
+        /// <summary>Optional: vehicles not to draw in a stall (Integration: the drivable work van while it exists in town).</summary>
+        public static System.Func<OwnedVehicle, bool> SkipParked;
 
         // Layout (local) filled by the level builders.
         readonly List<(Vector3 pos, Vector3 room)> _shelfSlots = new List<(Vector3, Vector3)>();   // pallet-rack beam levels
@@ -54,6 +56,16 @@ namespace Groundbreak
         }
 
         void OnDestroy() { if (I == this) I = null; }
+
+        /// <summary>World pose of parking stall i (vehicles park in Company.Vehicles order). False if there is no such stall.</summary>
+        public bool TryStall(int i, out Vector3 pos, out float yaw)
+        {
+            pos = Vector3.zero; yaw = 0f;
+            if (i < 0 || i >= _stalls.Count) return false;
+            pos = W(_stalls[i].pos); pos.y = transform.position.y;
+            yaw = _stalls[i].yaw + transform.eulerAngles.y;
+            return true;
+        }
 
         Vector3 W(Vector3 local) => transform.TransformPoint(local);
 
@@ -437,6 +449,7 @@ namespace Groundbreak
             {
                 var v = Company.Vehicles[i];
                 if (Fleet.IsBusy(v.Uid)) continue;
+                if (SkipParked != null && SkipParked(v)) continue;   // e.g. the work van, which is out driving in town
                 GameObject go;
                 try { go = VehicleModels.Build(v.TypeId, _contents, Fleet.HasRack(v.Uid)); }
                 catch (System.Exception e) { Debug.LogWarning($"[Yard] vehicle model {v.TypeId}: {e.Message}"); continue; }
