@@ -117,6 +117,13 @@ namespace Groundbreak
                 var c = new Vector3(rx, rY, 0); var d = new Vector3(-rx, rY, 0);
                 var n = new Vector3(0, 1, s * Pitch).normalized;
                 _k.B.AddQuad(a, b, c, d, roof, n, Vector3.right);
+                int line = _k.M(RoofMat(roofT * 0.55f));
+                Vector3 upS = (d - a).normalized; float slope = (d - a).magnitude;
+                for (float u = 0.127f; u < slope - 0.05f; u += 0.127f)
+                {
+                    Vector3 o = n * 0.003f + upS * u;
+                    _k.B.AddQuad(a + o, b + o, b + o + upS * 0.012f, a + o + upS * 0.012f, line, n, Vector3.right);
+                }
                 var down = Vector3.down * th;
                 _k.B.AddQuad(a + down, b + down, c + down, d + down, _trim, -n);
                 _k.B.AddQuad(a + down, a, d, d + down, _trim, Vector3.left);
@@ -151,7 +158,7 @@ namespace Groundbreak
             // ---- bath
             Bath(hd);
             // ---- furniture (simple)
-            Furn(new Vector3(-3.95f, F, 0.55f), new Vector3(-1.85f, F + 0.85f, 1.45f), new Color(0.35f, 0.40f, 0.46f)); // sofa
+            Sofa(-2.9f, 1.0f);
             Furn(new Vector3(2.0f, F, -0.5f), new Vector3(3.53f, F + 0.6f, 1.5f), new Color(0.80f, 0.78f, 0.72f));      // queen bed
 
             // ---- deck, fence
@@ -170,6 +177,23 @@ namespace Groundbreak
             lot.House = _h;
             var house = _h; _k = null; _go = null; _h = null;
             return house;
+        }
+
+        /// <summary>84" sofa centred at (x, z), back toward +Z (the front windows), facing the room.</summary>
+        static void Sofa(float x, float z)
+        {
+            int fab = _k.M(new Color(0.33f, 0.38f, 0.44f)), cush = _k.M(new Color(0.40f, 0.45f, 0.52f)), leg = _k.M(SurfaceKind.Walnut);
+            float hl = 1.07f, z0 = z - 0.45f, z1 = z + 0.45f;
+            Solid(new Vector3(x - hl, F + 0.1f, z0), new Vector3(x + hl, F + 0.42f, z1), fab);                       // base
+            Solid(new Vector3(x - hl + 0.2f, F + 0.42f, z0 + 0.02f), new Vector3(x - 0.005f, F + 0.5f, z1 - 0.2f), cush);  // seat cushions
+            Solid(new Vector3(x + 0.005f, F + 0.42f, z0 + 0.02f), new Vector3(x + hl - 0.2f, F + 0.5f, z1 - 0.2f), cush);
+            Solid(new Vector3(x - hl, F + 0.42f, z1 - 0.2f), new Vector3(x + hl, F + 0.86f, z1), fab);              // back
+            Solid(new Vector3(x - hl, F + 0.42f, z0), new Vector3(x - hl + 0.2f, F + 0.64f, z1), fab);             // arms
+            Solid(new Vector3(x + hl - 0.2f, F + 0.42f, z0), new Vector3(x + hl, F + 0.64f, z1), fab);
+            foreach (float lx in new[] { x - hl + 0.05f, x + hl - 0.09f })
+                foreach (float lz in new[] { z0 + 0.05f, z1 - 0.09f })
+                    Solid(new Vector3(lx, F, lz), new Vector3(lx + 0.04f, F + 0.1f, lz + 0.04f), leg);
+            Col(new Vector3(x - hl, F, z0), new Vector3(x + hl, F + 0.86f, z1));
         }
 
         static void AddLight(Vector3 local)
@@ -424,10 +448,10 @@ namespace Groundbreak
             _h.SetAnchor(HouseSpot.TubCaulk, new Vector3(tx1, F + 0.406f, zb + 0.762f), toMinusX);
             float eZ = hd + Over, eY = PT + Heel - Over * Pitch, ang = Mathf.Atan(Pitch);
             Vector3 up = new Vector3(0, Mathf.Sin(ang), -Mathf.Cos(ang)), n = new Vector3(0, Mathf.Cos(ang), Mathf.Sin(ang));
-            float workX = hw - 2.6f;
+            float workX = -2.7f;   // between the living window and the front door: clear of the driveway and shrubs
             _h.SetAnchor(HouseSpot.RoofShingles, new Vector3(workX, eY, eZ) + up * 1.0f, Quaternion.LookRotation(up, n));
             _h.SetAnchor(HouseSpot.Gutter, new Vector3(workX, _h.EaveHeight, eZ + 0.09f), outward);
-            _h.SetAnchor(HouseSpot.LadderFront, new Vector3(hw - 1.4f, 0f, eZ + 0.9f), outward);
+            _h.SetAnchor(HouseSpot.LadderFront, new Vector3(workX, 0f, eZ + 0.9f), outward);
             var swLocal = _go.transform.InverseTransformPoint(sidewalkWorld);
             _h.SetAnchor(HouseSpot.SidewalkSquare, swLocal, inward);
 
