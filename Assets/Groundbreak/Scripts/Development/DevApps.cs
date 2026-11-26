@@ -78,7 +78,7 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ Builder
 
-        static void BuilderApp()
+        internal static void BuilderApp()
         {
             if (!GameSettings.IsCareer) { GUILayout.Label("Builder jobs are part of Career mode.", Hd); return; }
             GUILayout.Label($"{Company.Name} · stage {Company.Stage} · reputation {Company.Reputation}", Hd);
