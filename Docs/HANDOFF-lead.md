@@ -2,7 +2,7 @@
 
 You are the **lead session**. Work in this checkout on `main`. Read `CLAUDE.md`, `Docs/BUSINESS.md`, then this file.
 (`Docs/HANDOFF-coordinator.md` is the long history; this file is the current state and wins where they differ.)
-Previous lead: `local_54073d16-4b24-4e7f-9bca-a4603ff30909` (context reached the 50% rule).
+Previous lead: `local_54073d16-4b24-4e7f-9bca-a4603ff30909` (context reached the 50% rule). New lead: `local_98a2032f-a420-4a0a-9364-69a1031cb23c`, started and detached 2026-11-26; helpers were told to report to it; the old lead's usage check is stopped.
 
 ## What the user wants
 A realistic first-person house-building game (Unity 6000.6.8f1, everything from code) that is also a full business game:
