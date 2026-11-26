@@ -114,3 +114,5 @@ mep-site-details-*, ui-capture-*; none merged yet.
 Running (Opus): town-repairs, yard-fleet, crew-workers, smart-placement — told to use at most one helper agent at a time.
 Waiting (resume by SendMessage as slots free): development, structure-extras, mep-site-details, ui-capture.
 Monitor cron every 4 min, pause threshold 85%. Parallelism doesn't add throughput when the plan limit is the bottleneck; keep it at 4.
+
+2026-11-26 ~20:15 UTC: user said start the waiting four too → all 8 running on Opus (verified via get_session). Monitor every 2 min, pause at 82%.
