@@ -67,7 +67,11 @@ namespace Groundbreak
             public List<KV> ext = new List<KV>();
         }
 
-        public static string Dir => Path.Combine(Application.persistentDataPath, "saves");
+        // Batch-mode runs (tests) get a folder per project checkout, so parallel test runs in different worktrees
+        // don't fight over the same autosave file. The real game keeps the plain "saves" folder.
+        static string _dir;
+        public static string Dir => _dir ??= Path.Combine(Application.persistentDataPath,
+            Application.isBatchMode ? "saves-test-" + ((uint)Application.dataPath.GetHashCode()).ToString("x8") : "saves");
         public static string PathFor(string slot) => Path.Combine(Dir, Sanitize(slot) + ".json");
         static string Sanitize(string s) { foreach (var c in Path.GetInvalidFileNameChars()) s = s.Replace(c, '_'); return s; }
 
