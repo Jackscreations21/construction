@@ -132,5 +132,89 @@ namespace Groundbreak.Tests
             Shot(Cam(s1.FrontWorld + new Vector3(0.06f, 0.03f, -0.25f), s1.FrontWorld, 45f), "detail_08_switch_plate");
             Shot(Cam(o2.transform.position + new Vector3(0.15f, 0.12f, 0.12f), o2.transform.position, 50f), "detail_09_box_back");
         }
+            [UnityTest]
+        public IEnumerator DuctSeamsAndJoints()
+        {
+            yield return Frames(10);
+            MepStock.Free = true;
+            if (GameClock.I != null) GameClock.I.Hours = 11f;
+            Vector3 O = new Vector3(-30f, 0f, 48f);
+            NetRun Run(string spec, float y, float z, params string[] tags)
+            {
+                var pts = new List<Vector3> { O + new Vector3(0, y, z), O + new Vector3(3.66f, y, z) };
+                var res = RunBuilder.Route(RunSpecs.Get(spec), pts, null, null);
+                Assert.IsTrue(res.Ok, "duct route failed: " + string.Join("; ", res.Warnings));
+                foreach (var t in tags) res.Runs[0].Tags.Add(t);
+                return res.Runs[0];
+            }
+            var trunk = Run(HvacSpecs.Trunk8x12, 1.2f, 0f, "conditioned");
+            var raw = Run(HvacSpecs.Round6, 1.1f, -0.6f, "conditioned");
+            var taped = Run(HvacSpecs.Round6, 1.1f, -1.1f, "conditioned", "sealed");
+            var attic = Run(HvacSpecs.Round6, 1.1f, -1.6f, "attic");
+            var to = HvacBuild.Takeoff(trunk, O + new Vector3(2.4f, 1.2f, 0f), Vector3.up, 6f);
+            Assert.NotNull(to, "takeoff");
+            yield return Frames(2);
+            DuctDetail.Apply();
+            yield return Frames(2);
+            foreach (var r in NetGraph.RunsOf(Trade.Hvac))
+                if (r != null && r.Spec.Kind == NetKind.Duct) Assert.IsNotNull(r.transform.Find("Detail"), "detail on " + r.Spec.Id);
+            Assert.IsTrue(DuctDetail.InAttic(attic));
+            Assert.IsFalse(DuctDetail.InAttic(trunk));
+
+            Vector3 j = O + new Vector3(I(60f), 1.2f, 0f);
+            Shot(Cam(j + new Vector3(0.25f, 0.35f, -0.55f), j, 50f), "detail_10_duct_rect_joint");
+            Vector3 jr = O + new Vector3(I(60f), 1.1f, -0.6f);
+            Shot(Cam(jr + new Vector3(0.12f, 0.15f, -0.32f), jr, 50f), "detail_11_duct_round_crimp_screws");
+            Vector3 jt = O + new Vector3(I(60f), 1.1f, -1.1f);
+            Shot(Cam(jt + new Vector3(0.12f, 0.15f, -0.32f), jt, 50f), "detail_12_duct_round_taped");
+            Vector3 tk = to.transform.position;
+            Shot(Cam(tk + new Vector3(-0.3f, 0.35f, -0.4f), tk, 50f), "detail_13_takeoff_collar");
+            Shot(Cam(O + new Vector3(1.0f, 1.9f, -3.2f), O + new Vector3(1.8f, 1.1f, -0.8f), 55f), "detail_14_duct_overview_attic_wrap");
+        }
+            [UnityTest]
+        public IEnumerator DigGravelPourDust()
+        {
+            yield return Frames(10);
+            if (GameClock.I != null) GameClock.I.Hours = 10.5f;
+            Weather.ForceRain = false;
+            Vector3 at = new Vector3(-36f, 0.02f, 60f);
+            Vector3 eye = at + new Vector3(-0.6f, 1.63f, -3.0f);
+
+            // scaling: a bucket throws more dust than a shovelful
+            SiteFx.Clear(); SiteFx.WindOverride = Vector3.zero;
+            SiteFx.Dig(at, 1f); int shovel = SiteFx.DustAlive;
+            SiteFx.Clear();
+            SiteFx.Dig(at, 1.8f); int bucket = SiteFx.DustAlive;
+            Assert.Greater(bucket, shovel, "bucket dust should exceed shovel dust");
+            SiteFx.Clear();
+
+            // wind drift: a 2 m/s east wind carries the cloud east
+            SiteFx.WindOverride = new Vector3(2f, 0, 0);
+            SiteFx.Dig(at, 1f);
+            yield return new WaitForSeconds(1.5f);
+            Assert.Greater(SiteFx.DustCentroid().x, at.x + 0.6f, "dust should drift downwind");
+            SiteFx.Clear();
+
+            // mid-dig: three shovelfuls, shot ~0.3 s after the last one, from standing eye height
+            SiteFx.WindOverride = new Vector3(0.8f, 0, 0.3f);
+            for (int i = 0; i < 3; i++) { SiteFx.Dig(at + new Vector3(0.05f * i, 0, 0), 1f); yield return new WaitForSeconds(0.35f); }
+            yield return new WaitForSeconds(0.3f);
+            Assert.Greater(SiteFx.DustAlive, 10);
+            Shot(Cam(eye, at + Vector3.up * 0.45f, 60f), "detail_15_dig_dust_shovel");
+            yield return new WaitForSeconds(1.2f);
+            Shot(Cam(eye, at + Vector3.up * 0.45f, 60f), "detail_16_dig_dust_drift");
+            SiteFx.Clear();
+            for (int i = 0; i < 2; i++) { SiteFx.Dig(at, 1.8f); yield return new WaitForSeconds(0.4f); }
+            yield return new WaitForSeconds(0.25f);
+            Shot(Cam(eye + new Vector3(0, 0.6f, -1.5f), at + Vector3.up * 0.5f, 60f), "detail_17_dig_dust_excavator");
+            SiteFx.Clear();
+            for (int i = 0; i < 4; i++) { SiteFx.Gravel(at + new Vector3(0.1f * i, 0, 0)); yield return new WaitForSeconds(0.12f); }
+            yield return new WaitForSeconds(0.35f);
+            Shot(Cam(eye, at + Vector3.up * 0.45f, 60f), "detail_18_gravel_dump_dust");
+            SiteFx.Clear();
+            for (int i = 0; i < 6; i++) { SiteFx.Concrete(at); yield return new WaitForSeconds(0.1f); }
+            Shot(Cam(at + new Vector3(-0.4f, 1.2f, -1.6f), at + Vector3.up * 0.2f, 55f), "detail_19_concrete_spatter");
+            SiteFx.Clear(); SiteFx.WindOverride = null; Weather.ForceRain = null;
+        }
     }
 }

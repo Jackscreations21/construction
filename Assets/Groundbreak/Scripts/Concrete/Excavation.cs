@@ -89,7 +89,7 @@ namespace Groundbreak
             if (!Ready(0.12f) || !CTool.Aim(out var hit, 9f) || SiteGround.I == null || !SiteGround.InPatch(hit.point)) return;
             Park(hit.point);
             float cut = SiteGround.I.DigTo(hit.point, 0.16f, SiteLayout.BenchmarkY - _depth);
-            if (cut > 0) { _dig = 1f; SiteFx.Burst(hit.point, SiteFx.DirtColor, 18, 0.05f, 1.2f, 2.2f); }
+            if (cut > 0) { _dig = 1f; SiteFx.Dig(hit.point, 1.8f); }
         }
 
         void SecondaryHeld()
