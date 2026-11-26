@@ -13,7 +13,7 @@ namespace Groundbreak
         {
             TownHook.JobLotProvider = i =>
             {
-                List<TownLot> lots = Town.Addresses.ToList();
+                List<TownLot> lots = Town.Addresses.Where(l => l.Category == "residential").ToList();
                 var l = lots[i % lots.Count];
                 return (l.Center, l.Address);
             };

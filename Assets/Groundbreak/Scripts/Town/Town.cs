@@ -22,6 +22,19 @@ namespace Groundbreak
         public float ParkingYaw;     // heading (degrees) of a vehicle parked there
         public Vector3 FrontDoor;    // standing spot just outside the front door (lot centre for empty lots)
         public TownHouse House;      // null for empty lots / the build site / the store
+        // ---- full map (Scripts/Map, additive): lots added by the map layout. Core town lots keep the defaults.
+        /// <summary>True for lots added by the map (<see cref="AddLot"/>); the core TownBuilder ignores them.</summary>
+        public bool External;
+        /// <summary>Map district id ("oldtown", "downtown", "north", "strip", "industrial", "farms"...).</summary>
+        public string District = "oldtown";
+        /// <summary>"residential", "commercial", "civic", "industrial", "farm" or "land".</summary>
+        public string Category = "residential";
+        /// <summary>Building type id (map model type, e.g. "twostory", "storefront", "barn"; "ranch" = an enterable TownHouse), null for empty land.</summary>
+        public string TypeId;
+        /// <summary>Optional house plan id (Docs/PLANS.md) the building is drawn from; may name a plan that is not registered — look it up and tolerate null.</summary>
+        public string PlanId;
+        /// <summary>Repair service calls need an enterable <see cref="TownHouse"/> (HouseSpot anchors). False for map buildings without one.</summary>
+        public bool ServiceCalls = true;
 
         public Vector3 Center => new Vector3(Rect.center.x, 0f, Rect.center.y);
         public float Frontage => Mathf.Abs(Front.x) > 0.5f ? Rect.height : Rect.width;
@@ -39,6 +52,12 @@ namespace Groundbreak
     {
         public string Name;
         public Vector3 A, B;          // centreline ends (axis aligned)
+        /// <summary>Half the pavement width (curb face to centreline). Core streets: <see cref="Town.RoadHalf"/>.</summary>
+        public float HalfWidth = Town.RoadHalf;
+        /// <summary>The street continues past its min / max end (the map joins another street there): no barricade.</summary>
+        public bool OpenMin, OpenMax;
+        /// <summary>True for streets added by the map (<see cref="Town.AddStreet"/>).</summary>
+        public bool External;
         public bool EastWest => Mathf.Abs(A.z - B.z) < 0.01f;
     }
 
@@ -66,6 +85,12 @@ namespace Groundbreak
 
         static readonly List<TownLot> _lots = new List<TownLot>();
         static readonly List<TownStreet> _streets = new List<TownStreet>();
+        static readonly List<TownStreet> _allStreets = new List<TownStreet>();
+        static bool _extending;
+
+        /// <summary>Map extension (Scripts/Map): called once at the end of the layout to add lots (<see cref="AddLot"/>) and streets
+        /// (<see cref="AddStreet"/>). Lots it adds are <see cref="TownLot.External"/>.</summary>
+        public static Action ExtendLayout;
         static GameObject _root;
         static Vector3? _hq;
 
@@ -73,7 +98,12 @@ namespace Groundbreak
         public static event Action Built, Destroyed, LotsChanged;
 
         public static IReadOnlyList<TownLot> Lots { get { Layout(); return _lots; } }
+        /// <summary>The core town's four streets (what TownBuilder draws).</summary>
         public static IReadOnlyList<TownStreet> Streets { get { Layout(); return _streets; } }
+        /// <summary>Core streets plus the map's streets (navigation, <see cref="NearestRoadPoint"/>, <see cref="OnRoad"/>).</summary>
+        public static IReadOnlyList<TownStreet> AllStreets { get { Layout(); return _allStreets; } }
+        /// <summary>Only the core town's lots (TownBuilder builds these).</summary>
+        public static IEnumerable<TownLot> CoreLots { get { foreach (var l in Lots) if (!l.External) yield return l; } }
         /// <summary>Customer houses (the lots repair and remodel jobs happen at).</summary>
         public static IEnumerable<TownLot> Addresses { get { foreach (var l in Lots) if (l.Use == LotUse.Customer) yield return l; } }
         /// <summary>Empty lots nobody has claimed yet (later stages buy/claim these with <see cref="Claim"/>).</summary>
@@ -136,7 +166,7 @@ namespace Groundbreak
         public static Vector3 NearestRoadPoint(Vector3 p)
         {
             Vector3 best = p; float bd = float.MaxValue;
-            foreach (var s in Streets)
+            foreach (var s in AllStreets)
             {
                 Vector3 ab = s.B - s.A;
                 float t = Mathf.Clamp01(Vector3.Dot(p - s.A, ab) / ab.sqrMagnitude);
@@ -151,7 +181,15 @@ namespace Groundbreak
         public static bool OnRoad(Vector3 p)
         {
             Vector3 q = NearestRoadPoint(p);
-            return Mathf.Abs(q.x - p.x) <= RoadHalf && Mathf.Abs(q.z - p.z) <= RoadHalf;
+            float hw = RoadHalf;
+            foreach (var s in AllStreets)
+            {
+                Vector3 ab = s.B - s.A;
+                float t = Mathf.Clamp01(Vector3.Dot(p - s.A, ab) / ab.sqrMagnitude);
+                Vector3 r = s.A + ab * t;
+                if (Mathf.Abs(r.x - q.x) < 0.01f && Mathf.Abs(r.z - q.z) < 0.01f) { hw = s.HalfWidth; break; }
+            }
+            return Mathf.Abs(q.x - p.x) <= hw && Mathf.Abs(q.z - p.z) <= hw;
         }
 
         /// <summary>Builds the 3D town if it is not there yet (cheap to call). Career mode calls this on a new game / load.</summary>
@@ -236,7 +274,29 @@ namespace Groundbreak
             Add("main-121", "Main St", 121, LotUse.Free, Rect.MinMaxRect(100f, MainZ + RowHalf, 222f, 40f), Vector3.back, "");         // ~2.8 acre tract
             Add("maple-300", "Maple Ave", 300, LotUse.Free, Rect.MinMaxRect(MapleX + RowHalf, 48f, 222f, 145f), Vector3.left, "");     // ~3 acre tract
             Add("oak-301", "Oak St", 301, LotUse.Free, Rect.MinMaxRect(-222f, 30f, OakX - RowHalf, 145f), Vector3.right, "");           // ~3.5 acre tract
+            _allStreets.AddRange(_streets);
+            if (ExtendLayout != null && !_extending)
+            {
+                _extending = true;
+                try { ExtendLayout(); }
+                catch (Exception e) { Debug.LogError("[Town] map layout extension failed: " + e); }
+                finally { _extending = false; }
+            }
         }
+
+        /// <summary>Adds a lot from the map layout (only inside <see cref="ExtendLayout"/>). Parking / FrontDoor get the Town defaults for the use;
+        /// the caller may overwrite them. Returns null if the id exists.</summary>
+        public static TownLot AddLot(string id, string street, int number, LotUse use, Rect rect, Vector3 front, string resident)
+        {
+            foreach (var l in _lots) if (string.Equals(l.Id, id, StringComparison.OrdinalIgnoreCase)) return null;
+            Add(id, street, number, use, rect, front, resident);
+            var lot = _lots[_lots.Count - 1];
+            lot.External = true;
+            return lot;
+        }
+
+        /// <summary>Adds a map street (navigation only: the core TownBuilder never draws it).</summary>
+        public static void AddStreet(TownStreet s) { s.External = true; _allStreets.Add(s); }
 
         static void Add(string id, string street, int number, LotUse use, Rect rect, Vector3 front, string resident)
         {
@@ -302,7 +362,7 @@ namespace Groundbreak
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void StaticReset() { _lots.Clear(); _streets.Clear(); _root = null; _hq = null; Built = null; Destroyed = null; LotsChanged = null; }
+        static void StaticReset() { _lots.Clear(); _streets.Clear(); _allStreets.Clear(); _extending = false; _root = null; _hq = null; Built = null; Destroyed = null; LotsChanged = null; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Init() { SaveSystem.RegisterExtension("town", Save, Load); }
