@@ -73,7 +73,7 @@ namespace Groundbreak.Tests
             else if (p == "pergola") { cam = new Vector3(5f, 3.2f, 6f); look = new Vector3(0, 1.4f, 0); }
             else if (Floor.Contains(p)) { cam = new Vector3(0.5f, 1.3f, 1.4f + sz.z * 0.4f); look = new Vector3(0, 0.05f, -sz.z * 0.2f); }
             else if (p == "fascia" || p == "gutter" || p == "soffit") { cam = new Vector3(0.4f, -1.0f, 2.4f); look = new Vector3(0, -0.15f, 0); }
-            else if (p == "doorhw" || p == "transition") { cam = new Vector3(0.2f, 1.4f, 1.6f); look = new Vector3(0, 1.0f, 0); }
+            else if (p == "doorhw") { cam = new Vector3(0.35f, 1.75f, 0.9f); look = new Vector3(-0.4f, 1.7f, 0f); }
             else if (p == "ledger") { cam = new Vector3(0.4f, 0.6f, 1.6f); look = new Vector3(0, -0.08f, 0); }
             else { float h = Mathf.Max(0.15f, sz.y); cam = new Vector3(0.3f, h * 0.55f + 0.1f, 0.6f + Mathf.Max(sz.x, h) * 0.9f); look = new Vector3(0, h * 0.5f, 0); }
             bool indoor = def.Where != null && !def.Where.Outdoor;

@@ -43,6 +43,9 @@ namespace Groundbreak
             Rust = new Color(0.5f, 0.3f, 0.15f), Wall = new Color(0.93f, 0.92f, 0.88f), Crack = new Color(0.15f, 0.14f, 0.13f), Orange = new Color(0.95f, 0.5f, 0.1f);
         static readonly Quaternion Qx = Quaternion.Euler(90, 0, 0), Qz = Quaternion.Euler(0, 0, 90);
 
+        /// <summary>Flat disc facing down (ceiling decals).</summary>
+        static void DiscDown(RM m, Vector3 c, float r, int mat, int seg = 16) => m.L.B.AddDisc(c, Quaternion.identity, r, seg, mat, false);
+
         static void Puddle(RM m, Vector3 c, float r) => m.Disc(c + Vector3.up * 0.003f, r, m.Mat(Water), 16);
         static void CrackLine(RM m, Vector3 a, Vector3 b, Vector3 normal, int mat, int segs = 5, float jig = 0.02f)
         {
@@ -240,13 +243,13 @@ namespace Groundbreak
                 bool newFix = c.Def.Id.Contains("swap") && c.Did("hang");
                 m.Cyl(new Vector3(0, -0.008f, 0), 0.17f, 0.016f, newFix ? m.Mat(SurfaceKind.MatteBlack) : white, 20);
                 m.L.B.AddFrustum(new Vector3(0, -0.06f, 0), Quaternion.Euler(180, 0, 0), 0.15f, 0.08f, 0.09f, 18, glass);
-                if (c.Bad && c.Def.Id.Contains("flicker")) m.Disc(new Vector3(0, -0.11f, 0), 0.04f, m.Mat(Stain));
+                if (c.Bad && c.Def.Id.Contains("flicker")) DiscDown(m, new Vector3(0, -0.11f, 0), 0.04f, m.Mat(Stain));
             });
 
             Register("smoke", (m, c) =>
             {
                 m.Cyl(new Vector3(0, -0.02f, 0), 0.065f, 0.04f, m.Mat(SurfaceKind.PaintedWhite, c.CauseFixed ? Color.white : new Color(0.9f, 0.86f, 0.7f)), 18);
-                m.Disc(new Vector3(0, -0.041f, 0.03f), 0.004f, m.Mat(c.Bad ? new Color(0.9f, 0.1f, 0.1f) : new Color(0.1f, 0.8f, 0.2f)));
+                DiscDown(m, new Vector3(0, -0.041f, 0.03f), 0.004f, m.Mat(c.Bad ? new Color(0.9f, 0.1f, 0.1f) : new Color(0.1f, 0.8f, 0.2f)));
             });
 
             Register("fan", (m, c) =>
@@ -254,7 +257,7 @@ namespace Groundbreak
                 int white = m.Mat(SurfaceKind.PaintedWhite);
                 if (c.Has("grille-off")) { m.Box(new Vector3(0, 0.0f, 0), new Vector3(0.22f, 0.012f, 0.22f), m.Mat(SurfaceKind.Galvanized)); m.Cyl(new Vector3(0, -0.04f, 0), 0.06f, 0.05f, m.Mat(SurfaceKind.DarkPlastic), 12); }
                 else for (int i = -3; i <= 3; i++) m.Box(new Vector3(0, -0.012f, i * 0.035f), new Vector3(0.26f, 0.014f, 0.018f), white);
-                if (c.Bad) m.Disc(new Vector3(0.05f, -0.022f, 0.12f), 0.06f, m.Mat(new Color(0.55f, 0.55f, 0.5f)));
+                if (c.Bad) DiscDown(m, new Vector3(0.05f, -0.022f, 0.12f), 0.06f, m.Mat(new Color(0.55f, 0.55f, 0.5f)));
             });
 
             Register("doorbell", (m, c) =>
@@ -416,13 +419,15 @@ namespace Groundbreak
                 // origin on the inside wall face at the window sill line, +Z into the room
                 int paint = m.Mat(SurfaceKind.PaintedWhite), glass = m.Mat(SurfaceKind.Glass);
                 float w = 1.1f;
-                float lower = c.Bad ? 0.0f : (c.Has("stops-off") ? 0.1f : 0.0f);
+                float lower = c.Bad ? 0.0f : (c.Def.Id.Contains("task") ? 0f : 0.3f);
+                var tilt = c.Bad && c.CauseId == "balance" ? Quaternion.Euler(0, 0, 2.2f) : Quaternion.identity;
                 m.Box(new Vector3(0, 0.02f, 0.03f), new Vector3(w + 0.1f, 0.025f, 0.08f), paint);       // stool
-                m.Box(new Vector3(0, 0.3f + lower, -0.02f), new Vector3(w, 0.6f, 0.04f), paint);
-                m.Box(new Vector3(0, 0.3f + lower, -0.02f), new Vector3(w - 0.1f, 0.5f, 0.045f), glass);
+                m.Box(new Vector3(0, 0.3f + lower, -0.02f), new Vector3(w, 0.6f, 0.04f), tilt, paint);
+                m.Box(new Vector3(0, 0.3f + lower, -0.02f), new Vector3(w - 0.1f, 0.5f, 0.045f), tilt, glass);
                 m.Box(new Vector3(0, 0.88f, -0.06f), new Vector3(w, 0.6f, 0.04f), paint);
                 m.Box(new Vector3(0, 0.88f, -0.06f), new Vector3(w - 0.1f, 0.5f, 0.045f), glass);
-                if (c.Bad && c.CauseId == "paint") m.Box(new Vector3(0, 0.6f, 0.0f), new Vector3(w, 0.006f, 0.005f), m.Mat(Crack));
+                if (c.Bad && c.CauseId == "paint") m.Box(new Vector3(0, 0.6f, 0.0f), new Vector3(w, 0.012f, 0.006f), m.Mat(new Color(0.85f, 0.83f, 0.75f)));
+                if (c.Bad && c.CauseId == "balance") m.Box(new Vector3(-w / 2 + 0.03f, 0.15f, -0.01f), new Vector3(0.02f, 0.3f, 0.02f), m.Mat(Rust));   // broken balance tube hanging
                 if (c.Has("stops-off")) m.Box(new Vector3(0.2f, 0.01f, 0.4f), new Vector3(0.02f, 0.012f, 1.2f), paint);
             });
 
@@ -455,9 +460,9 @@ namespace Groundbreak
             {
                 if (c.Has("cut-open")) { m.Box(new Vector3(0, 0.05f, 0), new Vector3(0.4f, 0.1f, 0.4f), m.Mat(new Color(0.1f, 0.1f, 0.1f))); m.Box(new Vector3(0, 0.05f, 0.05f), new Vector3(0.03f, 0.03f, 0.5f), m.Mat(SurfaceKind.PineLumber)); return; }
                 bool painted = c.Did("paint-ceiling");
-                if (!painted) m.Disc(new Vector3(0, -0.003f, 0), 0.28f, m.Mat(c.Did("prime") ? Color.white : Stain), 20);
-                if (!painted && !c.Did("prime")) m.Disc(new Vector3(0.03f, -0.004f, 0.02f), 0.18f, m.Mat(new Color(0.62f, 0.52f, 0.38f)), 18);
-                if (c.Did("patch")) m.Box(new Vector3(0, -0.002f, 0), new Vector3(0.42f, 0.002f, 0.42f), m.Mat(Color.white));
+                if (!painted) DiscDown(m, new Vector3(0, -0.003f, 0), 0.28f, m.Mat(c.Did("prime") ? Color.white : Stain), 20);
+                if (!painted && !c.Did("prime")) DiscDown(m, new Vector3(0.03f, -0.004f, 0.02f), 0.18f, m.Mat(new Color(0.45f, 0.36f, 0.24f)), 18);
+                if (c.Did("patch") && !c.Did("paint-ceiling")) m.Box(new Vector3(0, -0.002f, 0), new Vector3(0.42f, 0.002f, 0.42f), m.Mat(Color.white));
             });
 
             Register("wallcrack", (m, c) =>
@@ -531,14 +536,10 @@ namespace Groundbreak
             Register("roofpatch", (m, c) =>
             {
                 // RoofShingles frame: +Y roof normal, +Z up-slope, +X along the eave
-                int sh = m.Mat(SurfaceKind.DarkPlastic, new Color(0.35f, 0.34f, 0.33f)), sh2 = m.Mat(SurfaceKind.DarkPlastic, new Color(0.28f, 0.28f, 0.29f));
-                for (int r = 0; r < 6; r++) for (int i = 0; i < 4; i++)
-                {
-                    bool missing = c.Bad && c.CauseId == "shingle" && r == 2 && i == 1;
-                    bool lifted = c.Has("tabs-up") && r == 3 && (i == 1 || i == 2);
-                    if (missing) { m.Box(new Vector3(-0.45f + i * 0.3f + (r % 2) * 0.15f, 0.004f, -0.35f + r * 0.14f), new Vector3(0.3f, 0.002f, 0.14f), m.Mat(new Color(0.15f, 0.25f, 0.4f))); continue; }
-                    m.Box(new Vector3(-0.45f + i * 0.3f + (r % 2) * 0.15f, lifted ? 0.03f : 0.006f, -0.35f + r * 0.14f), new Vector3(0.298f, 0.005f, 0.14f), lifted ? Quaternion.Euler(-15, 0, 0) : Quaternion.identity, (r + i) % 3 == 0 ? sh2 : sh);
-                }
+                int sh = m.Mat(SurfaceKind.DarkPlastic, new Color(0.32f, 0.31f, 0.3f)), felt = m.Mat(new Color(0.12f, 0.12f, 0.13f));
+                if (c.Bad && c.CauseId == "shingle" && !c.Has("tabs-up")) m.Box(new Vector3(-0.15f, 0.004f, -0.07f), new Vector3(0.3f, 0.002f, 0.14f), felt);   // bare mat where the tab blew off
+                if (c.Has("tabs-up")) for (int i = 0; i < 3; i++) m.Box(new Vector3(-0.3f + i * 0.3f, 0.05f, 0.08f), new Vector3(0.298f, 0.005f, 0.2f), Quaternion.Euler(-18, 0, 0), sh);
+                if (c.Did("shingle")) m.Box(new Vector3(-0.15f, 0.006f, -0.07f), new Vector3(0.3f, 0.003f, 0.14f), m.Mat(SurfaceKind.DarkPlastic, new Color(0.4f, 0.39f, 0.38f)));
                 // plumbing vent pipe with boot
                 m.Cyl(new Vector3(0.35f, 0.12f, 0.15f), 0.024f, 0.25f, m.Mat(SurfaceKind.PaintedWhite));
                 m.L.B.AddFrustum(new Vector3(0.35f, 0.03f, 0.15f), Quaternion.identity, 0.12f, 0.03f, 0.06f, 14, c.Bad && c.CauseId == "boot" ? m.Mat(new Color(0.3f, 0.3f, 0.28f)) : m.Mat(SurfaceKind.MatteBlack));
@@ -679,7 +680,7 @@ namespace Groundbreak
                         float w = Mathf.Min(bl, L / 2 - x);
                         m.Box(new Vector3(x + w / 2f, y, 0.005f), new Vector3(w, bh, 0.012f), brick);
                     }
-                    if (c.Bad && !c.Did("point") && (r == 3 || r == 4)) m.Box(new Vector3(-0.3f, y + bh / 2f + j / 2f, 0.004f), new Vector3(0.9f, j, 0.004f), raking ? raked : m.Mat(new Color(0.55f, 0.53f, 0.5f)));
+                    if (c.Bad && !c.Did("point") && (r == 3 || r == 4)) m.Box(new Vector3(-0.3f, y + bh / 2f + j / 2f, 0.012f), new Vector3(0.9f, j * 1.4f, 0.004f), raking ? raked : m.Mat(new Color(0.3f, 0.27f, 0.24f)));
                 }
                 m.Box(new Vector3(0, 0.61f, -0.1f), new Vector3(L + 0.05f, 0.04f, 0.24f), m.Mat(SurfaceKind.Concrete));   // cap
                 m.Box(new Vector3(0, 0.6f, -0.5f), new Vector3(L, 0.02f, 0.6f), m.Mat(SurfaceKind.Dirt));
