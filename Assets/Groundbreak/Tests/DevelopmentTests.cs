@@ -78,7 +78,7 @@ namespace Groundbreak.Tests
                 Debug.Log($"[Dev] {pl.Id}: {pl.SqFt} sf, walls {pl.Walls.Count}, openings {pl.Openings.Count}, materials ${pl.Takeoff.MaterialTotal:N0}, total ${pl.Takeoff.Total:N0} (${pl.Takeoff.Total / pl.SqFt:0}/sf), {pl.TotalDays} days");
             Assert.AreEqual(6, HousePlans.All.Count);
             Assert.AreEqual(2400f, HousePlans.Get("twostory-2400").SqFt);
-            foreach (var pl in HousePlans.All) Assert.That(pl.Takeoff.Total / pl.SqFt, Is.InRange(95f, 200f), pl.Id + " $/sq ft");
+            foreach (var pl in HousePlans.All) Assert.That(pl.Takeoff.Total / pl.SqFt, Is.InRange(110f, 200f), pl.Id + " $/sq ft");
         }
 
         // ------------------------------------------------------------------ overlay

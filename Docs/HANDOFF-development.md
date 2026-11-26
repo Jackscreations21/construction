@@ -30,6 +30,17 @@ Branch `claude/development-3892f9`. No shared files edited (Company, Career, Ins
 - `DevApps.cs` — tablet apps "Plans", "Builder", "Development" (+ site-plan map); `NeighborhoodComplete` screen + summary.
 - `DevSave.cs` — SaveSystem key `"development"` (re-applies the on-site lot/inspection state in `AfterLoad`).
 
+## Plan format
+Data-driven, documented in `Docs/PLANS.md` (fields, coordinates, rules for derived walls/openings, `HousePlans.Register`).
+Finish grade scales finish costs: `HousePlan.FinishFactor(level)`; spec houses override with `HouseProject.FinishLevel`.
+
+## How to test
+- Batch suite (CLAUDE.md command): `DevelopmentTests` = takeoff hand count (starter-900), plan overlay, builder draws on
+  inspections + change order + warranty, buy land + plat 14 lots + site work, spec street at staggered stages + sale,
+  full neighborhood completion + summary, save round-trip. World shots: `Logs/shots/dev_01..06_*.png`.
+- App shots need the windowed UI capture (`Docs/UI-CAPTURE.md`): `ui_tablet_plans/builder/development.png`.
+- Apps: Plans in group "Plans"; Builder + Development in "Business". Builder/Development are Career-only.
+
 ## Not done / next
 - IMGUI app screenshots can't be taken in batchmode (OnGUI doesn't run); world screenshots only.
 - After the Town merge: check `TownLotAdapter` against the real API, and that `DevVisuals` roads only draw for fallback lots.

@@ -103,6 +103,9 @@ namespace Groundbreak
             p == BuildPhase.Foundation ? InspectionPhase.Footing : p == BuildPhase.Framing ? InspectionPhase.Framing :
             p == BuildPhase.RoughIn ? InspectionPhase.RoughMEP : p == BuildPhase.Drywall ? InspectionPhase.Insulation : InspectionPhase.Final;
 
+        /// <summary>Finish-phase cost multiplier for a finish level 0..1 (builder grade ≈ 0.9, standard ≈ 1.25, custom ≈ 1.6).</summary>
+        public static float FinishFactor(float level) => 0.4f + 1.4f * Mathf.Clamp01(level);
+
         public static string Label(BuildPhase p) => p == BuildPhase.RoughIn ? "Rough-in" : p.ToString();
 
         /// <summary>Working days a normal crew needs for each phase (scaled by size).</summary>
@@ -266,7 +269,9 @@ namespace Groundbreak
             t.WallInsulationSqFt = t.ExtWallNetSqFt;
             t.AtticInsulationSqFt = t.FootprintSqFt;
 
-            void L(BuildPhase p, string item, float qty, string unit, int cost) { if (qty > 0) t.Lines.Add(new TakeoffLine { Phase = p, Item = item, Qty = qty, Unit = unit, UnitCost = cost }); }
+            // finish grade: a custom plan's trim, flooring, cabinets and fixtures cost more per unit than a starter's
+            float fq = FinishFactor(BaseQuality);
+            void L(BuildPhase p, string item, float qty, string unit, int cost) { if (qty > 0) t.Lines.Add(new TakeoffLine { Phase = p, Item = item, Qty = qty, Unit = unit, UnitCost = p == BuildPhase.Finish ? Mathf.RoundToInt(cost * fq) : cost }); }
             var F = BuildPhase.Foundation; var Fr = BuildPhase.Framing; var R = BuildPhase.RoughIn; var Dw = BuildPhase.Drywall; var Fi = BuildPhase.Finish;
             L(F, "Ready-mix concrete 3000 psi", Mathf.Ceil(t.ConcreteYards * 1.05f), "yd³", 165);
             L(F, "#4 rebar x 20'", Mathf.Ceil(t.PerimeterFt * 3f / 20f * 1.1f), "pcs", 9);
@@ -296,11 +301,11 @@ namespace Groundbreak
             L(Fi, "Paint, trim, fixtures, appliances", SqFt, "sq ft", 6);
             L(Fi, "Driveway, sod, landscaping", 1, "lot", 6500);
             // crew/sub labor per phase (US 2026 rates)
-            t.Labor[0] = Mathf.RoundToInt(t.ConcreteYards * 120f + 2500f);
+            t.Labor[0] = Mathf.RoundToInt(t.ConcreteYards * 120f + 2500f + SqFt * 10f);   // + general conditions: supervision, survey, temp power, dumpsters, toilets
             t.Labor[1] = Mathf.RoundToInt(SqFt * 9f + t.RoofSquares * 90f);
             t.Labor[2] = Mathf.RoundToInt(SqFt * 11f);
             t.Labor[3] = Mathf.RoundToInt(t.DrywallSheets * 32f + SqFt * 1.2f);
-            t.Labor[4] = Mathf.RoundToInt(SqFt * 12f);
+            t.Labor[4] = Mathf.RoundToInt(SqFt * 12f * fq);
             return t;
         }
     }

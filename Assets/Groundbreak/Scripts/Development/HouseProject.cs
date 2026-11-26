@@ -189,7 +189,7 @@ namespace Groundbreak
         public static int PhaseCost(HouseProject p, BuildPhase ph)
         {
             int c = p.Plan.Takeoff.PhaseCost(ph);
-            if (ph == BuildPhase.Finish) c = Mathf.RoundToInt(c * (0.7f + 0.6f * p.FinishLevel));
+            if (ph == BuildPhase.Finish) c = Mathf.RoundToInt(c * HousePlan.FinishFactor(p.FinishLevel) / HousePlan.FinishFactor(p.Plan.BaseQuality));
             return c;
         }
 

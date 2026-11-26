@@ -149,6 +149,7 @@ namespace Groundbreak
 
         static void DevelopmentApp()
         {
+            if (!GameSettings.IsCareer) { GUILayout.Label("Land development is part of Career mode.", Hd); return; }
             if (GameSettings.IsCareer && Company.Stage < CompanyStage.Developer)
                 GUILayout.Label("Developing needs the Developer stage: HQ (warehouse level 3), 8+ workers, reputation 80.", L);
             GUILayout.Label($"Market index {Developments.MarketCycle(Projects.Day):P0} of trend · construction loans ${Developments.LoanBalance:N0} at {Developments.LoanRate:P1}", Hd);
@@ -244,6 +245,7 @@ namespace Groundbreak
             Tablet.RegisterApp("Plans", () => { if (Tablet.I != null) PlansApp(); });
             Tablet.RegisterApp("Builder", () => { if (Tablet.I != null) BuilderApp(); });
             Tablet.RegisterApp("Development", () => { if (Tablet.I != null) DevelopmentApp(); });
+            Tablet.SetAppGroup("Plans", "Plans"); Tablet.SetAppGroup("Builder", "Business"); Tablet.SetAppGroup("Development", "Business");
             Tablet.AddHelp("Plans app: pick a house plan, read its takeoff, lay the plan overlay (walls, openings, rooms) on your site");
             Developments.Completed += d => NeighborhoodComplete.Show(d);
         }
