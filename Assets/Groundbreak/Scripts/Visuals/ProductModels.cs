@@ -12,6 +12,12 @@ namespace Groundbreak
     {
         // ================================================================== public API
 
+        /// <summary>Extension point: a feature folder can build the model for some definitions itself (first that returns true wins).
+        /// Args: definition, size box (m), builder (origin = box center, +Z = front/exterior), material -> submesh index.
+        /// Register from [RuntimeInitializeOnLoadMethod(BeforeSceneLoad)] (meshes are cached per id + size).</summary>
+        public delegate bool ModelOverride(PieceDefinition def, Vector3 size, MeshBuilder b, System.Func<Material, int> mat);
+        public static readonly List<ModelOverride> Overrides = new List<ModelOverride>();
+
         public static GameObject Build(PieceDefinition def, Vector3 size, Transform parent)
         {
             bool raw = def != null && (def.Category == PieceCategory.Lumber || def.Category == PieceCategory.Sheet ||
@@ -154,6 +160,7 @@ namespace Groundbreak
             if (def == null) { k.Box(-s.x / 2, s.x / 2, -s.y / 2, s.y / 2, -s.z / 2, s.z / 2, k.M(SurfaceKind.PaintedWhite)); return; }
             if (s.x <= 0f || s.y <= 0f || s.z <= 0f) s = new Vector3(Mathf.Max(s.x, 0.15f), Mathf.Max(s.y, 0.1f), Mathf.Max(s.z, 0.1f));
             string id = def.Id ?? "";
+            for (int i = 0; i < Overrides.Count; i++) if (Overrides[i](def, s, k.B, k.Mat)) return;
             switch (def.Category)
             {
                 case PieceCategory.Lumber: Lumber(k, def, s); return;
