@@ -62,3 +62,10 @@ before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` 
 6. Business tutorials with pictures (Tutorials app; windowed capture for tablet shots).
 7. Balance pass (prices, wages, pay, growth pace) and small fixes: stop the Tutorials test rewriting Resources PNGs on normal runs; stored stock hard to see on
    warehouse racking; held tool visible beside the open tablet; crew drywall/paint/dig/sod tasks lack tests; optional delivery fee (`Fleet.DeliveryFee`).
+
+## First things for the new lead
+1. `get_session` "self" for your own id, then SendMessage every WORKING session (and smart-placement): "New lead session is `<your id>` — send DONE /
+   HANDOFF READY / FIX DONE reports there from now on." They currently report to the previous lead.
+2. `get_usage`; create the monitoring cron (CronCreate, every 5–10 min) with the pause rule above.
+3. Set the in-chat checklist with `update_plan` from "Left to do".
+4. Check `git log origin/main..main` and `git status` here, then continue at "Left to do" step 1.
