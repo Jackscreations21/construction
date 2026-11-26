@@ -116,3 +116,16 @@ Waiting (resume by SendMessage as slots free): development, structure-extras, me
 Monitor cron every 4 min, pause threshold 85%. Parallelism doesn't add throughput when the plan limit is the bottleneck; keep it at 4.
 
 2026-11-26 ~20:15 UTC: user said start the waiting four too → all 8 running on Opus (verified via get_session). Monitor every 2 min, pause at 82%.
+
+## Queued by the user (2026-11-26) — start AFTER the current eight are merged
+1. **Blueprints (1–2 sessions)**: "create blueprints and full layouts for a ton of houses and buildings and warehouses so I have houses to work on and build".
+   Build on the development session's plan format (Scripts/Development house plans + on-site overlay): many plans — starter homes, ranches, two-stories,
+   duplexes, townhomes, garages, sheds, barns, small commercial (shop, office), warehouses — each with full room layout, wall lines, openings,
+   roof, MEP fixture locations, material takeoff; split residential / non-residential across two sessions.
+2. **Job catalog (1 session)**: "create all the jobs like fixing different things and building new houses or buildings. I want a lot of different jobs".
+   Extend the generators from town-repairs (Repairs), yard-fleet (Fleet/Jobs contractor jobs) and development (House/Development jobs) with a large,
+   varied data-driven catalog per stage; each job real scope, verification via trade systems, pay, vehicle/trade requirements.
+Also queued: stop the Tutorials capture test from rewriting Resources/Tutorials PNGs on every run (causes merge conflicts on ~80 files; on conflict keep
+main's, except deliberate recaptures); doubled top plate shows red (StructuralRules.Classify treats every flat board as BottomPlate); Business .meta
+add/add conflicts on every branch (keep main's).
+Merged so far this phase: smart-placement (pushed, 54/54); yard-fleet + ui-capture merged locally, test run in progress.
