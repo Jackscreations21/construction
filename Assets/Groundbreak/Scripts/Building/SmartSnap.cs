@@ -498,6 +498,7 @@ namespace Groundbreak
                 }
                 float sp = SpacingInUse(count);
                 float k = Mathf.Max(1f, Mathf.Round(Mathf.Abs(la) / sp));
+                if (k > 1f && count <= 1) continue;   // a lone board only suggests its next neighbour, not one 3 bays away
                 float miss = Mathf.Abs(Mathf.Abs(la) - k * sp);
                 if (miss > OcWindow) continue;
                 float target = Mathf.Sign(la) * k * sp;
