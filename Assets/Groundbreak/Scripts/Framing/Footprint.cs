@@ -13,6 +13,8 @@ namespace Groundbreak
         public float DeckTopY;           // world Y of the subfloor top
         public float PlateTopY;          // world Y of the top of the double top plate (roof bearing)
         public float WallDepth;          // 3-1/2" for 2x4 walls, 5-1/2" for 2x6
+        public bool IJoist;              // engineered floor: I-joists + LVL rim board instead of 2x8s
+        public float IJoistDepthIn;      // 9-1/2" or 11-7/8" (picked from the span)
 
         public Quaternion Rotation => Quaternion.Euler(0f, Yaw, 0f);
         public Vector3 AlongX => Rotation * Vector3.right;
@@ -20,11 +22,12 @@ namespace Groundbreak
         /// <summary>World point from building-local (x along length, y = world height, z across).</summary>
         public Vector3 World(float x, float y, float z) { var p = Origin + Rotation * new Vector3(x, 0f, z); p.y = y; return p; }
 
-        public static Footprint Make(Vector3 origin, float yaw, float lengthFt, float widthFt)
+        public static Footprint Make(Vector3 origin, float yaw, float lengthFt, float widthFt, bool iJoist = false)
         {
-            float deck = Units.In(1.5f + 7.25f + 0.71875f);                 // sill + 2x8 rim + 3/4 subfloor
+            float depth = iJoist ? IJoistFloor.DepthForSpan(widthFt * 12f - 2f * IJoistFloor.RimIn) : 7.25f;
+            float deck = Units.In(1.5f + depth + 0.71875f);                 // sill + rim + 3/4 subfloor
             float plate = deck + Units.In(1.5f + 92.625f + 1.5f + 1.5f);    // bottom plate + stud + double top plate
-            return new Footprint { Origin = origin, Yaw = yaw, Length = lengthFt * Units.Foot, Width = widthFt * Units.Foot, DeckTopY = origin.y + deck, PlateTopY = origin.y + plate, WallDepth = Units.In(3.5f) };
+            return new Footprint { Origin = origin, Yaw = yaw, Length = lengthFt * Units.Foot, Width = widthFt * Units.Foot, DeckTopY = origin.y + deck, PlateTopY = origin.y + plate, WallDepth = Units.In(3.5f), IJoist = iJoist, IJoistDepthIn = iJoist ? depth : 0f };
         }
     }
 }

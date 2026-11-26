@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -92,6 +93,77 @@ namespace Groundbreak.Tests
             Snap(O + new Vector3(7.6f, 1.3f, 3.2f), O + new Vector3(7f, 1.0f, 0f), "extras_08_patio_slider");
             Snap(O + new Vector3(12.8f, 1.4f, 4.6f), O + new Vector3(12f, 1.1f, 0f), "extras_09_garage_ext", 50f);
             Snap(O + new Vector3(10.3f, 1.6f, -4.2f), O + new Vector3(12f, 1.6f, -0.5f), "extras_10_garage_tracks_springs", 60f);
+        }
+
+        static void RunSteps(FramingJob job, System.Func<BuildStep, bool> which)
+        {
+            foreach (var s in job.Steps) if (which(s)) s.Do?.Invoke();
+        }
+
+        [Test]
+        public void IJoist_DepthFromSpan()
+        {
+            Assert.AreEqual(9.5f, IJoistFloor.DepthForSpan(14 * 12 - 2.5f), 1e-4f);
+            Assert.AreEqual(11.875f, IJoistFloor.DepthForSpan(18 * 12 - 2.5f), 1e-4f);
+            var fp = Footprint.Make(Vector3.zero, 0f, 24, 14, true);
+            Assert.IsTrue(fp.IJoist);
+            Assert.AreEqual(Units.In(1.5f + 9.5f + 0.71875f), fp.DeckTopY, 1e-4f, "deck height follows the I-joist depth");
+        }
+
+        [UnityTest]
+        public IEnumerator IJoistFloor_GirderHangersStiffenersSquashBlocks_PassInspection()
+        {
+            var fp = Footprint.Make(O + new Vector3(-30f, 0f, 0f), 0f, 16, 28, true);
+            Assert.AreEqual(11.875f, fp.IJoistDepthIn, 1e-4f, "28' wide: 11-7/8\" I-joists");
+            var openings = new[] { new List<WallOpening>(), new List<WallOpening>(), new List<WallOpening>(), new List<WallOpening>() };
+            openings[0].Add(new WallOpening { Product = Catalog.Get("door-ext-steel36"), CenterIn = 60f });
+            openings[1].Add(new WallOpening { Product = Catalog.Get("win-sh-3648"), CenterIn = 100f });
+            var job = IJoistFloor.Build(fp, openings);
+            job.transform.root.SetParent(_root.transform, true);
+            RunSteps(job, s => !s.Label.StartsWith("Glue"));
+            yield return Frames(2);
+
+            var root = job.transform.root;
+            var members = root.GetComponentsInChildren<StructuralMember>();
+            int ij = 0, hung = 0, beams = 0, squash = 0, rims = 0;
+            foreach (var m in members)
+            {
+                string id = m.Piece != null ? m.Piece.Def.Id : "";
+                if (id.StartsWith("ij")) { ij++; if (m.GetComponent<IJoistEnd>() != null) hung++; }
+                if (m.Role == MemberRole.Beam) beams++;
+                if (m.Role == MemberRole.SquashBlock) squash++;
+                if (m.Role == MemberRole.RimJoist) { rims++; StringAssert.StartsWith("lvlrim12", id); }
+            }
+            Assert.Greater(ij, 20, "I-joists both sides of the girder");
+            Assert.AreEqual(ij, hung, "every I-joist end at the girder is hung + stiffened");
+            Assert.AreEqual(3, beams, "3-ply LVL girder");
+            Assert.AreEqual(4, squash, "squash blocks under 2 openings x 2 jacks");
+            Assert.GreaterOrEqual(rims, 4);
+
+            // shots: overview before the subfloor, close-up of hangers + stiffeners, squash blocks at the rim
+            Vector3 g = fp.World(Units.In(64f), 0f, fp.Width / 2);
+            Snap(fp.World(-1.2f, 2.6f, -1.5f), fp.World(fp.Length * 0.45f, 0f, fp.Width * 0.45f), "extras_11_ijoist_floor_overview", 60f);
+            Snap(g + new Vector3(0.55f, 0.75f, -0.75f), g + new Vector3(0f, 0.12f, 0f), "extras_12_ijoist_hangers_stiffeners", 45f);
+            Vector3 sq = fp.World(Units.In(60f - 20.75f), 0f, Units.In(2f));
+            Snap(sq + new Vector3(0.5f, 0.6f, 0.65f), sq + new Vector3(0f, 0.12f, 0f), "extras_13_ijoist_squash_blocks_rim", 50f);
+
+            RunSteps(job, s => s.Label.StartsWith("Glue"));
+            job.Next = job.Steps.Count;
+            yield return Frames(2);
+            float top = float.MinValue;
+            foreach (var m in root.GetComponentsInChildren<StructuralMember>())
+                if (m.Role == MemberRole.Subfloor && m.GetBox(out var c, out var h, out var r)) top = Mathf.Max(top, c.y + h.y);
+            Assert.AreEqual(fp.DeckTopY, top, Units.In(0.1f), "subfloor top = footprint deck height");
+
+            FramingInspection.Run();
+            var mine = new HashSet<StructuralMember>(root.GetComponentsInChildren<StructuralMember>());
+            var fails = FramingInspection.Last.FindAll(i => i.Member != null && mine.Contains(i.Member) && i.Severity != StructuralStatus.Ok);
+            Assert.AreEqual(0, fails.Count, "I-joist floor inspection: " + string.Join("; ", fails.ConvertAll(i => i.Note)));
+
+            // pull a stiffener off: inspection flags it
+            foreach (var e in root.GetComponentsInChildren<IJoistEnd>()) { e.Stiffened = false; break; }
+            FramingInspection.Run();
+            Assert.IsTrue(FramingInspection.Last.Exists(i => i.Note.Contains("web stiffeners")), "missing stiffener is flagged");
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Groundbreak
 
         FramingJob Track(FramingJob j) { if (j != null) Jobs.Add(j); return j; }
 
-        public FramingJob StartFloor() => Floor ?? (Floor = Track(FloorPlan.Build(Fp)));
+        public FramingJob StartFloor() => Floor ?? (Floor = Track(Fp.IJoist ? IJoistFloor.Build(Fp, Openings) : FloorPlan.Build(Fp)));
 
         /// <summary>Frames the walls one at a time so only one lies on the deck: wall i can start when wall i-1 stands.</summary>
         public FramingJob StartWall(int i)
@@ -81,6 +81,7 @@ namespace Groundbreak
     {
         static int _lenFt = 16, _widFt = 12;
         static int _doorIdx, _winIdx;
+        static bool _iJoist;
         static Vector2 _scroll;
 
         public static void Register() => Tablet.RegisterApp("Framing Plans", Draw);
@@ -105,13 +106,17 @@ namespace Groundbreak
                 if (GUILayout.Button("-", btn, GUILayout.Width(40))) _widFt = Mathf.Max(8, _widFt - 2);
                 if (GUILayout.Button("+", btn, GUILayout.Width(40))) _widFt = Mathf.Min(32, _widFt + 2);
                 GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Floor: " + (_iJoist ? "I-joists " + Units.Format(Units.In(IJoistFloor.DepthForSpan(_widFt * 12f - 2f * IJoistFloor.RimIn))) + " + LVL rim" : "2x8 joists 16\" O.C."), label);
+                if (GUILayout.Button(_iJoist ? "Use 2x8s" : "Use I-joists", btn, GUILayout.Width(140))) _iJoist = !_iJoist;
+                GUILayout.EndHorizontal();
                 var doors = Of(PieceCategory.Door); var wins = Of(PieceCategory.Window);
                 if (doors.Count > 0) { GUILayout.BeginHorizontal(); GUILayout.Label("Front door: " + doors[_doorIdx % doors.Count].Name, label); if (GUILayout.Button("Change", btn, GUILayout.Width(100))) _doorIdx++; GUILayout.EndHorizontal(); }
                 if (wins.Count > 0) { GUILayout.BeginHorizontal(); GUILayout.Label("Windows: " + wins[_winIdx % wins.Count].Name, label); if (GUILayout.Button("Change", btn, GUILayout.Width(100))) _winIdx++; GUILayout.EndHorizontal(); }
                 GUILayout.Label("The building starts at the grid origin (O key) facing its yaw. Sill sits on the ground / slab.", label);
                 if (GUILayout.Button("Start project here", btn))
                 {
-                    var fp = Footprint.Make(Game.Snap.Origin, Game.Snap.OriginYaw, _lenFt, _widFt);
+                    var fp = Footprint.Make(Game.Snap.Origin, Game.Snap.OriginYaw, _lenFt, _widFt, _iJoist);
                     p = ShellProject.Start(fp);
                     if (doors.Count > 0) p.Openings[0].Add(new WallOpening { Product = doors[_doorIdx % doors.Count], CenterIn = _lenFt * 12f / 2f - 24f });
                     if (wins.Count > 0)

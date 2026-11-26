@@ -38,6 +38,42 @@ namespace Groundbreak
             }, ghost(new Vector3(L / 2, 0.01f, 0), new Vector3(L, 0.02f, 0.02f), X));
 
             // 2. Sills (long sides full length, ends between)
+            AddSills(job, root, L, W, y0, ghost);
+
+            // 3. Rim (band) joists on the long sides, end joists between them
+            float ry = y0 + sillT + joistD / 2;
+            AddMember(job, root, "Set rim joist (front)", "2x8", L, new Vector3(L / 2, ry, t / 2), X, Z, MemberRole.RimJoist, 6, ghost);
+            AddMember(job, root, "Set rim joist (back)", "2x8", L, new Vector3(L / 2, ry, W - t / 2), X, Z, MemberRole.RimJoist, 6, ghost);
+            AddMember(job, root, "Set end joist (left)", "2x8", W - 2 * t, new Vector3(t / 2, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
+
+            // 4. Joists at 16" O.C. (crowns up), toe-nailed to the sill and end-nailed through the rim
+            float oc = I(16f);
+            var joistX = new List<float>();
+            for (float x = oc; x < L - t - I(2f); x += oc) joistX.Add(x);
+            foreach (var x in joistX)
+                AddMember(job, root, "Joist @ " + Units.Format(x) + " O.C. (crown up)", "2x8", W - 2 * t, new Vector3(x, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
+            AddMember(job, root, "Set end joist (right)", "2x8", W - 2 * t, new Vector3(L - t / 2, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
+
+            // 5. Mid-span solid blocking (staggered so it can be end-nailed)
+            var xs = new List<float> { t / 2 };
+            xs.AddRange(joistX); xs.Add(L - t / 2);
+            for (int i = 0; i + 1 < xs.Count; i++)
+            {
+                float a = xs[i] + t / 2, b2 = xs[i + 1] - t / 2;
+                float zc = W / 2 + (i % 2 == 0 ? -t / 2 : t / 2);
+                AddMember(job, root, "Blocking bay " + (i + 1), "2x8", b2 - a, new Vector3((a + b2) / 2, ry, zc), X, Z, MemberRole.Blocking, 4, ghost);
+            }
+
+            // 6. Subfloor
+            AddSubfloor(job, root, L, W, y0 + sillT + joistD + I(0.71875f) / 2, xs, ghost);
+            return job;
+        }
+
+        /// <summary>Sill gasket + PT 2x6 sills on anchor bolts around the perimeter (long sides full length, ends between).</summary>
+        public static void AddSills(FramingJob job, Transform root, float L, float W, float y0, System.Func<Vector3, Vector3, Vector3, System.Func<(Vector3, Vector3, Quaternion)>> ghost)
+        {
+            float sillT = I(1.5f), sillW = I(5.5f);
+            Vector3 X = Vector3.right, Z = Vector3.forward, U = Vector3.up;
             var sills = new List<(Vector3 c, float len, Vector3 dir)>
             {
                 (new Vector3(L / 2, y0 + sillT / 2, sillW / 2), L, X),
@@ -70,32 +106,13 @@ namespace Groundbreak
                 }, ghost(sc.c, new Vector3(sillW, sillT, sc.len), sc.dir)).Use(PickStock("pt2x6", sc.len)).Use("sill-gasket", Mathf.CeilToInt(Units.ToInches(sc.len) / 12f)).Use("anchor-bolt", bolts).Nails = 0;
             }
 
-            // 3. Rim (band) joists on the long sides, end joists between them
-            float ry = y0 + sillT + joistD / 2;
-            AddMember(job, root, "Set rim joist (front)", "2x8", L, new Vector3(L / 2, ry, t / 2), X, Z, MemberRole.RimJoist, 6, ghost);
-            AddMember(job, root, "Set rim joist (back)", "2x8", L, new Vector3(L / 2, ry, W - t / 2), X, Z, MemberRole.RimJoist, 6, ghost);
-            AddMember(job, root, "Set end joist (left)", "2x8", W - 2 * t, new Vector3(t / 2, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
+        }
 
-            // 4. Joists at 16" O.C. (crowns up), toe-nailed to the sill and end-nailed through the rim
-            float oc = I(16f);
-            var joistX = new List<float>();
-            for (float x = oc; x < L - t - I(2f); x += oc) joistX.Add(x);
-            foreach (var x in joistX)
-                AddMember(job, root, "Joist @ " + Units.Format(x) + " O.C. (crown up)", "2x8", W - 2 * t, new Vector3(x, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
-            AddMember(job, root, "Set end joist (right)", "2x8", W - 2 * t, new Vector3(L - t / 2, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
-
-            // 5. Mid-span solid blocking (staggered so it can be end-nailed)
-            var xs = new List<float> { t / 2 };
-            xs.AddRange(joistX); xs.Add(L - t / 2);
-            for (int i = 0; i + 1 < xs.Count; i++)
-            {
-                float a = xs[i] + t / 2, b2 = xs[i + 1] - t / 2;
-                float zc = W / 2 + (i % 2 == 0 ? -t / 2 : t / 2);
-                AddMember(job, root, "Blocking bay " + (i + 1), "2x8", b2 - a, new Vector3((a + b2) / 2, ry, zc), X, Z, MemberRole.Blocking, 4, ghost);
-            }
-
-            // 6. Subfloor: 4x8 panels perpendicular to joists, seams staggered 4' and landing on joist centers, glued + nailed
-            float sy = y0 + sillT + joistD + I(0.71875f) / 2;
+        /// <summary>4x8 3/4" T&amp;G panels perpendicular to the joists (at xs), seams staggered 4' on joist centers, glued + nailed.
+        /// sy = center height of the panels.</summary>
+        public static void AddSubfloor(FramingJob job, Transform root, float L, float W, float sy, List<float> xs, System.Func<Vector3, Vector3, Vector3, System.Func<(Vector3, Vector3, Quaternion)>> ghost)
+        {
+            Vector3 X = Vector3.right, U = Vector3.up;
             float sheetW = I(48f), sheetL = I(96f), gap = I(0.0625f);
             int rows = Mathf.CeilToInt(W / sheetW - 0.01f);
             for (int r = 0; r < rows; r++)
@@ -130,7 +147,6 @@ namespace Groundbreak
                     start = x1;
                 }
             }
-            return job;
         }
 
         static void AddMember(FramingJob job, Transform root, string label, string size, float len, Vector3 c, Vector3 dir, Vector3 thin, MemberRole role, int nails,

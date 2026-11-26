@@ -10,6 +10,7 @@ namespace Groundbreak
         BottomPlate, TopPlate, CapPlate, Stud, KingStud, JackStud, Header, Cripple, RoughSill, CornerBacker, Brace,
         WallSheathing, Truss, Rafter, HipRafter, ValleyRafter, JackRafter, RidgeBoard, CeilingJoist, CollarTie,
         SubFascia, Fascia, GableStud, RoofSheathing, Stringer, Tread, Riser, Ledger, Lookout, Product,
+        SquashBlock,
     }
 
     [Flags]
