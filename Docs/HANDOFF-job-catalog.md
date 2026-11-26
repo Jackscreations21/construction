@@ -1,0 +1,7 @@
+# Handoff: job-catalog (WIP, stopped for the plan limit)
+
+- Stopped after merging main 9369180. The full PlayMode run was killed before it finished. Last JobCatalogTests run: 5/7 passed; the two failures (duplicate "test" step ids, legacy entries without descriptions, a kitchen task overlap, job-id/payload-cache collision) are fixed in code but not re-run.
+- Next: re-run JobCatalogTests and then the full suite. Look at the `Logs/shots/jobcat_*` shots again (ceiling stain, roof, sash, planter and door were just reworked). Then route Fleet/Build offers through LotBroker/JobsHub (Docs/HANDOFF-integration.md). Use full-map's `TownLot.ServiceCalls`/`Category`/`TypeId` in `JobCatalog.FreeAddressFor` (exterior jobs on commercial lots).
+- Counts: 61 service calls, 34 contractor (12 remodel scopes from 25 tasks + 22 Fleet variants), 14 builds (6 commercial/outbuilding, tolerate missing blueprint ids), 14 legacy repair families. Format, generator and id list: Docs/JOBS.md.
+- Edits outside Scripts/JobCatalog: Repairs/RepairDefect.cs (RepairType.Catalog, DefectState.def, AddFor case), Repairs/RepairJobs.cs (RepairPayload.scope, IsService, ScopePrefix, ExternalGenerator hook, catalog Describe/ToolsFor, callbacks keep def), Repairs/RepairUI.cs (Kind checks -> IsService).
+- Open: send "job-catalog DONE @ <commit>" to the lead once the suite is green. Doc HANDOFF still needs a final pass. Blueprint plan ids in DefsContract.DefineBuilds are guesses until the blueprints session replies.
