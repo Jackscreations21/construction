@@ -79,3 +79,10 @@ Shared core `Scripts/Business/Company.cs` written by the lead on main. Phase 1 s
 crew-workers, smart-placement. Phase 2 (after merge): `Scripts/Development/` (builder/developer tiers, neighborhoods), business tutorials, balance,
 plus leftovers (window/door models, panel detail, duct seams, dig dust, HUD/tablet look in editor).
 Rules unchanged: nested sessions hand off at 40% context, lead at 50%, pause all at 90% plan usage.
+| name | session id | scope |
+|---|---|---|
+| town-repairs | local_378f0892-0825-4f13-bb36-0154c9bc5575 | Scripts/Town + Repairs: town, drivable van, repair jobs, Jobs app; owns `Town` API |
+| yard-fleet | local_91a3c222-2510-4367-8c6a-1ac497730909 | Scripts/Fleet + Yard: dealership, warehouse levels, finance/loans, contractor jobs |
+| crew-workers | local_300959da-4030-4adb-a115-ed2c67f24fdd | Scripts/Crew: hiring, worker NPCs doing real tasks, payroll, scheduling |
+| smart-placement | local_a1169bf4-9a64-42e5-b8c8-2622eb9a3d63 | Scripts/Building: context-aware snapping to neighboring pieces (only session editing PlacementController) |
+All from main @ 26197ab (2026-11-26).
