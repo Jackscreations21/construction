@@ -106,6 +106,8 @@ namespace Groundbreak
             var w = Wall.transform;
             float depth = p.Def.Size.z;
             float zLocal = IsDoor ? Units.In(Wall.Spec.DepthIn) / 2 : depth / 2 - Units.In(0.4375f) - Units.In(0.75f);
+            // detailed prehung units: exterior jamb edge flush with the sheathing face (2x6 walls get an extension jamb inside)
+            if (IsDoor && OpeningModels.Handles(p.Def)) zLocal = Units.In(OpeningModels.JambExtIn - 0.4375f);
             float yBottom = transform.localPosition.y - HeightM / 2 + (IsDoor ? 0f : Units.In(0.25f));
             Vector3 local = new Vector3(transform.localPosition.x, yBottom + p.Def.Size.y / 2, zLocal);
             p.transform.SetPositionAndRotation(w.TransformPoint(local), w.rotation * Quaternion.Euler(0, 180, 0));

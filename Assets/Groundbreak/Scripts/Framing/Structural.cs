@@ -10,6 +10,7 @@ namespace Groundbreak
         BottomPlate, TopPlate, CapPlate, Stud, KingStud, JackStud, Header, Cripple, RoughSill, CornerBacker, Brace,
         WallSheathing, Truss, Rafter, HipRafter, ValleyRafter, JackRafter, RidgeBoard, CeilingJoist, CollarTie,
         SubFascia, Fascia, GableStud, RoofSheathing, Stringer, Tread, Riser, Ledger, Lookout, Product,
+        SquashBlock,
     }
 
     [Flags]
@@ -110,6 +111,32 @@ namespace Groundbreak
             if (spanInches <= 72f) return ("2x10", 9.25f, 1);
             if (spanInches <= 96f) return ("2x12", 11.25f, 2);
             return ("lvl", 9.25f, 2);
+        }
+
+        /// <summary>Like <see cref="Classify(PieceDefinition, Quaternion, Vector3)"/>, but a flat (non-treated) board also looks at what it
+        /// lands on: on top of studs / headers it is a top plate, on top of a top plate a cap (double top) plate.</summary>
+        public static MemberRole Classify(PieceDefinition def, Quaternion rot, Vector3 size, Vector3 center)
+        {
+            var role = Classify(def, rot, size);
+            if (role != MemberRole.BottomPlate) return role;
+            Vector3 half = size * 0.5f;
+            float bottom = center.y - (Mathf.Abs((rot * Vector3.right).y) * half.x + Mathf.Abs((rot * Vector3.up).y) * half.y + Mathf.Abs((rot * Vector3.forward).y) * half.z);
+            bool onTop = false, onWallFraming = false;
+            foreach (var m in SupportGraph.Touching(center, half, rot))
+            {
+                if (!m.GetBox(out var mc, out var mh, out var mr)) continue;
+                float top = mc.y + Mathf.Abs((mr * Vector3.right).y) * mh.x + Mathf.Abs((mr * Vector3.up).y) * mh.y + Mathf.Abs((mr * Vector3.forward).y) * mh.z;
+                if (Mathf.Abs(top - bottom) > 0.02f) continue;   // must bear on its top face
+                switch (m.Role)
+                {
+                    case MemberRole.TopPlate: onTop = true; break;
+                    case MemberRole.Stud: case MemberRole.KingStud: case MemberRole.JackStud: case MemberRole.Cripple:
+                    case MemberRole.CornerBacker: case MemberRole.Header: onWallFraming = true; break;
+                }
+            }
+            if (onTop) return MemberRole.CapPlate;
+            if (onWallFraming) return MemberRole.TopPlate;
+            return role;
         }
 
         /// <summary>Guess a role for a free-placed piece from its definition and orientation.</summary>
@@ -273,7 +300,7 @@ namespace Groundbreak
         {
             reason = "";
             Physics.SyncTransforms();
-            var role = StructuralRules.Classify(def, rot, size);
+            var role = StructuralRules.Classify(def, rot, size, c);
             if (role == MemberRole.Unknown || role == MemberRole.Product) return StructuralStatus.Ok;
             Vector3 half = size * 0.5f;
             var sup = FindSupports(role, c, half, rot, null, out bool found);

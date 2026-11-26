@@ -19,6 +19,9 @@ namespace Groundbreak
         public static readonly List<InspectionIssue> Last = new List<InspectionIssue>();
         public static bool HasRun;
 
+        /// <summary>Extra checks feature code adds (I-joist spans, hangers, web stiffeners...). Each returns its issues.</summary>
+        public static readonly List<System.Func<List<InspectionIssue>>> Checks = new List<System.Func<List<InspectionIssue>>>();
+
         public static List<InspectionIssue> Run()
         {
             Last.Clear();
@@ -38,6 +41,7 @@ namespace Groundbreak
             foreach (var ro in RoughOpening.All)
                 if (ro.Installed != null && (!ro.Flashed || !ro.Fastened))
                     Last.Add(new InspectionIssue { Severity = StructuralStatus.Warning, Note = ro.name + ": " + (!ro.Flashed ? "not flashed" : "not fastened"), Where = ro.Center });
+            foreach (var c in Checks) { var l = c(); if (l != null) Last.AddRange(l); }
             HasRun = true;
             return Last;
         }

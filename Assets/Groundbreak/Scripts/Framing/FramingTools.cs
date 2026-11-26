@@ -81,7 +81,7 @@ namespace Groundbreak
                 if (p.GetComponent<StructuralMember>() == null)
                 {
                     var m = p.gameObject.AddComponent<StructuralMember>();
-                    m.Role = StructuralRules.Classify(p.Def, p.transform.rotation, p.Size);
+                    m.Role = StructuralRules.Classify(p.Def, p.transform.rotation, p.Size, p.transform.position);
                 }
                 SupportGraph.Dirty = true;
             };
