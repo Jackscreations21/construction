@@ -79,3 +79,53 @@ Shared core `Scripts/Business/Company.cs` written by the lead on main. Phase 1 s
 crew-workers, smart-placement. Phase 2 (after merge): `Scripts/Development/` (builder/developer tiers, neighborhoods), business tutorials, balance,
 plus leftovers (window/door models, panel detail, duct seams, dig dust, HUD/tablet look in editor).
 Rules unchanged: nested sessions hand off at 40% context, lead at 50%, pause all at 90% plan usage.
+| name | session id | scope |
+|---|---|---|
+| town-repairs | local_378f0892-0825-4f13-bb36-0154c9bc5575 | Scripts/Town + Repairs: town, drivable van, repair jobs, Jobs app; owns `Town` API |
+| yard-fleet | local_91a3c222-2510-4367-8c6a-1ac497730909 | Scripts/Fleet + Yard: dealership, warehouse levels, finance/loans, contractor jobs |
+| crew-workers | local_300959da-4030-4adb-a115-ed2c67f24fdd | Scripts/Crew: hiring, worker NPCs doing real tasks, payroll, scheduling |
+| smart-placement | local_a1169bf4-9a64-42e5-b8c8-2622eb9a3d63 | Scripts/Building: context-aware snapping to neighboring pieces (only session editing PlacementController) |
+All from main @ 26197ab (2026-11-26).
+
+## Tracker artifact (user request 2026-11-26)
+https://claude.ai/artifact/WwS89dEKZHeosQa3HZpPiW — done / being worked on / left to do. Rows live in its database: collection `items`
+(fields: status "work"|"next"|"done", order, area, title, note) and doc `meta/info` {text}. On every merge or new session, update rows with the
+ArtifactData tool (get the row first for its version, then update with if_version) and refresh `meta/info`. Main verified 50/50 with Company.cs.
+
+## Extra parallel sessions (user 2026-11-26: "run anything you can in parallel but pause if any limit reaches 90"; chose "Start now anyway" at 72%)
+| name | session id | scope |
+|---|---|---|
+| development | local_ca789e89-8199-43c4-a90d-7a7b60af366e | Scripts/Development: house plans, Builder draws, Developer land/subdivision/sales; compiles without Town/Crew (own ILotProvider/ICrewProgress), adapters after merge |
+| structure-extras | local_97c176bc-8e90-4975-a92a-b82a0ede7a23 | window/door models, I-joist floors, roof valleys |
+| mep-site-details | local_3ba35a70-5d6e-4c69-b03d-47369fc3b077 | panel detail, duct seams, dig dust |
+| ui-capture | local_89767c4f-878f-4b62-beab-089d49732008 | windowed (non-batchmode) HUD/tablet capture + fixes, tablet layout for many apps, tutorial HUD pictures |
+Monitor cron now every 5 min, pauses at 88% (usage climbs ~1 pt/min). After a pause/reset the user must say "go" to restart (app blocks auto-start).
+Merge order hint: town-repairs first (others adapt to Town), then yard-fleet, crew-workers, development; ui-capture changes Tablet layout — merge it
+before the business apps if possible, else re-check tab layout after.
+User rule (2026-11-26): nested sessions run on Opus (`claude-opus-5-5`) — pass `model` when starting new ones; the 8 current sessions were switched with set_session_model (applies from each one's next turn).
+
+## PAUSED 2026-11-26 ~17:17 UTC — plan 5-hour limit hit 95% (8 sessions burn ~4 pts/min; 5-min ticks were too slow)
+All 8 sessions told to commit WIP and stop (stop_session used so the queued message runs). Resets 20:10 UTC. A one-shot cron at 15:14 local resumes
+four sessions by SendMessage and recreates the monitor (pause threshold 85%). Lesson: with 8 sessions check usage every ~2 min or run at most 4.
+Branches: check `git branch -a` for claude/town-repairs-*, yard-fleet-*, crew-workers-*, smart-placement-*, development-*, structure-extras-*,
+mep-site-details-*, ui-capture-*; none merged yet.
+
+## RESUMED 2026-11-26 ~20:11 UTC (user: "go", limit reset to 0%)
+Running (Opus): town-repairs, yard-fleet, crew-workers, smart-placement — told to use at most one helper agent at a time.
+Waiting (resume by SendMessage as slots free): development, structure-extras, mep-site-details, ui-capture.
+Monitor cron every 4 min, pause threshold 85%. Parallelism doesn't add throughput when the plan limit is the bottleneck; keep it at 4.
+
+2026-11-26 ~20:15 UTC: user said start the waiting four too → all 8 running on Opus (verified via get_session). Monitor every 2 min, pause at 82%.
+
+## Queued by the user (2026-11-26) — start AFTER the current eight are merged
+1. **Blueprints (1–2 sessions)**: "create blueprints and full layouts for a ton of houses and buildings and warehouses so I have houses to work on and build".
+   Build on the development session's plan format (Scripts/Development house plans + on-site overlay): many plans — starter homes, ranches, two-stories,
+   duplexes, townhomes, garages, sheds, barns, small commercial (shop, office), warehouses — each with full room layout, wall lines, openings,
+   roof, MEP fixture locations, material takeoff; split residential / non-residential across two sessions.
+2. **Job catalog (1 session)**: "create all the jobs like fixing different things and building new houses or buildings. I want a lot of different jobs".
+   Extend the generators from town-repairs (Repairs), yard-fleet (Fleet/Jobs contractor jobs) and development (House/Development jobs) with a large,
+   varied data-driven catalog per stage; each job real scope, verification via trade systems, pay, vehicle/trade requirements.
+Also queued: stop the Tutorials capture test from rewriting Resources/Tutorials PNGs on every run (causes merge conflicts on ~80 files; on conflict keep
+main's, except deliberate recaptures); doubled top plate shows red (StructuralRules.Classify treats every flat board as BottomPlate); Business .meta
+add/add conflicts on every branch (keep main's).
+Merged so far this phase: smart-placement (pushed, 54/54); yard-fleet + ui-capture merged locally, test run in progress.
