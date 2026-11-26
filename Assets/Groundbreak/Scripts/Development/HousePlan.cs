@@ -185,9 +185,16 @@ namespace Groundbreak
                     if (horiz && (Mathf.Abs(w.A.y - r.Ft.yMin) < 0.01f || Mathf.Abs(w.A.y - r.Ft.yMax) < 0.01f)) { a = Mathf.Max(r.Ft.xMin, Mathf.Min(w.A.x, w.B.x)); b = Mathf.Min(r.Ft.xMax, Mathf.Max(w.A.x, w.B.x)); }
                     else if (!horiz && (Mathf.Abs(w.A.x - r.Ft.xMin) < 0.01f || Mathf.Abs(w.A.x - r.Ft.xMax) < 0.01f)) { a = Mathf.Max(r.Ft.yMin, Mathf.Min(w.A.y, w.B.y)); b = Mathf.Min(r.Ft.yMax, Mathf.Max(w.A.y, w.B.y)); }
                     else continue;
-                    if (b - a > bestLen) { bestLen = b - a; best = w; bestCenter = (a + b) / 2f; }
+                    if (b - a < 3f) continue;
+                    // prefer an edge that opens onto a shared (public) room: hall, living, kitchen
+                    float mid = (a + b) / 2f;
+                    Vector2 probe = horiz ? new Vector2(mid, w.A.y + (Mathf.Abs(w.A.y - r.Ft.yMin) < 0.01f ? -0.5f : 0.5f))
+                                          : new Vector2(w.A.x + (Mathf.Abs(w.A.x - r.Ft.xMin) < 0.01f ? -0.5f : 0.5f), mid);
+                    var other = Rooms.Find(o => o.Floor == r.Floor && o != r && o.Ft.Contains(probe));
+                    float score = (b - a) + (other != null && !other.Private ? 1000f : 0f);
+                    if (score > bestLen) { bestLen = score; best = w; bestCenter = mid; }
                 }
-                if (best == null || bestLen < 3f) continue;
+                if (best == null) continue;
                 float along = Mathf.Abs(best.A.y - best.B.y) < 0.01f ? Mathf.Abs(bestCenter - best.A.x) : Mathf.Abs(bestCenter - best.A.y);
                 AddOpening(r.Floor, Walls.IndexOf(best), along, r.Name.Contains("Bath") || r.Name == "Powder" ? "door-int-6p24" : "door-int-6p30");
             }

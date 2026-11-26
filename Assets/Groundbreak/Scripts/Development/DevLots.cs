@@ -63,7 +63,7 @@ namespace Groundbreak
     {
         static ILotProvider _provider;
         /// <summary>Set by the Town adapter after merge; defaults to the fallback layout.</summary>
-        public static ILotProvider Provider { get => _provider ?? (_provider = new FallbackLotProvider()); set => _provider = value; }
+        public static ILotProvider Provider { get => _provider ?? (_provider = (ILotProvider)TownLotAdapter.TryCreate() ?? new FallbackLotProvider()); set => _provider = value; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void StaticReset() { _provider = null; }

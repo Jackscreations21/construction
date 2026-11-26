@@ -104,11 +104,10 @@ namespace Groundbreak
             var k = new LandModel();
             int asphalt = k.M(SurfaceKind.Concrete, new Color(0.32f, 0.32f, 0.34f)), conc = k.M(SurfaceKind.BroomedConcrete), gravel = k.M(SurfaceKind.Gravel);
             // fallback Ridge Rd + county road (only when the fallback provider is in use)
-            if (DevLots.Provider is FallbackLotProvider)
-            {
+            if (Projects.All.Exists(p => p.LotId != null && p.LotId.StartsWith("ridge-")))
                 Road(k, new Vector3(420f, 0, FallbackLotProvider.RidgeZ), new Vector3(905f, 0, FallbackLotProvider.RidgeZ), 1f, asphalt, conc);
+            if (Developments.All.Exists(d => d.TractId.StartsWith("tract-")))
                 Road(k, new Vector3(420f, 0, 600f), new Vector3(1050f, 0, 600f), 1f, asphalt, conc);
-            }
             foreach (var d in Developments.All)
             {
                 if (!d.Platted) { StakeRect(k, d.Tract.Rect); continue; }
@@ -218,7 +217,7 @@ namespace Groundbreak
                 if (f1 >= 0.75f)
                 {
                     float top = elev + plan.Floors * H + (plan.Floors - 1) * 0.3f;
-                    float rise = (D / 2f + 1f) * plan.Pitch / 12f;
+                    float rise = (D / 2f + 1f) * plan.Pitch / 12f * ft;   // feet → meters
                     if (f1 < 1f)
                     {
                         int trusses = Mathf.FloorToInt(W * 12f / 24f) + 1;
