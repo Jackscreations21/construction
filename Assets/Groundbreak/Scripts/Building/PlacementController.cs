@@ -293,7 +293,7 @@ namespace Groundbreak
                 _hl = go.AddComponent<LineRenderer>();
                 _hl.useWorldSpace = true;
                 _hl.positionCount = _hlPts.Length;
-                _hl.widthMultiplier = 0.008f;
+                _hl.widthMultiplier = 0.012f;
                 _hl.numCornerVertices = 0;
                 _hl.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 _hl.receiveShadows = false;
