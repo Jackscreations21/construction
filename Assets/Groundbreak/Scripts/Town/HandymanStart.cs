@@ -26,6 +26,8 @@ namespace Groundbreak
             if (!Company.Owns(VanTypeId)) Company.AddVehicle(VanTypeId, "Work Van");
             VanCargo.LoadStarterKit();
             WorkVan.EnsureSpawned();
+            RepairKit.GrantStarterTools();
+            RepairJobs.GenerateOffers();
             MovePlayer(Town.Home.Parking + Town.Home.Rotation * new Vector3(-2.2f, 0f, 0f), Town.Home.ParkingYaw);
             Game.Toast("You're in business. Tablet (T) → Jobs for service calls. E at the van door to drive.");
         }
