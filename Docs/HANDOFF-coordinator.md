@@ -102,3 +102,4 @@ ArtifactData tool (get the row first for its version, then update with if_versio
 Monitor cron now every 5 min, pauses at 88% (usage climbs ~1 pt/min). After a pause/reset the user must say "go" to restart (app blocks auto-start).
 Merge order hint: town-repairs first (others adapt to Town), then yard-fleet, crew-workers, development; ui-capture changes Tablet layout — merge it
 before the business apps if possible, else re-check tab layout after.
+User rule (2026-11-26): nested sessions run on Opus (`claude-opus-5-5`) — pass `model` when starting new ones; the 8 current sessions were switched with set_session_model (applies from each one's next turn).
