@@ -57,18 +57,28 @@ namespace Groundbreak.Tests
             if (cc != null) cc.enabled = true;
         }
 
-        static IEnumerator AimAt(Vector3 feet, Vector3 target)
+        /// <summary>Stand at <paramref name="feet"/> and look at a point on a surface. Aims 1 cm inside the surface along
+        /// <paramref name="normal"/> so the ray always enters through that face (aiming exactly at the face lets a
+        /// sub-centimetre camera drift graze past an edge-on board and hit the ground behind it), and keeps re-aiming
+        /// from the camera's current position until the player has settled and the ray hits what was meant.</summary>
+        static IEnumerator AimAt(Vector3 feet, Vector3 target, Vector3 normal, Collider expect = null)
         {
-            for (int i = 0; i < 4; i++)
+            Vector3 inside = target - normal.normalized * 0.01f;
+            PutPlayer(feet);
+            bool ok = false;
+            for (int i = 0; i < 30; i++)
             {
-                PutPlayer(feet);
-                Vector3 d = target - Game.Player.Cam.transform.position;
+                Vector3 d = inside - Game.Player.Cam.transform.position;
                 float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
                 float pitch = -Mathf.Atan2(d.y, new Vector2(d.x, d.z).magnitude) * Mathf.Rad2Deg;
                 Game.Player.SetLook(yaw, pitch);
-                yield return null;
+                yield return null;   // PlacementController updates on the next frame with this look
+                if (i < 3) continue; // let the CharacterController settle first
+                if (!Game.Player.TryAim(out var hit, PlacementController.AimRange)) continue;
+                ok = (expect == null || hit.collider == expect) && Vector3.Distance(hit.point, target) < 0.02f;
+                if (ok) break;
             }
-            yield return Frames(2);
+            Assert.IsTrue(ok, "could not aim at " + target.ToString("F3") + (expect ? " on " + expect.name : "") + ":" + Diag());
         }
 
         static void Select(string id)
@@ -87,6 +97,34 @@ namespace Groundbreak.Tests
             Assert.IsTrue(Game.Placement.Active, "place tool not active");
             _prevSel = Game.Placement.Selected;
             Game.Placement.SmartSnapOff = false;
+
+            // Isolation: earlier tests (or a loaded save) may leave pieces, a moved grid origin or another grid step.
+            Debug.Log($"[SmartSnap] setup: grid {Game.Snap.GridLabel} origin {Game.Snap.Origin} yaw {Game.Snap.OriginYaw} angle {Game.Snap.AngleLabel}");
+            _snap = (Game.Snap.GridIndex, Game.Snap.AngleIndex, Game.Snap.Origin, Game.Snap.OriginYaw);
+            Game.Snap.GridIndex = 3; Game.Snap.AngleIndex = 1; Game.Snap.Origin = Vector3.zero; Game.Snap.OriginYaw = 0f;
+            var area = new Bounds(Site + new Vector3(6f, 1.5f, -1f), new Vector3(24f, 6f, 10f));
+            foreach (var p in Object.FindObjectsByType<Piece>(FindObjectsSortMode.None))
+            {
+                if (!area.Contains(p.transform.position)) continue;
+                Debug.Log($"[SmartSnap] setup: clearing foreign piece {p.name} at {p.transform.position}");
+                Object.Destroy(p.gameObject);
+            }
+            yield return Frames(2);
+        }
+
+        (int grid, int angle, Vector3 origin, float yaw) _snap;
+
+        static string Diag()
+        {
+            var pc = Game.Placement;
+            Game.Player.TryAim(out var hit, PlacementController.AimRange);
+            const string NL = "\n  ";
+            return NL + "status: " + pc.StatusLine
+                 + NL + "target: " + (pc.SnapTarget ? pc.SnapTarget.name + " @" + pc.SnapTarget.transform.position.ToString("F3") : "none")
+                 + NL + "ghost " + pc.GhostPosition.ToString("F3") + " rot " + pc.GhostRotation.eulerAngles
+                 + NL + "player " + Game.Player.transform.position.ToString("F3") + " cam " + Game.Player.Cam.transform.position.ToString("F3")
+                 + NL + "aim hit " + (hit.collider ? hit.collider.name : "nothing") + " @" + hit.point.ToString("F3")
+                 + NL + "grid " + Game.Snap.GridLabel + " origin " + Game.Snap.Origin;
         }
 
         [UnityTearDown]
@@ -95,6 +133,7 @@ namespace Groundbreak.Tests
             foreach (var g in _made) if (g != null) Object.Destroy(g);
             _made.Clear();
             if (Game.Placement != null) { Game.Placement.SmartSnapOff = false; Game.Placement.Select(_prevSel); }
+            Game.Snap.GridIndex = _snap.grid; Game.Snap.AngleIndex = _snap.angle; Game.Snap.Origin = _snap.origin; Game.Snap.OriginYaw = _snap.yaw;
             yield return Frames(2);
         }
 
@@ -102,7 +141,7 @@ namespace Groundbreak.Tests
         public IEnumerator StudStandsOnPlateAtNext16OC()
         {
             Vector3 c = Site;
-            Plate(c);
+            var bp = Plate(c);
             Stud(c, -48f + 0.75f, 92.625f);   // end stud flush with the plate end
             Stud(c, -32f, 92.625f);           // 16" O.C. from the end
             yield return Frames(2);
@@ -110,10 +149,10 @@ namespace Groundbreak.Tests
 
             // aim at the plate top 30" from the end: the next mark is 32"
             Vector3 aim = c + new Vector3(In(-48f + 30f), In(1.5f), 0f);
-            yield return AimAt(c + new Vector3(In(-18f), 0f, -1.8f), aim);
+            yield return AimAt(c + new Vector3(In(-18f), 0f, -1.8f), aim, Vector3.up, bp.GetComponent<Collider>());
             var pc = Game.Placement;
             Debug.Log("[SmartSnap] stud: " + pc.StatusLine);
-            Assert.IsNotNull(pc.SnapTarget, "no snap target: " + pc.StatusLine);
+            Assert.IsNotNull(pc.SnapTarget, "no snap target:" + Diag());
             StringAssert.Contains("16\" O.C.", pc.SnapLabel);
             Assert.Greater(Vector3.Dot(pc.GhostRotation * Vector3.forward, Vector3.up), 0.99f, "stud not stood up");
             Vector3 want = c + new Vector3(In(-16f), In(1.5f) + In(92.625f) * 0.5f, 0f);
@@ -156,10 +195,10 @@ namespace Groundbreak.Tests
             Select("2x4x8");
 
             Vector3 aim = top.transform.position + new Vector3(In(10f), In(0.75f), 0f);
-            yield return AimAt(c + new Vector3(In(10f), 0f, -1.6f), aim);
+            yield return AimAt(c + new Vector3(In(10f), 0f, -1.6f), aim, Vector3.up, top.GetComponent<Collider>());
             var pc = Game.Placement;
-            Debug.Log("[SmartSnap] cap plate: " + pc.StatusLine);
-            Assert.AreEqual(top, pc.SnapTarget, "not snapping to the top plate: " + pc.StatusLine);
+            Debug.Log("[SmartSnap] cap plate:" + Diag());
+            Assert.AreEqual(top, pc.SnapTarget, "not snapping to the top plate:" + Diag());
             StringAssert.Contains("flush", pc.SnapLabel);
             Vector3 want = top.transform.position + Vector3.up * In(1.5f);
             Assert.Less(Vector3.Distance(pc.GhostPosition, want), 0.002f, "cap plate not flush: " + pc.GhostPosition + " want " + want);
@@ -179,10 +218,10 @@ namespace Groundbreak.Tests
             Select("osb716");
 
             Vector3 aim = c + new Vector3(In(2f) * 0f, 1.2f, -In(1.75f));   // exterior face of the middle stud
-            yield return AimAt(c + new Vector3(0.3f, 0f, -2.6f), aim);
+            yield return AimAt(c + new Vector3(0.3f, 0f, -2.6f), aim, Vector3.back);
             var pc = Game.Placement;
             Debug.Log("[SmartSnap] sheet: " + pc.StatusLine);
-            Assert.IsNotNull(pc.SnapTarget, "sheet did not find the framing: " + pc.StatusLine);
+            Assert.IsNotNull(pc.SnapTarget, "sheet did not find the framing:" + Diag());
             Vector3 g = pc.GhostPosition;
             Assert.Greater(Vector3.Dot(pc.GhostRotation * Vector3.up, Vector3.back), 0.99f, "sheet should face out of the wall");
             Assert.AreEqual(-In(1.75f) - In(0.4375f) * 0.5f, g.z - c.z, 0.001f, "sheet not on the stud faces");
@@ -206,10 +245,10 @@ namespace Groundbreak.Tests
             Select("2x4x8");
 
             Vector3 aim = c + new Vector3(In(48f + 30f), 0f, 0f);   // ground just past the end, in line
-            yield return AimAt(c + new Vector3(In(48f + 30f), 0f, -1.8f), aim);
+            yield return AimAt(c + new Vector3(In(48f + 30f), 0f, -1.8f), aim, Vector3.up);
             var pc = Game.Placement;
             Debug.Log("[SmartSnap] splice: " + pc.StatusLine);
-            Assert.AreEqual(plate, pc.SnapTarget, pc.StatusLine);
+            Assert.AreEqual(plate, pc.SnapTarget, "not splicing:" + Diag());
             StringAssert.Contains("splice", pc.SnapLabel);
             Vector3 want = plate.transform.position + Vector3.right * In(96f);
             Assert.Less(Vector3.Distance(pc.GhostPosition, want), 0.002f, "not spliced end to end: " + pc.GhostPosition + " want " + want);
