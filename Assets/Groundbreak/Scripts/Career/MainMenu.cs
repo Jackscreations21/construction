@@ -18,6 +18,9 @@ namespace Groundbreak
         }
         void OnDestroy() { if (I == this) I = null; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetEvents() { NewGameStarted = null; }
+
         public void Show() { _show = true; _page = 0; }
         public void Hide() { _show = false; Game.UIOpen = false; Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
 
@@ -26,6 +29,9 @@ namespace Groundbreak
             if (GInput.GetKeyDown(KeyCode.F10)) { if (_show) Hide(); else Show(); }
             if (_show) { Game.UIOpen = true; Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
         }
+
+        /// <summary>Raised at the end of <see cref="NewGame"/> (after state and wallet were reset) so features can set up their start.</summary>
+        public static event System.Action<GameMode> NewGameStarted;
 
         /// <summary>Starts a new game in the given mode: clears the build, resets all feature state and money.</summary>
         public static void NewGame(GameMode mode)
@@ -36,6 +42,7 @@ namespace Groundbreak
             Game.Wallet = new Wallet(mode == GameMode.Career ? 25000 : 50000);
             if (GameClock.I != null) { GameClock.I.Day = 1; GameClock.I.Hours = 7f; }
             Game.Toast(mode == GameMode.Career ? "New career: open the tablet (T) → Job Board" : "Free Build: unlimited open site. Sandbox toggles in Settings (F10)");
+            NewGameStarted?.Invoke(mode);
         }
 
         void OnGUI()
