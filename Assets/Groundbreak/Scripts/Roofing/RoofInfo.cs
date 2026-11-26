@@ -28,6 +28,8 @@ namespace Groundbreak
         public float SheathingThickness = Units.In(0.4375f);
         /// <summary>Fascia (1x6) thickness outside the sheathing edge at eaves and rakes.</summary>
         public float FasciaOutset = Units.In(0.75f);
+        /// <summary>Extra (u,v) clip lines added to <see cref="Bounds"/>, e.g. a closed-cut valley line on a cross-gable plane.</summary>
+        public List<HalfPlane> ExtraBounds;
 
         public float Pitch => PitchRise / 12f;
         public float AngleDeg => Mathf.Atan(Pitch) * Mathf.Rad2Deg;
@@ -65,6 +67,7 @@ namespace Groundbreak
             l.Add(HipEnd ? new HalfPlane(new Vector2(EaveLength, 0f), new Vector2(-1f, -c)) : HalfPlane.XMax(EaveLength + rakeOut));
             l.Add(HalfPlane.YMin(-eaveOut));
             l.Add(HalfPlane.YMax(vTop));
+            if (ExtraBounds != null) l.AddRange(ExtraBounds);
             return l;
         }
     }

@@ -95,6 +95,96 @@ namespace Groundbreak.Tests
             Snap(O + new Vector3(10.3f, 1.6f, -4.2f), O + new Vector3(12f, 1.6f, -0.5f), "extras_10_garage_tracks_springs", 60f);
         }
 
+        /// <summary>Main-house stand-in: slab/deck block, OSB wall boxes and double top plates (roof bearing).</summary>
+        static void StandIn(Footprint fp)
+        {
+            var root = new GameObject("ExtrasStandIn").transform;
+            root.SetParent(_root.transform, true);
+            root.SetPositionAndRotation(new Vector3(fp.Origin.x, 0f, fp.Origin.z), fp.Rotation);
+            float L = fp.Length, W = fp.Width, Pt = fp.PlateTopY, wd = fp.WallDepth, deck = fp.DeckTopY, t = Units.In(1.5f);
+            float wallTop = Pt - 2 * t;
+            Framer.AttachMesh(root, "Walls", (MeshBuilder b, System.Func<SurfaceKind, int> s) =>
+            {
+                int osb = s(SurfaceKind.Osb), conc = s(SurfaceKind.Concrete);
+                b.AddBox(new Vector3(L / 2, deck / 2 - 0.05f, W / 2), new Vector3(L + 0.02f, deck + 0.1f, W + 0.02f), conc);
+                float h = wallTop - deck, yc = deck + h / 2, sh = Units.In(0.4375f);
+                b.AddBox(new Vector3(L / 2, yc, wd / 2 - sh / 2), new Vector3(L, h, wd + sh), osb);
+                b.AddBox(new Vector3(L / 2, yc, W - wd / 2 + sh / 2), new Vector3(L, h, wd + sh), osb);
+                b.AddBox(new Vector3(wd / 2 - sh / 2, yc, W / 2), new Vector3(wd + sh, h, W - 2 * wd), osb);
+                b.AddBox(new Vector3(L - wd / 2 + sh / 2, yc, W / 2), new Vector3(wd + sh, h, W - 2 * wd), osb);
+            });
+            string longId = RoofStock.Pick("2x4", L).id, endId = RoofStock.Pick("2x4", W - 2 * wd).id;
+            foreach (var (y, role) in new[] { (Pt - t * 1.5f, MemberRole.TopPlate), (Pt - t * 0.5f, MemberRole.CapPlate) })
+            {
+                Framer.Make(longId, L, root, new Vector3(L / 2, y, wd / 2), Vector3.right, Vector3.up, role);
+                Framer.Make(longId, L, root, new Vector3(L / 2, y, W - wd / 2), Vector3.right, Vector3.up, role);
+                Framer.Make(endId, W - 2 * wd, root, new Vector3(wd / 2, y, W / 2), Vector3.forward, Vector3.up, role);
+                Framer.Make(endId, W - 2 * wd, root, new Vector3(L - wd / 2, y, W / 2), Vector3.forward, Vector3.up, role);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CrossGable_ValleysFramedAndClosedCut()
+        {
+            bool req = FramingJob.RequireStock;
+            FramingJob.RequireStock = false;
+            var fp = Footprint.Make(O + new Vector3(30f, 0f, 0f), 0f, 32f, 24f);
+            StandIn(fp);
+            var roofJob = RoofFraming.Trusses(fp, 6, 12, 12, false);
+            var info = RoofFraming.InfoOf(roofJob);
+            roofJob.RunAll();
+            var sheath = RoofFraming.RoofSheathing(info); sheath.RunAll();
+            yield return Frames(2);
+
+            var cg = CrossGable.Frame(info, fp.Length / 2, 14f, 20f);
+            cg.FramingJob.transform.SetParent(_root.transform, true);
+            Assert.AreEqual(2, cg.Valleys.Count);
+            Assert.GreaterOrEqual(info.Valleys.Count, 2, "valleys published on the main RoofInfo");
+            // valley geometry: 45 deg in plan for equal pitches, from the inside corner to the wing ridge on the main deck
+            var v = cg.Valleys[0];
+            Vector3 d = v.B - v.A; d.y = 0f;
+            Assert.AreEqual(45f, Vector3.Angle(d, fp.AlongX), 0.5f);
+            // frame everything but the deck, photograph the valley framing, then sheathe
+            var fj = cg.FramingJob;
+            int deckSteps = fj.Steps.FindAll(s => s.Label.StartsWith("Wing roof sheathing")).Count;
+            for (int i = 0; i < fj.Steps.Count - deckSteps; i++) fj.Steps[i].Do?.Invoke();
+            fj.Next = fj.Steps.Count - deckSteps;
+            yield return Frames(2);
+            var v0 = cg.Valleys[0];
+            Vector3 vm = Vector3.Lerp(v0.A, v0.B, 0.45f);
+            Snap(vm + new Vector3(-1.3f, 1.3f, -2.2f), vm + new Vector3(0.5f, -0.1f, 0.2f), "extras_14_valley_framing", 55f);
+            fj.RunAll();
+            yield return Frames(2);
+            Assert.IsTrue(cg.Framed);
+            var members = cg.FramingJob.GetComponentsInChildren<StructuralMember>();
+            int jacks = 0, valleyBoards = 0, commons = 0, ridge = 0;
+            foreach (var m in members)
+            {
+                if (m.Role == MemberRole.JackRafter) jacks++;
+                if (m.Role == MemberRole.ValleyRafter) valleyBoards++;
+                if (m.Role == MemberRole.Rafter) commons++;
+                if (m.Role == MemberRole.RidgeBoard) ridge++;
+            }
+            Assert.AreEqual(2, valleyBoards);
+            Assert.AreEqual(1, ridge);
+            Assert.Greater(jacks, 6, "valley jacks both sides");
+            Assert.Greater(commons, 10, "commons over the wing");
+            Vector3 vc = Vector3.Lerp(v.A, v.B, 0.35f);
+
+            var dry = Roofing.DryIn(info); dry.RunAll();
+            var sh = Roofing.Shingles(info); sh.RunAll();
+            var wr = CrossGable.Roof(cg); wr.transform.SetParent(_root.transform, true); wr.RunAll();
+            yield return Frames(3);
+            Assert.IsTrue(cg.Roofed);
+            Assert.IsNotNull(GameObject.Find("Main courses across the valley"), "main courses woven across the valley");
+            Snap(vc + new Vector3(-1.2f, 2.2f, -2.6f), vc + new Vector3(0.2f, 0.1f, 0.2f), "extras_15_valley_closed_cut", 50f);
+            Vector3 cen = fp.World(fp.Length / 2, 0f, 0f);
+            Snap(cen + new Vector3(-9f, 7f, -14f), cen + new Vector3(0f, 2.8f, 0.5f), "extras_16_L_house_cross_gable", 55f);
+            foreach (var r in Object.FindObjectsByType<RoofInfo>(FindObjectsSortMode.None)) Object.Destroy(r.gameObject);
+            foreach (var j in new[] { roofJob, sheath, dry, sh }) if (j != null) Object.Destroy(j.gameObject);
+            FramingJob.RequireStock = req;
+        }
+
         static void RunSteps(FramingJob job, System.Func<BuildStep, bool> which)
         {
             foreach (var s in job.Steps) if (which(s)) s.Do?.Invoke();
