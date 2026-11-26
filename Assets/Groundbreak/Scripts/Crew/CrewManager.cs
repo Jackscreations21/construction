@@ -37,14 +37,17 @@ namespace Groundbreak
 
         public static void DespawnAll()
         {
-            foreach (var n in CrewNpc.All.ToArray()) if (n != null) Destroy(n.gameObject);
+            foreach (var n in CrewNpc.All.ToArray()) if (n != null) { n.gameObject.SetActive(false); Destroy(n.gameObject); }
         }
 
         public static CrewNpc NpcFor(Worker w) => CrewNpc.All.Find(n => n != null && n.W == w);
 
         /// <summary>Where workers arrive and leave: the delivery drop point (by the trucks), else near the player.</summary>
+        public static Vector3? ArrivalOverride;
+
         public static Vector3 ArrivalPoint()
         {
+            if (ArrivalOverride.HasValue) return ArrivalOverride.Value;
             if (DeliveryService.I != null) return DeliveryService.I.DropPoint + new Vector3(-2f, 0, -1f);
             if (Game.Player != null) return Game.Player.transform.position + Game.Player.transform.right * 3f;
             return Vector3.zero;

@@ -12,13 +12,16 @@ namespace Groundbreak
     public class CrewNpc : MonoBehaviour
     {
         public static readonly List<CrewNpc> All = new List<CrewNpc>();
-        public const float WalkSpeed = 1.35f, Reach = 1.1f;
+        public const float WalkSpeed = 1.35f, Reach = 1.1f, MaxFetch = 50f;
+        static Vector3 Flat(Vector3 p) => new Vector3(p.x, 0f, p.z);
 
         public Worker W;
         public CrewTask Task;
         public WorkUnit Unit;
         public enum Phase { Idle, ToPickup, ToWork, Working, Leaving }
         public Phase State = Phase.Idle;
+        /// <summary>Seconds into the current piece of work (0 when not working).</summary>
+        public float WorkElapsed => State == Phase.Working ? _workT : 0f;
         public string Doing => Unit != null ? Unit.Label : State == Phase.Leaving ? "Heading home" : "Waiting for work";
 
         Transform _hips, _legL, _legR, _armL, _armR, _toolRoot, _carryRoot;
@@ -51,12 +54,11 @@ namespace Groundbreak
             switch (State)
             {
                 case Phase.ToPickup:
-                    ShowCarry(null);
                     if (MoveTo(Unit.PickupAt, Reach, dt)) { ShowCarry(Unit.CarryId); State = Phase.ToWork; }
                     break;
                 case Phase.ToWork:
                     Vector3 stand = Unit.HasStand ? Unit.StandAt : Unit.Spot;
-                    if (MoveTo(stand, Unit.HasStand ? 0.35f : Reach, dt)) { State = Phase.Working; _workLeft = WorkSeconds(); _workT = 0f; ShowCarry(null); }
+                    if (MoveTo(stand, Unit.HasStand ? 0.35f : Reach, dt)) { State = Phase.Working; _workLeft = WorkSeconds(); _workT = 0f; ShowCarry(null); ShowTool(Unit.Anim); Pose(Unit.Anim, 0f); }
                     break;
                 case Phase.Working:
                     Face(Unit.Spot, dt);
@@ -82,7 +84,11 @@ namespace Groundbreak
             Unit = Task.Next(W, transform.position);
             if (Unit == null) { Crew.Info(W).Doing = Task.Blocked != null ? "Waiting: " + Task.Blocked : "Waiting for work"; Task.Release(W.Uid); Task = null; return; }
             Crew.Info(W).Doing = Unit.Label;
-            State = !string.IsNullOrEmpty(Unit.CarryId) ? Phase.ToPickup : Phase.ToWork;
+            // fetch from the pile unless it's off this site (then it's already been brought over with the tools)
+            Vector3 work = Unit.HasStand ? Unit.StandAt : Unit.Spot;
+            bool fetch = !string.IsNullOrEmpty(Unit.CarryId) && Vector3.Distance(Flat(Unit.PickupAt), Flat(work)) < MaxFetch;
+            State = fetch ? Phase.ToPickup : Phase.ToWork;
+            if (!fetch) ShowCarry(Unit.CarryId);
             _stuck = 0f;
         }
 

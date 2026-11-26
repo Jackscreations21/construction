@@ -124,7 +124,7 @@ namespace Groundbreak
 
         public Data ToData() => new Data { id = Id, n = Count, pos = transform.position, yaw = Yaw };
         public static void Restore(Data d) { if (d != null && d.n > 0) At(d.pos, d.yaw, d.id).Add(d.n); }
-        public static void ClearAll() { foreach (var p in All.ToArray()) if (p != null) Destroy(p.gameObject); All.Clear(); }
+        public static void ClearAll() { foreach (var p in All.ToArray()) if (p != null) { p.gameObject.SetActive(false); Destroy(p.gameObject); } All.Clear(); }
 
         void OnEnable() => All.Add(this);
         void OnDisable() => All.Remove(this);
