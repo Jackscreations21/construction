@@ -93,6 +93,10 @@ namespace Groundbreak.Tests
             Game.ToastUntil = 0f;
             yield return new WaitForSecondsRealtime(0.2f);
             yield return Shot("ui_hud");
+            if (Game.Belt != null) { Game.Belt.Select(0); Game.Player.SetLook(20f, 25f); }
+            yield return new WaitForSecondsRealtime(0.3f);
+            yield return Shot("ui_hud_place");
+            if (Game.Belt != null) { Game.Belt.Select(1); Game.Player.SetLook(20f, 6f); }
 
             // Tab tool list (held Tab): ToolBelt.Update resets _showList each frame, so set it after Update, before OnGUI
             var f = typeof(ToolBelt).GetField("_showList", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -105,8 +109,9 @@ namespace Groundbreak.Tests
             // every tablet app
             var names = (string[])typeof(Tablet).GetMethod("AppNames", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
             var seen = new List<string>();
-            Tablet.I.Open();
+            Tablet.I.ShowApp("Home");
             yield return new WaitForSecondsRealtime(0.35f);
+            Assert.AreEqual("Home", Tablet.I.CurrentApp);
             yield return Shot("ui_tablet_home");
             foreach (var n in names)
             {

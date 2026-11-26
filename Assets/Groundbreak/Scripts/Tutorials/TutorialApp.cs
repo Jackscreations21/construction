@@ -69,7 +69,7 @@ namespace Groundbreak
                     GUILayout.FlexibleSpace();
                     string tag = $"{seen}/{tut.Steps.Count} steps";
                     if (!tut.Available) tag = "coming with " + tut.ComingWith + " · " + tag;
-                    GUILayout.Label(tag, _tag, GUILayout.Width(label.fontSize * 16));
+                    GUILayout.Label(tag, _tag, GUILayout.Width(label.fontSize * (tut.Available ? 6 : 16)));
                     GUILayout.EndHorizontal();
                 }
             }
@@ -102,8 +102,8 @@ namespace Groundbreak
             GUILayout.Space(6);
 
             // picture + text: side by side on a wide tablet, stacked on a narrow one
-            float inner = Screen.width * 0.7f - 70f;
-            bool wide = inner >= 900f;
+            float inner = Tablet.I != null ? Tablet.I.ContentWidth - 8f : Screen.width * 0.7f - 70f;
+            bool wide = inner >= 820f;
             if (wide)
             {
                 float pw = inner * 0.6f, ph = Mathf.Min(pw * 9f / 16f, Screen.height * 0.45f);
