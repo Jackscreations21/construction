@@ -26,6 +26,20 @@ namespace Groundbreak
             _appNames = null;
         }
 
+        /// <summary>Extension point: removes an app registered by a feature (e.g. when another app takes over its screen).</summary>
+        public static void RemoveApp(string name)
+        {
+            if (_extApps.RemoveAll(a => a.name == name) > 0) _appNames = null;
+        }
+
+        static readonly Dictionary<string, System.Func<bool>> _visibleIf = new Dictionary<string, System.Func<bool>>();
+        /// <summary>Extension point: show an app only while the condition holds (e.g. Career-only business apps in Free Build).</summary>
+        public static void SetAppVisible(string name, System.Func<bool> visible)
+        {
+            if (visible == null) _visibleIf.Remove(name); else _visibleIf[name] = visible;
+            _appNames = null;
+        }
+
         /// <summary>Extension point: extra lines for the Help app (controls for a feature).</summary>
         public static void AddHelp(string line) { if (!_extHelp.Contains(line)) _extHelp.Add(line); }
 
@@ -49,12 +63,13 @@ namespace Groundbreak
 
         static string[] AppNames()
         {
-            if (_appNames != null) return _appNames;
+            if (_appNames != null && _visibleIf.Count == 0) return _appNames;
             var list = new List<string>();
             foreach (var b in BuiltInApps)
                 if (!_extApps.Exists(a => a.name == b)) list.Add(b);
             int help = list.IndexOf("Help");
             foreach (var a in _extApps) if (!list.Contains(a.name)) list.Insert(help >= 0 ? list.IndexOf("Help") : list.Count, a.name);
+            list.RemoveAll(n => _visibleIf.TryGetValue(n, out var vis) && !vis());
             _appNames = list.ToArray();
             return _appNames;
         }

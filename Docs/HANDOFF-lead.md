@@ -29,39 +29,31 @@ Known merge noise: (1) every test run rewrites ~80 `Assets/Groundbreak/Resources
 before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` / `Business/Company.cs.meta` add/add conflicts — keep main's.
 (3) untracked Unity files blocking a merge (`ProjectSettings/PackageManagerSettings.asset`, .meta) — delete them and retry.
 
-## State of main (local, NOT all pushed)
-- Pushed (origin/main 4803bd1): all six trade milestones, tutorials, polish, `Company` core, **smart placement**, **yard-fleet** (vehicles, warehouse,
-  finance, contractor jobs), **ui-capture** (tablet home grid + grouped sidebar, `Tablet.SetAppGroup(app, group)`, windowed capture — Docs/UI-CAPTURE.md). 64 tests + 1 skipped.
-- Local only, on top: **crew-workers** merge (e52e878), a SaveSystem fix (batch-mode runs use a per-checkout save folder), **mep-site-details** merge (fc972ba, untested on main).
-- **Blocking the push**: `SmartPlacementTests.SecondTopPlateSnapsFlush` fails intermittently on main (picks a 16" O.C. candidate instead of the flush cap;
-  also reported failing alone on 4803bd1). The smart-placement session was asked to make it deterministic and report "smart-placement FIX DONE".
-  When it does: merge `claude/smart-placement-851e8c`, run the full suite, look at `crew_*.png` and `detail_*.png` shots, push.
+## State of main (updated 2026-11-26 ~20:55 UTC by lead local_98a2032f-a420-4a0a-9364-69a1031cb23c)
+- **Pushed, origin/main fda9dc3, 100 tests pass + 1 skipped (UICapture, by design):** everything before, plus crew-workers, mep-site-details,
+  the smart-placement test fix, development, town-repairs, structure-extras. Nothing is local-only.
+- The earlier helper sessions (town-repairs, development, structure-extras, smart-placement, crew-workers, mep-site-details, yard-fleet, ui-capture)
+  are all DONE and merged; their notes are `Docs/HANDOFF-<name>.md`.
 
-## Sessions (all Opus, worktrees under `.claude/worktrees/`)
-| name | id | branch | state |
+## Sessions running (all Opus, own worktrees, started 20:51 UTC, report to the lead)
+| name | id | branch | task |
 |---|---|---|---|
-| town-repairs | local_378f0892-0825-4f13-bb36-0154c9bc5575 | claude/town-repairs-b14d3c | WORKING: town (streets, 17 houses, store) written; van + repair jobs in progress. Owns `Town` API (Docs/TOWN.md on its branch) |
-| development | local_ca789e89-8199-43c4-a90d-7a7b60af366e | claude/development-3892f9 | WORKING: house plans, Builder draws, Developer land/subdivision/sales; own `ILotProvider`/`ICrewProgress` until Town/Crew adapters |
-| structure-extras | local_97c176bc-8e90-4975-a92a-b82a0ede7a23 | claude/structure-extras-dfa71f | WORKING: window/door models, I-joist floors, roof valleys, + fix `StructuralRules.Classify` (doubled top plate shows red) |
-| smart-placement | local_a1169bf4-9a64-42e5-b8c8-2622eb9a3d63 | claude/smart-placement-851e8c | fixing the flaky test above |
-| mep-site-details | local_3ba35a70-5d6e-4c69-b03d-47369fc3b077 | claude/mep-site-details-92f734 | DONE @ 968b144, merged locally |
-| crew-workers | local_300959da-4030-4adb-a115-ed2c67f24fdd | claude/crew-workers-ed35ce | DONE @ 97ebe12, merged locally. Hooks: `CrewManager.HereJobResolver`, `Crew.AddTask` (JobId) |
-| yard-fleet | local_91a3c222-2510-4367-8c6a-1ac497730909 | claude/yard-fleet-6f0301 | DONE, merged + pushed. `TownHook.JobLotProvider` to wire after Town merge |
-| ui-capture | local_89767c4f-878f-4b62-beab-089d49732008 | claude/ui-capture-79450e | DONE, merged + pushed |
+| integration | local_05a7f175-4270-437c-a3a8-481b750b3c2a | claude/integration-* | wire Town lots/Crew/Development/Fleet, one van, tablet groups, Career playthrough test |
+| blueprints | local_ff81f833-9625-43f6-9ed4-b74d82863730 | claude/blueprints-* | 40+ plans in `Scripts/Blueprints/` on the `HousePlan` format, `Docs/BLUEPRINTS.md` |
+| job-catalog | local_ce07e7ff-f4d7-4356-98bc-59e1d71fee58 | claude/job-catalog-* | 60+ repairs, 25+ contractor jobs, build jobs, `Scripts/JobCatalog/`, `Docs/JOBS.md` |
+| full-map | local_7e060d9b-6544-43be-a0c9-6c3deb424650 | claude/full-map-ee35f7 | user request: full map, nothing empty, many buildings with blueprints/jobs, `Scripts/Map/`, `Docs/MAP.md` |
+
+Each reports "<name> DONE @ <commit>" or "<name> HANDOFF READY". Expect overlaps when merging: integration and full-map both touch `Scripts/Town/`;
+job-catalog and full-map both lean on blueprint plan ids (looked up at runtime, missing ids tolerated).
 
 ## Left to do, in order
-1. Land the snap-test fix; test + push main with crew and MEP details.
-2. Merge town-repairs, structure-extras, development as they report DONE (town first if possible).
-3. **Integration session**: wire real `Town` lots into yard-fleet (`TownHook.JobLotProvider`), development (`ILotProvider`) and crew (`HereJobResolver`,
-   `ICrewProgress`); business apps call `Tablet.SetAppGroup(name, "Business")`; one van model/type between Town and Fleet; Career new-game flow end to end
-   (Handyman → Contractor → Crew → Builder → Developer) with a playthrough test.
-4. **Blueprints (user request, 1–2 sessions)**: "blueprints and full layouts for a ton of houses and buildings and warehouses" on development's plan format:
-   residential (starters, ranches, two-stories, duplexes, townhomes) and non-residential (garages, sheds, barns, shops, offices, warehouses); full room layout,
-   walls, openings, roof, MEP fixture locations, takeoff.
-5. **Job catalog (user request, 1 session)**: many different repair jobs and new-build jobs per stage, data-driven, extending Repairs / Fleet-Jobs / Development.
-6. Business tutorials with pictures (Tutorials app; windowed capture for tablet shots).
-7. Balance pass (prices, wages, pay, growth pace) and small fixes: stop the Tutorials test rewriting Resources PNGs on normal runs; stored stock hard to see on
-   warehouse racking; held tool visible beside the open tablet; crew drywall/paint/dig/sod tasks lack tests; optional delivery fee (`Fleet.DeliveryFee`).
+1. Merge integration, blueprints, job-catalog, full-map as they report (test, look at `career_*`, `bp_*`, `jobcat_*`, `map_*` shots, push, tell the others to merge main).
+2. A short follow-up pass once all four are in: map buildings use the new plans and jobs; playthrough test still passes on the big map.
+3. Business tutorials with pictures (Tutorials app; windowed capture for tablet shots).
+4. Balance pass (prices, wages, pay, growth pace) and small fixes: stop the Tutorials test rewriting Resources PNGs on normal runs; stored stock hard to see on
+   warehouse racking; held tool visible beside the open tablet; crew drywall/paint/dig/sod tasks lack tests; optional delivery fee (`Fleet.DeliveryFee`);
+   cross-gable wing has no UI button; van model polish.
+- The user wants the checklist of everything left written in every reply (the pinned list disappears) and the tracker artifact kept current.
 
 ## First things for the new lead
 1. `get_session` "self" for your own id, then SendMessage every WORKING session (and smart-placement): "New lead session is `<your id>` — send DONE /
