@@ -328,7 +328,7 @@ namespace Groundbreak
             _equipInside = new Vector3(bx1 - 2.0f, 0.1f, F(8)); _equipOutside = new Vector3(bx1 + 6f, 0.03f, -6f);
             PlayerSpawn = W(new Vector3(F(4), 0, -3f));
             CameraSpot = W(new Vector3(-24f, 9f, -30f)); CameraLook = W(new Vector3(-4f, 2f, 6f));
-            InteriorCameraSpot = W(new Vector3(F(4), 1.7f, 1.2f)); InteriorCameraLook = W(new Vector3(-1f, 1.6f, z1 - 2f));
+            InteriorCameraSpot = W(new Vector3(bx1 - 0.8f, 2.4f, 0.9f)); InteriorCameraLook = W(new Vector3(bx0 + 3f, 1.4f, z1 - 4f));
         }
 
         // ------------------------------------------------------------------ level 2: yard + shop

@@ -52,7 +52,7 @@ namespace Groundbreak.Tests
             Career.Reputation = _rep;
             int d = _money - Game.Wallet.Money;
             if (d > 0) Game.Wallet.Add(d, "test restore"); else if (d < 0) Game.Wallet.TrySpend(-d, "test restore");
-            Game.Stock.TryTake("crusher-run", Game.Stock.Count("crusher-run"));
+            if (Game.Stock.Count("crusher-run") > 0) Game.Stock.TryTake("crusher-run", Game.Stock.Count("crusher-run"));
             SaveSystem.Delete("test_yardfleet");
         }
 
@@ -194,6 +194,7 @@ namespace Groundbreak.Tests
             Shot(s.CameraSpot, s.CameraLook, "yf_12_yard_exterior");
             Shot(s.InteriorCameraSpot, s.InteriorCameraLook, "yf_13_shop_interior", 70f);
 
+            Cash(100000);
             Assert.IsTrue(Yard.Lease(3, out msg), msg);
             yield return Frames(3);
             s = YardSite.I;
