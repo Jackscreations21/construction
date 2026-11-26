@@ -109,3 +109,8 @@ All 8 sessions told to commit WIP and stop (stop_session used so the queued mess
 four sessions by SendMessage and recreates the monitor (pause threshold 85%). Lesson: with 8 sessions check usage every ~2 min or run at most 4.
 Branches: check `git branch -a` for claude/town-repairs-*, yard-fleet-*, crew-workers-*, smart-placement-*, development-*, structure-extras-*,
 mep-site-details-*, ui-capture-*; none merged yet.
+
+## RESUMED 2026-11-26 ~20:11 UTC (user: "go", limit reset to 0%)
+Running (Opus): town-repairs, yard-fleet, crew-workers, smart-placement — told to use at most one helper agent at a time.
+Waiting (resume by SendMessage as slots free): development, structure-extras, mep-site-details, ui-capture.
+Monitor cron every 4 min, pause threshold 85%. Parallelism doesn't add throughput when the plan limit is the bottleneck; keep it at 4.
