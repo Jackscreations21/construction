@@ -40,6 +40,45 @@ namespace Groundbreak
         struct Placed { public Piece Piece; public string Id; public float Offcut; }
         readonly List<Placed> _history = new List<Placed>();
 
+        // Smart snap (context-aware placement from neighbouring pieces, see SmartSnap)
+        /// <summary>True = plain grid placement only (same as holding Ctrl). Tests and settings can set it.</summary>
+        public bool SmartSnapOff { get; set; }
+        /// <summary>Short readout of the active smart snap ("16\" O.C.", "flush", "butt", "splice"...), "" when none.</summary>
+        public string SnapLabel { get; private set; } = "";
+        /// <summary>The piece the ghost is snapped to (highlighted), or null.</summary>
+        public Piece SnapTarget { get; private set; }
+        public int SnapCandidateCount => _cands.Count;
+        public Vector3 GhostPosition => _ghostPos;
+        public Quaternion GhostRotation => _ghostRot;
+        public bool GhostValid => _hasAim && _valid;
+        readonly List<SnapCandidate> _cands = new List<SnapCandidate>();
+        int _pick;
+        bool _manualRot;
+        Piece _lastTickTarget; string _lastTickLabel = "";
+        LineRenderer _hl;
+        readonly Vector3[] _hlPts = new Vector3[16];
+
+        /// <summary>Select a placeable material directly (tablet, tests).</summary>
+        public void Select(PieceDefinition def)
+        {
+            if (def == null || !def.IsPlaceable) return;
+            Selected = def; _manualRot = false; _pick = 0;
+        }
+
+        /// <summary>Q / Shift+Q: step through the smart snap candidates.</summary>
+        public void CycleSnap(int dir)
+        {
+            _manualRot = false;
+            int n = Mathf.Max(1, _cands.Count);
+            _pick = ((_pick + dir) % n + n) % n;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void RegisterHelp()
+        {
+            Tablet.AddHelp("Smart placement: the ghost finds nearby boards and sheets (stud on a plate at the next 16\"/24\" O.C., doubled plate, splice, sheet edge on a stud center). Q / Shift+Q next/previous fit, hold Ctrl for the plain grid, scroll to rotate by hand.");
+        }
+
         void Awake()
         {
             Game.Placement = this;
@@ -50,6 +89,7 @@ namespace Groundbreak
         {
             if (Game.Placement == this) Game.Placement = null;
             if (_ghost != null) Destroy(_ghost);
+            if (_hl != null) Destroy(_hl.gameObject);
         }
 
         float StockLength => Selected != null ? Selected.Size.z : 0f;
@@ -65,6 +105,7 @@ namespace Groundbreak
 
             if (Active) UpdateGhost();
             else { _hasAim = false; SetGhostVisible(false); }
+            if (!_hasAim) { SnapTarget = null; SnapLabel = ""; _lastTickTarget = null; UpdateHighlight(null); }
 
             BuildStatus();
         }
@@ -105,9 +146,16 @@ namespace Groundbreak
             if (scroll != 0f)
             {
                 float step = Game.Snap.AngleStep > 0f ? Game.Snap.AngleStep : 5f;
+                if (!_manualRot && _hasAim && SnapTarget != null)
+                {
+                    // start manual rotation from the pose smart snap had chosen
+                    var e = _ghostRot.eulerAngles; _yaw = e.y; _pitch = e.x;
+                }
                 if (GInput.Alt) _pitch = Mathf.Repeat(_pitch + scroll * step, 360f);
                 else _yaw = Mathf.Repeat(_yaw + scroll * step, 360f);
+                _manualRot = true;
             }
+            if (GInput.GetKeyDown(KeyCode.Q)) CycleSnap(GInput.Shift ? -1 : 1);
 
             if (GInput.Ctrl && GInput.GetKeyDown(KeyCode.Z)) Undo();
             else if (GInput.GetKeyDown(KeyCode.F)) Repeat();
@@ -119,6 +167,7 @@ namespace Groundbreak
             if (list.Count == 0) return;
             int i = Mathf.Max(0, list.IndexOf(Selected));
             Selected = list[(i + dir + list.Count) % list.Count];
+            _manualRot = false; _pick = 0;
             Game.Toast("Selected: " + Selected.Name + " (" + Game.Stock.Count(Selected.Id) + " on site)");
         }
 
@@ -183,11 +232,40 @@ namespace Groundbreak
             float facePlane = Vector3.Dot(hit.point, n);
             pos += n * (facePlane + hn - Vector3.Dot(pos, n));
 
-            if (!GInput.Ctrl)
+            bool free = GInput.Ctrl || SmartSnapOff;
+            Piece hitPiece = hit.collider != null ? hit.collider.GetComponentInParent<Piece>() : null;
+            if (!free && hitPiece != null) pos = SnapToPiece(hitPiece, pos, rot, half, n);
+
+            // Smart snap: candidate poses from the pieces around the aim point. Nothing nearby = the plain pose above.
+            SnapTarget = null; SnapLabel = "";
+            if (free) _cands.Clear();
+            else
             {
-                var piece = hit.collider != null ? hit.collider.GetComponentInParent<Piece>() : null;
-                if (piece != null) pos = SnapToPiece(piece, pos, rot, half, n);
+                var q = new SnapQuery
+                {
+                    Def = Selected, Size = size, Point = hit.point, Normal = n, HitPiece = hitPiece,
+                    BasePos = pos, BaseRot = rot, ManualRotation = _manualRot,
+                };
+                SmartSnap.Solve(q, _cands);
             }
+
+            bool chosen = false;
+            if (_cands.Count > 0)
+            {
+                if (_pick >= _cands.Count) _pick = 0;
+                // the player's pick first; on the default pick, skip candidates that run into another piece
+                for (int k = 0; k < _cands.Count && !chosen; k++)
+                {
+                    var c = _cands[(_pick + k) % _cands.Count];
+                    if (_pick == 0 && k < _cands.Count - 1 && Overlaps(c.Pos, c.Rot, size)) continue;
+                    pos = c.Pos; rot = c.Rot; SnapTarget = c.Target; SnapLabel = c.Target != null ? c.Label : "";
+                    chosen = true;
+                }
+            }
+            if (SnapTarget != null && (SnapTarget != _lastTickTarget || SnapLabel != _lastTickLabel))
+                Sfx.Play("click", pos, 0.18f);
+            _lastTickTarget = SnapTarget; _lastTickLabel = SnapLabel;
+            UpdateHighlight(SnapTarget);
 
             _ghostPos = pos;
             _ghostRot = rot;
@@ -199,6 +277,42 @@ namespace Groundbreak
 
             _valid = Validate(pos, rot, size, out _reason);
             _ghostRenderer.sharedMaterial = MaterialLibrary.Ghost(!_valid ? new Color(1f, 0.2f, 0.2f) : _warn ? new Color(1f, 0.85f, 0.1f) : new Color(0.2f, 0.5f, 1f));
+        }
+
+        /// <summary>Thin pulsing outline around the piece the ghost is snapped to (world-space line, no collider).</summary>
+        void UpdateHighlight(Piece target)
+        {
+            if (target == null)
+            {
+                if (_hl != null && _hl.gameObject.activeSelf) _hl.gameObject.SetActive(false);
+                return;
+            }
+            if (_hl == null)
+            {
+                var go = new GameObject("SnapTargetHighlight") { layer = 2 };
+                _hl = go.AddComponent<LineRenderer>();
+                _hl.useWorldSpace = true;
+                _hl.positionCount = _hlPts.Length;
+                _hl.widthMultiplier = 0.012f;
+                _hl.numCornerVertices = 0;
+                _hl.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _hl.receiveShadows = false;
+                var sh = Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color");
+                _hl.sharedMaterial = new Material(sh) { name = "GB_SnapHighlight" };
+            }
+            if (!_hl.gameObject.activeSelf) _hl.gameObject.SetActive(true);
+            var t = target.transform;
+            Vector3 h = target.Size * 0.5f + Vector3.one * 0.004f;
+            // same edge walk as GhostOutline: bottom loop, up, top loop, remaining verticals as spurs
+            Vector3 P(float x, float y, float z) => t.position + t.rotation * Vector3.Scale(new Vector3(x, y, z), h);
+            _hlPts[0] = P(-1, -1, -1); _hlPts[1] = P(1, -1, -1); _hlPts[2] = P(1, -1, 1); _hlPts[3] = P(-1, -1, 1); _hlPts[4] = P(-1, -1, -1);
+            _hlPts[5] = P(-1, 1, -1); _hlPts[6] = P(1, 1, -1); _hlPts[7] = P(1, -1, -1); _hlPts[8] = P(1, 1, -1);
+            _hlPts[9] = P(1, 1, 1); _hlPts[10] = P(1, -1, 1); _hlPts[11] = P(1, 1, 1);
+            _hlPts[12] = P(-1, 1, 1); _hlPts[13] = P(-1, -1, 1); _hlPts[14] = P(-1, 1, 1); _hlPts[15] = P(-1, 1, -1);
+            _hl.SetPositions(_hlPts);
+            float pulse = 0.6f + 0.4f * (0.5f + 0.5f * Mathf.Sin(Time.time * 5f));
+            var c = new Color(1f, 0.78f, 0.2f, pulse);
+            _hl.startColor = c; _hl.endColor = c;
         }
 
         /// <summary>Sit exactly on the hit face (done) and align ends/edges with the piece along its other local axes.</summary>
@@ -394,6 +508,8 @@ namespace Groundbreak
                 else
                 {
                     s += !_valid ? " · INVALID (" + _reason + ")" : _warn ? " · WARNING (" + _reason + ")" : " · VALID";
+                    if (SnapLabel != "") s += " · snap: " + SnapLabel + (_cands.Count > 2 ? " (Q next)" : "");
+                    else if (GInput.Ctrl || SmartSnapOff) s += " · free (grid)";
                     Vector3 d = _aimPoint - Game.Snap.Origin;
                     Vector3 local = Quaternion.Inverse(Quaternion.Euler(0f, Game.Snap.OriginYaw, 0f)) * d;
                     s += " · from origin " + Units.Format(new Vector2(d.x, d.z).magnitude)
@@ -403,7 +519,7 @@ namespace Groundbreak
             StatusLine = s;
         }
 
-        GUIStyle _small;
+        GUIStyle _small, _snapStyle;
 
         void OnGUI()
         {
@@ -412,6 +528,15 @@ namespace Groundbreak
             _small.normal.textColor = _valid ? new Color(0.7f, 0.85f, 1f) : new Color(1f, 0.55f, 0.55f);
             string txt = Units.Format(CurrentLength) + "\nyaw " + Mathf.RoundToInt(_yaw) + "°  pitch " + Mathf.RoundToInt(_pitch) + "°";
             GUI.Label(new Rect(Screen.width * 0.5f + 14f, Screen.height * 0.5f + 10f, 160f, 34f), txt, _small);
+            if (SnapLabel != "")
+            {
+                if (_snapStyle == null) _snapStyle = new GUIStyle(GUI.skin.label) { fontSize = 13, fontStyle = FontStyle.Bold };
+                var r = new Rect(Screen.width * 0.5f + 14f, Screen.height * 0.5f - 22f, 260f, 22f);
+                _snapStyle.normal.textColor = new Color(0f, 0f, 0f, 0.7f);
+                GUI.Label(new Rect(r.x + 1, r.y + 1, r.width, r.height), SnapLabel, _snapStyle);
+                _snapStyle.normal.textColor = new Color(1f, 0.82f, 0.3f);
+                GUI.Label(r, SnapLabel, _snapStyle);
+            }
         }
     }
 }
