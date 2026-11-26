@@ -141,6 +141,7 @@ namespace Groundbreak
             _next = Time.unscaledTime + 1f;
             if (_ver != NetGraph.Version) { _ver = NetGraph.Version; Last = AirflowSim.Evaluate(); }
             HvacLook.Apply();
+            DuctDetail.Apply();
         }
     }
 
