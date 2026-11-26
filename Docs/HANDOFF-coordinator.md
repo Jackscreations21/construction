@@ -71,3 +71,11 @@ All cut from main @ fb84616, own worktree branches. 90% plan-limit pause applies
 Everything merged and pushed; main 50/50 PlayMode tests, 0 compile errors. No sessions working. Open follow-ups:
 window/door models, electrical panel detail, duct seam line (structure); faint dig dust (site); HUD/tablet visual check in the editor;
 tutorial HUD/tablet pictures need one non-batchmode capture run (Docs/TUTORIALS.md).
+
+## Business game phase (user, 2026-11-26) — see Docs/BUSINESS.md
+User: "turn it into a full game where you make money": van repairs → warehouse + trucks → hire workers → houses → neighborhoods.
+Also: "improve the placing system so it figures out where a piece should go by finding other pieces of wood or other stuff".
+Shared core `Scripts/Business/Company.cs` written by the lead on main. Phase 1 sessions (own worktrees from main): town-repairs, yard-fleet,
+crew-workers, smart-placement. Phase 2 (after merge): `Scripts/Development/` (builder/developer tiers, neighborhoods), business tutorials, balance,
+plus leftovers (window/door models, panel detail, duct seams, dig dust, HUD/tablet look in editor).
+Rules unchanged: nested sessions hand off at 40% context, lead at 50%, pause all at 90% plan usage.
