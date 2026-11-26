@@ -185,6 +185,35 @@ namespace Groundbreak.Tests
             FramingJob.RequireStock = req;
         }
 
+        [UnityTest]
+        public IEnumerator FlatBoardOnStuds_ClassifiedAsTopThenCapPlate()
+        {
+            var root = new GameObject("PlateTest").transform;
+            root.SetParent(_root.transform);
+            root.position = O + new Vector3(-20f, 0f, 0f);
+            float t = Units.In(1.5f), stud = Units.In(92.625f), len = Units.In(64f);
+            Framer.Make("2x4x16", len, root, new Vector3(len / 2, t / 2, 0f), Vector3.right, Vector3.up, MemberRole.BottomPlate);
+            for (int i = 0; i < 5; i++)
+                Framer.Make("2x4x12", stud, root, new Vector3(t / 2 + i * Units.In(15.5f), t + stud / 2, 0f), Vector3.up, Vector3.right, MemberRole.Stud);
+            yield return Frames(2);
+            SupportGraph.Dirty = true;
+
+            var def = Catalog.Get("2x4x16");
+            var rot = root.rotation * Quaternion.LookRotation(Vector3.right, Vector3.up);
+            var size = new Vector3(def.Size.x, def.Size.y, len);
+            Vector3 topC = root.TransformPoint(new Vector3(len / 2, t + stud + t / 2, 0f));
+            Assert.AreEqual(MemberRole.TopPlate, StructuralRules.Classify(def, rot, size, topC), "flat board on studs = top plate");
+            Assert.AreEqual(StructuralStatus.Ok, SupportGraph.CheckGhost(def, topC, rot, size, out string why), "top plate on studs is supported: " + why);
+
+            Framer.Make("2x4x16", len, root, new Vector3(len / 2, t + stud + t / 2, 0f), Vector3.right, Vector3.up, MemberRole.TopPlate);
+            yield return Frames(1);
+            SupportGraph.Dirty = true;
+            Vector3 capC = topC + root.up * t;
+            Assert.AreEqual(MemberRole.CapPlate, StructuralRules.Classify(def, rot, size, capC), "flat board on a top plate = cap plate");
+            Assert.AreEqual(StructuralStatus.Ok, SupportGraph.CheckGhost(def, capC, rot, size, out why), "doubled top plate is supported: " + why);
+            Assert.AreEqual(MemberRole.BottomPlate, StructuralRules.Classify(def, rot, size, root.TransformPoint(new Vector3(len / 2, t / 2, Units.In(30f)))), "flat board on the floor stays a bottom plate");
+        }
+
         static void RunSteps(FramingJob job, System.Func<BuildStep, bool> which)
         {
             foreach (var s in job.Steps) if (which(s)) s.Do?.Invoke();
