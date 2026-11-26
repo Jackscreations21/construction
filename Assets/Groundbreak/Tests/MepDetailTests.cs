@@ -216,5 +216,30 @@ namespace Groundbreak.Tests
             Shot(Cam(at + new Vector3(-0.4f, 1.2f, -1.6f), at + Vector3.up * 0.2f, 55f), "detail_19_concrete_spatter");
             SiteFx.Clear(); SiteFx.WindOverride = null; Weather.ForceRain = null;
         }
+            [UnityTest]
+        public IEnumerator WaterHeaterTrimDetail()
+        {
+            yield return Frames(10);
+            MepStock.Free = true;
+            if (GameClock.I != null) GameClock.I.Hours = 11f;
+            Vector3 O = new Vector3(-40f, 0f, 70f);
+            var gas = P("wh-gas50", O + new Vector3(0, I(30f), 0), Quaternion.identity);
+            var ele = P("wh-elec50", O + new Vector3(0.75f, I(29f), 0), Quaternion.identity);
+            var tl = P("wh-tankless", O + new Vector3(1.5f, I(54f), 0), Quaternion.identity);
+            foreach (var wh in new[] { gas, ele })
+            {
+                var c = wh.GetComponent<NetNode>().Port("cold in");
+                var res = RunBuilder.Route(RunSpecs.Get(PlumbCatalog.Pex34Blue), new List<Vector3> { c.WorldPos, c.WorldPos + Vector3.up * 0.6f }, c, null);
+                Assert.IsTrue(res.Ok, "cold riser: " + string.Join("; ", res.Warnings));
+            }
+            yield return Frames(2);
+            WaterHeaterTrim.Apply();
+            yield return Frames(2);
+            foreach (var wh in new[] { gas, ele, tl }) Assert.IsNotNull(wh.transform.Find("WhTrim"), "trim on " + wh.Def.Id);
+            Vector3 g = gas.transform.position;
+            Shot(Cam(g + new Vector3(0.55f, 0.55f, 1.25f), g + new Vector3(0.1f, 0.1f, 0), 55f), "detail_20_water_heaters");
+            Shot(Cam(g + new Vector3(0.05f, I(38f), 0.55f), g + new Vector3(0, I(30f), 0), 50f), "detail_21_wh_top_valve");
+            Shot(Cam(g + new Vector3(0.45f, -0.15f, 0.55f), g + new Vector3(0.1f, -I(10f), 0.15f), 50f), "detail_22_wh_gas_drain");
+        }
     }
 }
