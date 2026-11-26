@@ -68,9 +68,9 @@ namespace Groundbreak.Tests
             // studs: 16" O.C. per wall (4x23 + 23+13+11+11) + 2 per opening (12) + 2 per corner (4) + 2 per partition (4)
             Assert.AreEqual(150 + 24 + 8 + 8, t.Studs);
             Assert.AreEqual(3f * (120f + 74f), t.PlateLf, 0.01f);
-            Assert.AreEqual(110f, t.OpeningSqFt, 0.05f, "5 3648 + 2 4836 + 1 2436 windows + one 36x80 door");
-            Assert.AreEqual(30, t.SheathingSheets, "ceil((960-110)/32 x 1.10)");
-            Assert.AreEqual(69, t.DrywallSheets, "ceil((850 + 2x74x8 + 900)/48 x 1.12)");
+            Assert.AreEqual(113f, t.OpeningSqFt, 0.05f, "living 3660 + 4 3648 + 2 4836 + 1 2436 windows + one 36x80 door");
+            Assert.AreEqual(30, t.SheathingSheets, "ceil((960-113)/32 x 1.10)");
+            Assert.AreEqual(69, t.DrywallSheets, "ceil((847 + 2x74x8 + 900)/48 x 1.12)");
             Assert.AreEqual((120f * 16f / 12f + 900f * 4f / 12f) / 27f, t.ConcreteYards, 0.01f, "16\"x12\" footing + 4\" slab");
             Assert.AreEqual(16, t.Trusses);
             Assert.AreEqual(37, t.ShingleBundles, "32'x32' roof at 5/12 = 11.09 sq x 1.10 x 3");
