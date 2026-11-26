@@ -187,7 +187,7 @@ namespace Groundbreak.Tests
             Assert.GreaterOrEqual(studs, 5, "studs at 16\" O.C.");
             Assert.AreEqual(WallState.Braced, wall.State, "stood up, plumbed and braced");
             Assert.IsTrue(shot, "screenshot of the crew framing");
-            Shot(Cam(at + new Vector3(-2.5f, 2.0f, -3.5f), at + new Vector3(1.5f, 1.2f, 0)), "crew_wall_done");
+            Shot(Cam(at + new Vector3(5.2f, 2.1f, -4.4f), at + new Vector3(1.5f, 1.1f, 0)), "crew_wall_done");
         }
 
         [UnityTest]
