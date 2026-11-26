@@ -91,3 +91,14 @@ All from main @ 26197ab (2026-11-26).
 https://claude.ai/artifact/WwS89dEKZHeosQa3HZpPiW — done / being worked on / left to do. Rows live in its database: collection `items`
 (fields: status "work"|"next"|"done", order, area, title, note) and doc `meta/info` {text}. On every merge or new session, update rows with the
 ArtifactData tool (get the row first for its version, then update with if_version) and refresh `meta/info`. Main verified 50/50 with Company.cs.
+
+## Extra parallel sessions (user 2026-11-26: "run anything you can in parallel but pause if any limit reaches 90"; chose "Start now anyway" at 72%)
+| name | session id | scope |
+|---|---|---|
+| development | local_ca789e89-8199-43c4-a90d-7a7b60af366e | Scripts/Development: house plans, Builder draws, Developer land/subdivision/sales; compiles without Town/Crew (own ILotProvider/ICrewProgress), adapters after merge |
+| structure-extras | local_97c176bc-8e90-4975-a92a-b82a0ede7a23 | window/door models, I-joist floors, roof valleys |
+| mep-site-details | local_3ba35a70-5d6e-4c69-b03d-47369fc3b077 | panel detail, duct seams, dig dust |
+| ui-capture | local_89767c4f-878f-4b62-beab-089d49732008 | windowed (non-batchmode) HUD/tablet capture + fixes, tablet layout for many apps, tutorial HUD pictures |
+Monitor cron now every 5 min, pauses at 88% (usage climbs ~1 pt/min). After a pause/reset the user must say "go" to restart (app blocks auto-start).
+Merge order hint: town-repairs first (others adapt to Town), then yard-fleet, crew-workers, development; ui-capture changes Tablet layout — merge it
+before the business apps if possible, else re-check tab layout after.
