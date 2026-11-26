@@ -24,6 +24,7 @@ namespace Groundbreak
         public bool Stripped, Grounds, Neutrals, Hots;
         public ElDevice Device;
         public bool SwitchOn = true;
+        public bool Plate;           // cover plate installed (trim-out)
         public float PlugW;          // plug load on a receptacle (W)
         public bool Wet;             // bath / kitchen / outdoor / garage: needs GFCI protection
         public bool Countertop;      // kitchen countertop receptacle: 42-44" to center
@@ -155,6 +156,14 @@ namespace Groundbreak
             return "Box already made up";
         }
 
+        public string InstallPlate()
+        {
+            if (Device == ElDevice.None) return "Install a device first";
+            if (Plate) return "Plate already on";
+            Plate = true; Changed();
+            return "Cover plate on (" + (IsSwitch ? "toggle" : Device == ElDevice.Gfci ? "decorator" : "duplex") + ")";
+        }
+
         public void MakeUpAll() { Stripped = true; Grounds = Neutrals = Hots = true; Changed(); }
         public void RemoveGroundSplice() { Grounds = false; Changed(); }
 
@@ -174,7 +183,7 @@ namespace Groundbreak
             if (Device == ElDevice.None) return "No device";
             string id = ElCatalog.DeviceId(Device);
             if (id != null && !MepStock.Free) Game.Stock.Add(id, 1);
-            Device = ElDevice.None; Changed();
+            Device = ElDevice.None; Plate = false; Changed();
             return "Device removed";
         }
 
@@ -250,6 +259,8 @@ namespace Groundbreak
         public NetNode Node;
         public Piece Piece;
         public bool Main;
+        /// <summary>Dead-front cover installed (trim-out). Off for rough-in so the inspector can see the terminations.</summary>
+        public bool Cover;
         public readonly List<ElBreaker> Breakers = new List<ElBreaker>();
         [NonSerialized] public bool ServiceLive;
         public bool Live => Main && ServiceLive;
@@ -344,13 +355,14 @@ namespace Groundbreak
         }
 
         public void SetMain(bool on) { Main = on; Touch(); }
+        public void SetCover(bool on) { Cover = on; Touch(); }
 
-        /// <summary>Panel-local position (meters) of the breaker face for a space.</summary>
+        /// <summary>Panel-local position (meters) of the breaker face for a space. Odd spaces on the left as you face the panel (local +X, front = +Z).</summary>
         public Vector3 SpaceLocal(int slot)
         {
             int row = (slot - 1) / 2; bool left = slot % 2 == 1;
             float y = Piece.Size.y * 0.5f - Units.In(9.5f) - row * Units.In(1f) - Units.In(0.5f);
-            return new Vector3((left ? -1 : 1) * Units.In(1.55f), y, Piece.Size.z * 0.5f - Units.In(1.2f));
+            return new Vector3((left ? 1 : -1) * Units.In(1.55f), y, Piece.Size.z * 0.5f - Units.In(0.12f)); // breaker face: handles pass through the dead-front
         }
 
         void LateUpdate() { ElVisuals.UpdatePanel(this); }

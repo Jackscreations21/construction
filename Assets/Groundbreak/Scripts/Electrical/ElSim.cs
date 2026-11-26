@@ -235,7 +235,11 @@ namespace Groundbreak
             var box = hit.collider.GetComponentInParent<ElBox>();
             if (box != null) { Game.Toast(Use(box)); return; }
             var panel = hit.collider.GetComponentInParent<ElPanel>();
-            if (panel != null) Game.Toast(UsePanel(panel));
+            if (panel != null)
+            {
+                if (GInput.Shift) { panel.SetCover(!panel.Cover); Game.Toast(panel.Cover ? "Dead-front cover on (6 screws)" : "Dead-front cover off"); }
+                else Game.Toast(UsePanel(panel));
+            }
         }
 
         public static string Use(ElBox box)

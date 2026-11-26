@@ -226,6 +226,17 @@ namespace Groundbreak
             k.Ring(new Vector3(0, off + t + I(0.15f), 0), Vector3.up, r + I(0.35f), r, I(0.3f), g);  // spin-in bead
             k.Tube(new Vector3(0, off, 0), new Vector3(0, off + len, 0), r, g);
             k.Ring(new Vector3(0, off + I(1.7f), 0), Vector3.up, r + I(0.08f), r - I(0.01f), I(0.18f), g); // crimp bead
+            // 4 zip screws through the flange corners + mastic brushed around the base of the collar
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sz = -1; sz <= 1; sz += 2)
+                {
+                    Vector3 sp = new Vector3(sx * (fh - I(0.35f)), off + t, sz * (fh - I(0.35f)));
+                    k.Cyl(sp, sp + Vector3.up * I(0.03f), I(0.2f), g, 12);
+                    k.Cyl(sp + Vector3.up * I(0.03f), sp + Vector3.up * I(0.13f), I(0.125f), g, 6);
+                }
+            int mastic = k.Mat(DuctDetail.Mastic);
+            k.Ring(new Vector3(0, off + t + I(0.02f), 0), Vector3.up, r + I(0.9f), r - I(0.01f), I(0.06f), mastic);
+            k.Ring(new Vector3(0, off + t + I(0.2f), 0), Vector3.up, r + I(0.06f), r - I(0.01f), I(0.35f), mastic);
             // damper shaft + wing handle
             float dy = off + I(1.1f);
             k.Cyl(new Vector3(-r - I(0.5f), dy, 0), new Vector3(r + I(0.5f), dy, 0), I(0.09f), g, 8);
