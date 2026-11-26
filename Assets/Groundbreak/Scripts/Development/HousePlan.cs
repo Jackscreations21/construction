@@ -6,8 +6,8 @@ namespace Groundbreak
 {
     /// <summary>Construction phases a house goes through, each closed by an inspection (and a lender draw).</summary>
     public enum BuildPhase { Foundation, Framing, RoughIn, Drywall, Finish }
-    public enum RoofType { Gable, Hip }
-    public enum FoundationType { Slab, Crawlspace, Basement }
+    public enum RoofType { Gable, Hip, Shed, Flat, Gambrel }   // Shed/Flat/Gambrel: Blueprints (non-residential)
+    public enum FoundationType { Slab, Crawlspace, Basement, PostFrame, Skids }   // PostFrame/Skids: Blueprints (pole barns, sheds)
 
     /// <summary>A room on a plan, in plan feet. Plan x runs left→right as seen from the street, y runs back from the front wall.</summary>
     public class PlanRoom
@@ -21,12 +21,14 @@ namespace Groundbreak
     {
         public int Floor, Wall; public float CenterFt; public string ProductId;
         public PieceDefinition Product => Catalog.Get(ProductId);
-        public bool IsDoor => Product != null && Product.Category == PieceCategory.Door;
+        public bool IsDoor => Product != null && (Product.Category == PieceCategory.Door || Product.Category == PieceCategory.GarageDoor);
+        /// <summary>Overhead / sliding vehicle door: framed to the door size (no clearance).</summary>
+        public bool IsOverhead => Product != null && Product.Category == PieceCategory.GarageDoor;
         public float WidthFt => Product != null ? Product.Size.x / Units.Foot : 3f;
         public float HeightFt => Product != null ? Product.Size.y / Units.Foot : 4f;
         /// <summary>Rough opening width per WallOpening: windows unit + 1/2", prehung doors unit + 2".</summary>
-        public float RoughWidthIn => WidthFt * 12f + (IsDoor ? 2f : 0.5f);
-        public float RoughHeightIn => HeightFt * 12f + (IsDoor ? 2.5f : 0.5f);
+        public float RoughWidthIn => WidthFt * 12f + (IsOverhead ? 0f : IsDoor ? 2f : 0.5f);
+        public float RoughHeightIn => HeightFt * 12f + (IsOverhead ? 0f : IsDoor ? 2.5f : 0.5f);
     }
 
     /// <summary>One wall line on a plan floor (plan feet). Exterior walls are the four footprint edges (0 front, 1 right, 2 back, 3 left).</summary>
@@ -76,15 +78,18 @@ namespace Groundbreak
         public string StudSize = "2x6";
         public float FrontDoorFt;                                       // along the front wall
         public float BaseQuality = 0.6f;                                // 0..1 finish level the plan is drawn for
+        public string Category = "house";                               // type id for lookups/filters (Blueprints: ranch, garage, warehouse...)
+        public PlanGroup Group = PlanGroup.Residential;                  // Residential / Outbuilding / Commercial / Industrial
+        public CompanyStage MinStage = CompanyStage.Builder;            // lowest company stage that can build it
         public readonly List<PlanRoom> Rooms = new List<PlanRoom>();
         public readonly List<PlanWall> Walls = new List<PlanWall>();
         public readonly List<PlanOpening> Openings = new List<PlanOpening>();
         Takeoff _takeoff;
 
-        public float SqFt => WidthFt * DepthFt * Floors;
+        public virtual float SqFt => WidthFt * DepthFt * Floors;
         public float WallDepthFt => StudSize == "2x6" ? 5.5f / 12f : 3.5f / 12f;
         public string BathsLabel => (Baths2 % 2 == 0 ? (Baths2 / 2).ToString() : (Baths2 / 2) + ".5");
-        public string Summary => $"{SqFt:N0} sq ft · {Beds} bed / {BathsLabel} bath · {Floors} {(Floors > 1 ? "stories" : "story")} · {WidthFt}'x{DepthFt}' · {Foundation} · {Roof} {Pitch}/12";
+        public virtual string Summary => $"{SqFt:N0} sq ft · {Beds} bed / {BathsLabel} bath · {Floors} {(Floors > 1 ? "stories" : "story")} · {WidthFt}'x{DepthFt}' · {Foundation} · {Roof} {Pitch}/12";
         public Takeoff Takeoff => _takeoff ?? (_takeoff = ComputeTakeoff());
 
         public List<InspectionPhase> RequiredInspections
@@ -123,7 +128,7 @@ namespace Groundbreak
         { Rooms.Add(new PlanRoom { Name = name, Floor = floor, Ft = Rect.MinMaxRect(x0, y0, x1, y1) }); return this; }
 
         /// <summary>Derives wall lines and openings from the rooms. Called once by the registry.</summary>
-        public HousePlan Finish()
+        public virtual HousePlan Finish()
         {
             Walls.Clear(); Openings.Clear(); _takeoff = null;
             for (int f = 0; f < Floors; f++)
@@ -219,7 +224,7 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ takeoff
 
-        Takeoff ComputeTakeoff()
+        protected virtual Takeoff ComputeTakeoff()
         {
             var t = new Takeoff();
             float W = WidthFt, D = DepthFt, H = WallHeightFt;

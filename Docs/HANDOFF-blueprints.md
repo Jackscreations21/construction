@@ -1,0 +1,6 @@
+# Blueprints — WIP handoff (stopped on plan limit, not compiled or tested yet)
+1. Done in `Scripts/Blueprints/`: `Blueprint : HousePlan` (open-plan walls, unit-aware doors, stairs, explicit doors), MEP rules, code checks, system takeoff (wood/post-frame/PEMB/CMU), validator, products, overlay layer, `Blueprints` registry.
+2. Shared edits (additive): HousePlan.cs (virtual Finish/ComputeTakeoff/SqFt/Summary; Category/Group/MinStage; RoofType/FoundationType values; PlanOpening.IsOverhead), DevVisuals.cs (`PlanOverlay.Shown` event), DevApps.cs (group/type filters; spec plans residential ≤ 60'), DevelopmentTests.cs (count ≥ 6, $/sf on Dev's six only).
+3. NOT written yet: `BlueprintLibrary.Define(List<Blueprint>)` (Blueprints.cs calls it — the project won't compile until it exists). Planned ids: shared note `blueprint-ids.md`. Layouts were drafted in-session (ranch modules Garage/Public/Wing at D=30, Hickory/Elm two-story, Laurel split-entry, duplex, townhome unit, ADU, carriage house, barns, shops, retail/diner/office/strip mall/c-store, warehouses, yard bay/shop/HQ).
+4. Next: write the library, compile, `Tests/BlueprintTests.cs` (validator on all plans, takeoff sanity, overlay per plan, `Logs/shots/bp_*.png`), look at the shots, write Docs/BLUEPRINTS.md, merge main (now 9369180), report to the lead.
+5. Not merged with main yet; no tests run.
