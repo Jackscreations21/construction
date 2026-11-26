@@ -82,6 +82,17 @@ namespace Groundbreak
                     mb.AddRod(new Vector3(I(-hx - 0.9f), I(y), I(z)), Quaternion.LookRotation(Vector3.left), I(0.06f), I(2.5f), 8, 1);
                     mb.AddCylinder(new Vector3(I(-hx + t + 0.32f), I(y), I(z)), Quaternion.Euler(0, 0, 90), I(0.14f), I(0.05f), 10, 1);
                 }
+                // molded stiffening ribs on the outside walls, push-in cable clamp flaps behind each knockout
+                for (int s = -1; s <= 1; s += 2)
+                    for (int k = -1; k <= 1; k += 2)
+                    {
+                        mb.AddBox(new Vector3(I(s * (hx + 0.03f)), 0, I(k * hz * 0.45f)), new Vector3(I(0.06f), I(H - 0.3f), I(0.09f)), 0);
+                        mb.AddBox(new Vector3(I(k * hx * 0.5f), I(s * (hy + 0.03f)), I(-hz * 0.2f)), new Vector3(I(0.09f), I(0.06f), I(D - 0.6f)), 0);
+                    }
+                float[] kx = b.Kind == ElBoxKind.TwoGang ? new[] { -1.35f, -0.45f, 0.45f, 1.35f } : new[] { -0.45f, 0.45f };
+                foreach (var x in kx)
+                    for (int s = -1; s <= 1; s += 2)
+                        mb.AddBox(new Vector3(I(x), I(s * (hy - t - 0.25f)), I(-hz + 1.25f)), new Vector3(I(0.6f), I(0.05f), I(0.55f)), Quaternion.Euler(s * 35f, 0, 0), 0);
                 // depth-gauge ear resting on the stud face (box front 1/2" proud for drywall)
                 mb.AddBox(new Vector3(I(-hx - 0.28f), 0, I(hz - 0.5f + 0.04f)), new Vector3(I(0.56f), I(0.9f), I(0.08f)), 0);
             }
@@ -261,7 +272,56 @@ namespace Groundbreak
             }
             // green ground screw on the yoke
             mb.AddCylinder(new Vector3(-I(0.3f), -I(1.55f), I(0.02f)), face, I(0.1f), I(0.08f), 10, G);
+            // #6-32 mounting screws through the yoke ears into the box (3-9/32" centers)
+            for (int s = -1; s <= 1; s += 2)
+            {
+                mb.AddCylinder(new Vector3(0, s * I(1.64f), I(0.03f)), face, I(0.095f), I(0.05f), 10, S);
+                mb.AddBox(new Vector3(0, s * I(1.64f), I(0.058f)), new Vector3(I(0.15f), I(0.03f), I(0.008f)), D);
+            }
+            // back-wire holes + release slots (receptacles)
+            if (b.IsReceptacle)
+                for (int s = -1; s <= 1; s += 2)
+                    for (int k = -1; k <= 1; k += 2)
+                    {
+                        mb.AddBox(new Vector3(s * I(0.35f), k * I(0.55f), -I(1.255f)), new Vector3(I(0.1f), I(0.1f), I(0.01f)), D);
+                        mb.AddBox(new Vector3(s * I(0.35f), k * I(0.85f), -I(1.255f)), new Vector3(I(0.16f), I(0.04f), I(0.01f)), D);
+                    }
+            if (b.Plate) AddPlate(mb, b.Device, W, D);
             Spawn(b.transform, "Device", mb, new[] { DeviceWhite, Steel, Black, Brass, Nickel, GreenNut });
+        }
+
+        /// <summary>Thermoset wall plate (2-3/4" x 4-1/2"): duplex = two openings + 1 center screw, toggle = slot + 2 screws,
+        /// decorator (GFCI) = rectangle + 2 screws. Built from bands around the openings (real holes, no z-fighting).</summary>
+        static void AddPlate(MeshBuilder mb, ElDevice d, int white, int dark)
+        {
+            const float PW = 2.75f, PH = 4.5f, T = 0.16f, Z = 0.12f;
+            float hw; var holes = new List<Vector2>(); // (yCenter, halfHeight)
+            var screws = new List<float>();
+            if (d == ElDevice.Gfci) { hw = 0.67f; holes.Add(new Vector2(0, 1.32f)); screws.Add(1.9f); screws.Add(-1.9f); }
+            else if (d == ElDevice.Switch || d == ElDevice.Switch3) { hw = 0.2f; holes.Add(new Vector2(0, 0.48f)); screws.Add(1.19f); screws.Add(-1.19f); }
+            else { hw = 0.585f; holes.Add(new Vector2(0.66f, 0.52f)); holes.Add(new Vector2(-0.66f, 0.52f)); screws.Add(0f); }
+            holes.Sort((a, c) => c.x.CompareTo(a.x));
+            void Bx(float x0, float x1, float y0, float y1) { if (x1 - x0 > 1e-3f && y1 - y0 > 1e-3f) mb.AddBox(new Vector3(I((x0 + x1) / 2), I((y0 + y1) / 2), I(Z + T / 2)), new Vector3(I(x1 - x0), I(y1 - y0), I(T)), white); }
+            float y = PH / 2;
+            foreach (var h in holes)
+            {
+                float top = h.x + h.y, bot = h.x - h.y;
+                Bx(-PW / 2, PW / 2, top, y);
+                Bx(-PW / 2, -hw, bot, top); Bx(hw, PW / 2, bot, top);
+                y = bot;
+            }
+            Bx(-PW / 2, PW / 2, -PH / 2, y);
+            // skirt stepping back to the wall
+            mb.AddBox(new Vector3(0, I(PH / 2 + 0.03f), I(Z / 2 + 0.02f)), new Vector3(I(PW + 0.06f), I(0.06f), I(Z + 0.04f)), white);
+            mb.AddBox(new Vector3(0, -I(PH / 2 + 0.03f), I(Z / 2 + 0.02f)), new Vector3(I(PW + 0.06f), I(0.06f), I(Z + 0.04f)), white);
+            mb.AddBox(new Vector3(I(PW / 2 + 0.03f), 0, I(Z / 2 + 0.02f)), new Vector3(I(0.06f), I(PH + 0.12f), I(Z + 0.04f)), white);
+            mb.AddBox(new Vector3(-I(PW / 2 + 0.03f), 0, I(Z / 2 + 0.02f)), new Vector3(I(0.06f), I(PH + 0.12f), I(Z + 0.04f)), white);
+            var face = Quaternion.Euler(90, 0, 0);
+            foreach (var sy in screws)
+            {
+                mb.AddFrustum(new Vector3(0, I(sy), I(Z + T + 0.015f)), face, I(0.13f), I(0.1f), I(0.03f), 12, white);
+                mb.AddBox(new Vector3(0, I(sy), I(Z + T + 0.032f)), new Vector3(I(0.17f), I(0.025f), I(0.006f)), dark);
+            }
         }
 
         static void Slots(MeshBuilder mb, float y, float z, bool tSlot, int dark)
@@ -278,8 +338,8 @@ namespace Groundbreak
 
         public static void UpdatePanel(ElPanel p)
         {
-            int h = p.Version * 31 + (p.Main ? 7 : 3) + NetGraph.Version * 131;
-            foreach (var b in p.Breakers) h = h * 17 + b.Slot * 5 + (b.On ? 1 : 0) + (b.Tripped ? 2 : 0) + (b.Run != null ? 4 : 0);
+            int h = p.Version * 31 + (p.Main ? 7 : 3) + (p.Cover ? 11 : 0) + NetGraph.Version * 131;
+            foreach (var b in p.Breakers) h = h * 17 + b.Slot * 5 + (b.On ? 1 : 0) + (b.Tripped ? 2 : 0) + (b.Run != null ? 4 : 0) + (b.Label ?? "").GetHashCode();
             if (_panelHash.TryGetValue(p, out int old) && old == h) return;
             _panelHash[p] = h;
             BuildPanel(p);
@@ -288,94 +348,7 @@ namespace Groundbreak
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => _panelHash.Clear();
 
-        static void BuildPanel(ElPanel p)
-        {
-            var s = p.Piece.Size / Units.Inch;
-            float hx = s.x / 2, hy = s.y / 2, hz = s.z / 2, t = 0.07f;
-            var mb = new MeshBuilder();
-            const int Gray = 0, Galv = 1, Dark = 2, Tin = 3, White = 4, Red = 5;
-            Vector3 V(float x, float y, float z) => new Vector3(I(x), I(y), I(z));
-            // can (dead-front off for rough-in)
-            mb.AddBox(V(0, 0, -hz + t / 2), V(s.x, s.y, t), Gray);
-            mb.AddBox(V(-hx + t / 2, 0, 0), V(t, s.y, s.z), Gray);
-            mb.AddBox(V(hx - t / 2, 0, 0), V(t, s.y, s.z), Gray);
-            mb.AddBox(V(0, hy - t / 2, 0), V(s.x - 2 * t, t, s.z), Gray);
-            mb.AddBox(V(0, -hy + t / 2, 0), V(s.x - 2 * t, t, s.z), Gray);
-            mb.AddBox(V(0, 0, -hz + t + 0.01f), V(s.x - 2 * t, s.y - 2 * t, 0.02f), White);
-            // interior: insulating base + bus stabs
-            float busTop = hy - 9f, busBot = hy - 9.5f - 15f;
-            mb.AddBox(V(0, (busTop + busBot) / 2, -hz + 0.45f), V(3.4f, busTop - busBot, 0.7f), Dark);
-            for (int i = -1; i <= 1; i += 2) mb.AddBox(V(i * 0.45f, (busTop + busBot) / 2, -hz + 0.95f), V(0.35f, busTop - busBot, 0.3f), Tin);
-            // main lugs + 200 A main breaker
-            for (int i = -1; i <= 1; i += 2) mb.AddBox(V(i * 1.3f, hy - 2.6f, -hz + 1.2f), V(0.9f, 1.0f, 1.0f), Tin);
-            mb.AddBox(V(0, hy - 5.6f, -hz + 1.7f), V(4.4f, 4.2f, 2.6f), Dark);
-            mb.AddBox(V(0, hy - 5.6f + (p.Main ? 0.7f : -0.7f), -hz + 3.15f), V(1.8f, 0.55f, 0.55f), Dark);
-            mb.AddBox(V(0, hy - 5.6f, -hz + 3.02f), V(0.9f, 0.35f, 0.02f), p.Main ? Red : White);
-            // neutral / ground bars
-            for (int i = -1; i <= 1; i += 2)
-            {
-                mb.AddBox(V(i * 5.3f, (busTop + busBot) / 2, -hz + 0.8f), V(0.42f, busTop - busBot, 0.42f), Tin);
-                for (float y = busBot + 0.4f; y < busTop; y += 0.75f)
-                    mb.AddCylinder(V(i * 5.3f, y, -hz + 1.06f), Quaternion.Euler(90, 0, 0), I(0.09f), I(0.1f), 8, Tin);
-            }
-            // breakers
-            foreach (var b in p.Breakers)
-            {
-                Vector3 face = p.SpaceLocal(b.Slot) / Units.Inch;
-                float sgn = face.x < 0 ? -1 : 1;
-                float yc = face.y - (b.Poles == 2 ? 1f : 0f) * 0.5f * 2f / 2f * 1f;
-                if (b.Poles == 2) yc = face.y - 0.5f;
-                float hgt = b.Poles == 2 ? 1.95f : 0.97f;
-                mb.AddBox(V(sgn * 1.55f, yc, face.z - 1.25f), V(2.7f, hgt, 2.5f), Dark);
-                float hxo = b.Tripped ? 0f : b.On ? -0.35f : 0.35f;
-                mb.AddBox(V(sgn * (1.55f + hxo), yc, face.z + 0.2f), V(0.42f, hgt * 0.55f, 0.4f), Dark);
-                if (b.Type != ElCatalog.BreakerType.Standard)
-                    mb.AddBox(V(sgn * 0.75f, yc, face.z + 0.02f), V(0.3f, 0.25f, 0.06f), b.Type == ElCatalog.BreakerType.Gfci ? Tin : White);
-            }
-            var go = Spawn(p.transform, "Visual", mb, new[] { PanelGray, Steel, Black, Nickel, DeviceWhite, RedNut });
-            MepAutoAttach.ReplaceVisual(p.Piece, go);
-
-            // conductors (world sweeps)
-            Kill(p.transform, "Wires");
-            var mm = new MepMesh { Origin = p.transform.position };
-            Vector3 Wp(float x, float y, float z) => p.transform.TransformPoint(V(x, y, z));
-            void Wire(List<Vector3> pts, float r, int sub) => mm.Sweep(MepMesh.RoundCorners(pts, I(0.6f), 5), MepMesh.Circle(I(r), 8), sub);
-            int idx = 0;
-            foreach (var b in p.Breakers)
-            {
-                if (b.Run == null) continue;
-                var port = b.Run.PortAt(p.Node);
-                if (port == null) continue;
-                Vector3 e = port.LocalPos / Units.Inch;
-                Vector3 face = p.SpaceLocal(b.Slot) / Units.Inch;
-                float sgn = face.x < 0 ? -1 : 1;
-                float gx = sgn * (3.9f + (idx % 4) * 0.12f), zc = -hz + 1.9f + (idx % 3) * 0.15f;
-                bool top = port.LocalPos.y > 0;
-                float ey = e.y + (top ? -0.4f : 0.4f);
-                float ins = b.Run.Spec.Awg >= 14 ? 0.06f : 0.07f;
-                // black to the breaker terminal
-                Wire(new List<Vector3> { Wp(e.x, e.y, e.z), Wp(e.x, ey, e.z), Wp(gx, ey + (top ? -1f : 1f), zc), Wp(gx, face.y, zc), Wp(sgn * 2.8f, face.y, face.z - 0.7f) }, ins, 0);
-                if (b.Run.Spec.Conductors >= 3 || b.Poles == 2)
-                    Wire(new List<Vector3> { Wp(e.x + 0.1f, e.y, e.z), Wp(e.x + 0.1f, ey, e.z), Wp(gx + 0.1f, ey + (top ? -1f : 1f), zc + 0.1f), Wp(gx + 0.1f, face.y - 1f, zc + 0.1f), Wp(sgn * 2.8f, face.y - 1f, face.z - 0.7f) }, ins, 2);
-                // white + bare to the neutral/ground bar
-                float by = Mathf.Clamp(face.y + 0.3f, busBot + 0.5f, busTop - 0.5f);
-                Wire(new List<Vector3> { Wp(e.x - 0.1f, e.y, e.z), Wp(e.x - 0.1f, ey, e.z), Wp(sgn * 4.6f, ey + (top ? -1f : 1f), zc - 0.2f), Wp(sgn * 4.6f, by, zc - 0.2f), Wp(sgn * 5.3f, by, -hz + 1.06f) }, ins, 1);
-                Wire(new List<Vector3> { Wp(e.x - 0.2f, e.y, e.z), Wp(e.x - 0.2f, ey, e.z), Wp(sgn * 4.75f, ey + (top ? -1f : 1f), zc - 0.35f), Wp(sgn * 4.75f, by - 0.75f, zc - 0.35f), Wp(sgn * 5.3f, by - 0.75f, -hz + 1.06f) }, 0.035f, 3);
-                if (b.Afci || b.Gfci) // breaker pigtail neutral to the bar
-                    Wire(new List<Vector3> { Wp(sgn * 2.9f, face.y - 0.2f, face.z - 1.8f), Wp(sgn * 4.2f, face.y - 0.2f, face.z - 1.6f), Wp(sgn * 5.3f, by - 0.4f, -hz + 1.06f) }, 0.06f, 1);
-                idx++;
-            }
-            // service conductors: SER to main lugs / neutral bar
-            var sp = p.ServicePort;
-            if (sp != null && sp.Run != null)
-            {
-                Vector3 e = sp.LocalPos / Units.Inch;
-                for (int i = -1; i <= 1; i += 2)
-                    Wire(new List<Vector3> { Wp(e.x + i * 0.3f, e.y, e.z), Wp(e.x + i * 0.3f, e.y - 0.8f, e.z), Wp(i * 1.3f, hy - 1.6f, -hz + 1.2f), Wp(i * 1.3f, hy - 2.2f, -hz + 1.2f) }, 0.26f, 0);
-                Wire(new List<Vector3> { Wp(e.x - 0.6f, e.y, e.z), Wp(e.x - 0.6f, e.y - 0.8f, e.z), Wp(-5.3f, hy - 3f, -hz + 1.0f), Wp(-5.3f, busTop, -hz + 1.0f) }, 0.2f, 4);
-            }
-            mm.Spawn(p.transform, "Wires", new[] { Black, WhiteIns, RedIns, Copper, Steel });
-        }
+        static void BuildPanel(ElPanel p) => ElPanelLook.Build(p);
 
         // ================================================================== cable coil
 

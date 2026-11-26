@@ -19,7 +19,7 @@ namespace Groundbreak
             ToolFactory.Register(new ToolShopItem { Id = "staple-hammer", Name = "Insulated Staple Hammer", Price = 32, Description = "Staple Romex within 8\" of every box and at least every 4-1/2'." },
                 () => new StapleHammer());
             Tablet.AddHelp("Electrical: fish tape pulls Romex (snaps to box knockouts / panel) · strippers LMB box = strip, LMB cable = cut · pliers LMB box = next splice / install device, RMB = pick device, LMB panel = main / reset");
-            Tablet.AddHelp("Electrical: E on a switch = flip, E on a receptacle = plug in a load, E on the panel = main / reset · staple hammer LMB on Romex · tester beeps near live wiring · multimeter LMB on a box");
+            Tablet.AddHelp("Electrical: E on a switch = flip, E on a receptacle = plug in a load, E on the panel = main / reset, Shift+E = dead-front on/off · pliers on a device = cover plate · staple hammer LMB on Romex · tester beeps near live wiring · multimeter LMB on a box");
         }
 
         public static ElBox AimBox(out RaycastHit hit)
@@ -123,13 +123,15 @@ namespace Groundbreak
                 if (GInput.Ctrl)
                 {
                     if (ElSim.CheckShock(ElSim.BoxLive(b), b.transform.position, b.Label)) return;
-                    if (b.Device != ElDevice.None) Game.Toast(b.RemoveDevice());
+                    if (b.Plate) { b.Plate = false; b.Changed(); Game.Toast("Cover plate off"); }
+                    else if (b.Device != ElDevice.None) Game.Toast(b.RemoveDevice());
                     else if (b.Hots) { b.Hots = false; b.Changed(); Game.Toast("Hots un-spliced"); }
                     else if (b.Neutrals) { b.Neutrals = false; b.Changed(); Game.Toast("Neutrals un-spliced"); }
                     else if (b.Grounds) { b.RemoveGroundSplice(); Game.Toast("Ground splice removed"); }
                     return;
                 }
                 if (b.MadeUp && b.Device == ElDevice.None && b.Kind != ElBoxKind.Round) Game.Toast(ElTools.Install(b, Choice));
+                else if (b.Device != ElDevice.None && !b.Plate) Game.Toast(b.InstallPlate());
                 else Game.Toast(ElTools.Splice(b));
                 ToolUtil.Wear(this, 0.0003f);
                 return;
