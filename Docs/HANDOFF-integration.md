@@ -28,6 +28,7 @@ Branch `claude/integration-66875b`. Glue code: `Assets/Groundbreak/Scripts/Integ
 system, client keeps the lot) → 2 hires = Crew (crew arrives at the town job, task tagged with it, finishes the job off site) → yard + shop,
 rep 66 = Builder (client house on a town lot, crew speeds it up, finished off site) → HQ (moves to main-121), 8 workers, rep 85 = Developer
 (land listing bought, platted, spec houses with crews) → save → load → every key restored → neighborhood sells out. Shots `Logs/shots/career_*.png`.
+Last full PlayMode run: 102 total, 101 passed, 0 failed, 1 skipped (UICapture, by design).
 
 ## Follow-ups (not done)
 - SiteHud and the main-menu toast still say "Job Board" in Career; the old Career contract board (shed rep 0, houses at the origin pad)
