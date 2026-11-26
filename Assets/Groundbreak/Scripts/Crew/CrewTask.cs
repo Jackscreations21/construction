@@ -260,11 +260,11 @@ namespace Groundbreak
                 Do = ctx =>
                 {
                     if (job == null || job.Done || job.Current != step) return null;    // the player did this step meanwhile
-                    HashSet<int> before = null;
+                    HashSet<Piece> before = null;
                     if (ctx.Sloppy && step.Nails > 0)
                     {
-                        before = new HashSet<int>();
-                        foreach (var p in UnityEngine.Object.FindObjectsByType<Piece>(FindObjectsSortMode.None)) before.Add(p.GetInstanceID());
+                        before = new HashSet<Piece>();
+                        foreach (var p in UnityEngine.Object.FindObjectsByType<Piece>(FindObjectsSortMode.None)) before.Add(p);
                     }
                     int at = job.Next; string msg = "";
                     for (int i = 0; i < 60 && job.Next == at; i++)      // a hammer takes several swings per step
@@ -274,7 +274,7 @@ namespace Groundbreak
                     {
                         var fresh = new List<Piece>();
                         foreach (var p in UnityEngine.Object.FindObjectsByType<Piece>(FindObjectsSortMode.None))
-                            if (!before.Contains(p.GetInstanceID()) && p.State == PieceState.Fastened && p.Def != null && !p.Def.IsProduct) fresh.Add(p);
+                            if (!before.Contains(p) && p.State == PieceState.Fastened && p.Def != null && !p.Def.IsProduct) fresh.Add(p);
                         if (fresh.Count > 0)
                         {
                             var bad = fresh[ctx.Rng.Next(fresh.Count)];
