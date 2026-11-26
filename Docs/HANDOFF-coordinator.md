@@ -86,3 +86,8 @@ Rules unchanged: nested sessions hand off at 40% context, lead at 50%, pause all
 | crew-workers | local_300959da-4030-4adb-a115-ed2c67f24fdd | Scripts/Crew: hiring, worker NPCs doing real tasks, payroll, scheduling |
 | smart-placement | local_a1169bf4-9a64-42e5-b8c8-2622eb9a3d63 | Scripts/Building: context-aware snapping to neighboring pieces (only session editing PlacementController) |
 All from main @ 26197ab (2026-11-26).
+
+## Tracker artifact (user request 2026-11-26)
+https://claude.ai/artifact/WwS89dEKZHeosQa3HZpPiW — done / being worked on / left to do. Rows live in its database: collection `items`
+(fields: status "work"|"next"|"done", order, area, title, note) and doc `meta/info` {text}. On every merge or new session, update rows with the
+ArtifactData tool (get the row first for its version, then update with if_version) and refresh `meta/info`. Main verified 50/50 with Company.cs.
