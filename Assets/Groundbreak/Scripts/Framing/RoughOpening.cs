@@ -112,7 +112,8 @@ namespace Groundbreak
             Vector3 local = new Vector3(transform.localPosition.x, yBottom + p.Def.Size.y / 2, zLocal);
             p.transform.SetPositionAndRotation(w.TransformPoint(local), w.rotation * Quaternion.Euler(0, 180, 0));
             p.Fasten();
-            var m = p.GetComponent<StructuralMember>() ?? p.gameObject.AddComponent<StructuralMember>();
+            var m = p.GetComponent<StructuralMember>();   // no '??': GetComponent returns a fake-null object in the Editor
+            if (m == null) m = p.gameObject.AddComponent<StructuralMember>();
             m.Role = MemberRole.Product; m.Connectors = Connector.Flashed;
             SupportGraph.Dirty = true;
         }
