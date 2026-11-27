@@ -797,9 +797,11 @@ namespace Groundbreak
         {
             var k = new Kit(b, s);
             float W = Mathf.Max(10f, s.Width), D = Mathf.Max(7f, s.Depth);
-            float L = Mathf.Clamp(W - 1.5f, 9f, 17f), hx = L * 0.5f;
-            float bd = Mathf.Clamp(D - 3.0f, 4.2f, 5.2f);
-            const float zF = -2.4f, y0 = 0.75f, rad = 0.7f;
+            // a deep lot (an 80-seat diner on a 50'x60' plan) gets a deeper car and a full-width kitchen / dining annex behind it
+            bool big = D >= 12f;
+            float L = Mathf.Clamp(W - (big ? 0.5f : 1.5f), 9f, 17f), hx = L * 0.5f;
+            float bd = Mathf.Clamp(D - 3.0f, 4.2f, big ? 6.4f : 5.2f);
+            float zF = big ? -1.3f : -2.4f; const float y0 = 0.75f, rad = 0.7f;
             float zB = zF - bd, cz = (zF + zB) * 0.5f;
             var up = Quaternion.Euler(-90f, 0f, 0f);    // extrude along +Y
             int steel = k.alum;
@@ -845,11 +847,11 @@ namespace Groundbreak
             foreach (float sx in new[] { -1.05f, 1.05f })
                 b.B.AddBox(new Vector3(sx, 0.95f, zF + 1.4f + 0.45f), new Vector3(0.04f, 0.04f, 1.0f), Quaternion.Euler(-28f, 0f, 0f), steel);
             // kitchen annex behind
-            float kd = -D - zB;
+            float kd = D + zB;   // depth left behind the car
             if (kd > 1.6f)
             {
                 int cmu = k.b.K.M(SurfaceKind.ConcreteBlock, new Color(0.95f, 0.95f, 0.92f));
-                float kx0 = -hx + 1.0f, kx1 = Mathf.Min(hx - 1.0f, kx0 + Mathf.Max(5f, L * 0.55f));
+                float kx0 = big ? -hx + 0.2f : -hx + 1.0f, kx1 = big ? hx - 0.2f : Mathf.Min(hx - 1.0f, kx0 + Mathf.Max(5f, L * 0.55f));
                 Bx(k, kx0, 0f, -D + 0.2f, kx1, 3.4f, zB + 0.3f, cmu, Walls);
                 Parapets(k, kx0, kx1, -D + 0.2f, zB + 0.3f, 3.4f, 0.3f, cmu, k.alum, 0.2f);
                 Cyl(k, kx1 - 1.2f, 3.4f, (-D + zB) * 0.5f, 0.35f, 0.7f, 10, k.galv);
@@ -1464,7 +1466,7 @@ namespace Groundbreak
         {
             var k = new Kit(b, s);
             float W = Mathf.Max(20f, s.Width), D = Mathf.Max(24f, s.Depth), hw = W * 0.5f;
-            float sw = Mathf.Min(16f, W - 2f), sd = Mathf.Min(11f, D * 0.33f), zS = -D + sd, sx0 = -sw * 0.5f, sx1 = sw * 0.5f;
+            var gs = MapBodies.GasStore(s); float sw = gs.x, sd = gs.y, zS = -D + sd, sx0 = -sw * 0.5f, sx1 = sw * 0.5f;
             Color brandC = Pick(b, SignColors);
             int brand = k.Flat(brandC), brandGlow = k.Glow(brandC);
             int wall = b.R() < 0.5f ? k.b.K.M(SurfaceKind.ConcreteBlock, s.Color) : k.b.K.M(MapMaterials.Stucco(s.Color));
@@ -1753,7 +1755,7 @@ namespace Groundbreak
             float W = Mathf.Max(16f, s.Width), D = Mathf.Max(16f, s.Depth), hw = W * 0.5f;
             const float lane = 4.0f, zf = -1.6f;
             float bx0 = -hw + 0.6f, bx1 = Mathf.Max(bx0 + 10f, hw - lane - 0.6f), cx = (bx0 + bx1) * 0.5f;
-            float bd = Mathf.Clamp(D * 0.5f, 9f, 13f), zb = zf - bd;
+            float bd = s.PlanSize.y > 0f ? s.PlanSize.y : Mathf.Clamp(D * 0.5f, 9f, 13f), zb = zf - bd;   // plan on file: the restaurant is the plan's depth
             bool mansard = b.R() < 0.55f;
             float H = mansard ? 5.0f : 4.2f;
             int wall = b.R() < 0.5f ? k.Brick(s.Color) : k.b.K.M(MapMaterials.Stucco(s.Color));

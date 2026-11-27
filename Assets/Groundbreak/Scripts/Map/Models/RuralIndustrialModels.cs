@@ -404,7 +404,7 @@ namespace Groundbreak
             int post = Paint(b, new Color(0.2f, 0.36f, 0.22f)), roof = Panel(b, new Color(0.25f, 0.42f, 0.28f)), dark = Dark(b);
             int conc = Conc(b), block = b.K.M(SurfaceKind.ConcreteBlock), osb = b.K.M(SurfaceKind.Osb), ply = b.K.M(SurfaceKind.Plywood);
             // store / contractor desk building at the front-left, gable to the street
-            float sw = Mathf.Min(24f, W * 0.3f), sd = 18f, scx = -hw + sw * 0.5f + 1f;
+            var sz = MapBodies.LumberStore(s); float sw = sz.x, sd = sz.y, scx = -hw + sw * 0.5f + 1f;
             var store = new MapBuildingSpec { Type = "metalshop", Width = sw, Depth = sd, Color = new Color(0.86f, 0.84f, 0.76f), Sign = "", Seed = s.Seed };
             MetalShopAt(b, store, scx, sw, sd, false);
             // storefront glass on the store (replaces part of the wall look)
@@ -595,7 +595,7 @@ namespace Groundbreak
         static void ContractorYard(MapBuild b, MapBuildingSpec s)
         {
             float W = s.Width, D = s.Depth, hw = W * 0.5f;
-            float sw = Mathf.Min(18f, W * 0.6f), sd = Mathf.Min(14f, D * 0.35f);
+            var sz = MapBodies.YardShop(s); float sw = sz.x, sd = sz.y;
             var shop = new MapBuildingSpec { Type = "metalshop", Width = sw, Depth = sd, Color = s.Color, Sign = s.Sign, Seed = s.Seed };
             float scx = -hw + sw * 0.5f + 0.5f;
             MetalShopAt(b, shop, scx, sw, sd, true);

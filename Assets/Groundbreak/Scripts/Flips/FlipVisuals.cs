@@ -61,25 +61,16 @@ namespace Groundbreak
             // ---- overgrowth: tall grass tufts, weeds, saplings (until the trash-out is done)
             if (!sold && !Done(f, "yard"))
             {
-                int grass = k.M(LandSurface.Foliage, new Color(0.72f, 0.78f, 0.45f)), dry = k.M(LandSurface.Straw, new Color(0.85f, 0.78f, 0.55f)),
-                    weed = k.M(LandSurface.Foliage, new Color(0.5f, 0.7f, 0.35f));
                 bool weedsGone = StepDone(f, "yard", "weeds");
                 int n = weedsGone ? 0 : 900;
                 for (int i = 0; i < n; i++)
                 {
                     var p = lot.Local((R() - 0.5f) * (lot.Frontage - 0.8f), 0.6f + R() * (lot.Depth - 1.2f));
                     if (Blocked(lot, house, p, driveSide, side)) continue;
-                    // a clump of 6-9 thin blades, leaning out (knee-high fescue, crabgrass, seed heads)
-                    int blades = 6 + rng.Next(4), mat = R() < 0.3f ? dry : grass;
-                    float clumpH = 0.3f + R() * 0.45f;
-                    for (int b = 0; b < blades; b++)
-                    {
-                        float a = R() * 360f, lean = 8f + R() * 26f, h = clumpH * (0.7f + R() * 0.5f);
-                        var rot = Quaternion.Euler(0, a, 0) * Quaternion.Euler(lean, 0, 0);
-                        var basePt = p + Quaternion.Euler(0, a, 0) * new Vector3(0, 0, R() * 0.06f);
-                        k.B.AddFrustum(basePt + rot * Vector3.up * (h / 2f), rot, 0.014f, 0.002f, h, 3, mat, false);
-                    }
-                    if (R() < 0.03f) k.B.AddFrustum(p + Vector3.up * 0.35f, Quaternion.Euler(0, R() * 360f, 0), 0.12f, 0.03f, 0.7f, 6, weed, false);
+                    // knee-high fescue / crabgrass tufts (bent blades, some seed heads), now and then a dock or burdock rosette
+                    // (shared weed builder from MapFollowup/Weeds: season colours, no cone-shaped "weeds")
+                    if (R() < 0.04f) Weeds.Rosette(k, p, rng, R() < 0.5f);
+                    else Weeds.Tuft(k, p, rng, 0.3f + R() * 0.45f, R() < 0.3f ? WeedTone.Straw : WeedTone.Grass, R() < 0.12f);
                 }
                 // volunteer saplings along the foundation and fence
                 if (!weedsGone && house != null)
