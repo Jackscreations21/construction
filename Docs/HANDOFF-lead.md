@@ -40,11 +40,14 @@ before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` 
   job-catalog (492330a, 153 jobs), full-map (6ea95a7, ~260 buildings), blueprints (a267cfc, 46 plans). Nothing is local-only.
 - All helper sessions so far are DONE and merged; notes in `Docs/HANDOFF-<name>.md`, plus `Docs/JOBS.md`, `Docs/MAP.md`, `Docs/BLUEPRINTS.md`.
 
-## PAUSED FOR THE NIGHT (user request, 2026-11-27 ~03:00 UTC)
-main = aa6ed35 + docs (map-followup merged, 125 tests / 124 pass / 1 skipped). The 7 remaining helpers below were told to commit WIP, cancel their
-Unity runs and stop. No usage cron is running. To resume (when the user says so): check `unity.lock` in the shared notes folder is gone, SendMessage each
-"Resume: merge main, continue from your handoff notes, Unity only through unity-run.sh, report DONE to the lead", re-create the usage watch cron,
-set tracker rows `paused:false`. map-followup is DONE and merged (drop it from the table).
+## AUTONOMOUS DAY (user away all of 2026-11-27; "you will be on your own to finish the game")
+Resumed the 7 helpers ~15:50 UTC. main = c1d7e79 (map-followup merged, 125 tests / 124 pass / 1 skipped). Usage cron every 15 min: pause at 85%,
+auto-resume after the 5-hour reset (one-shot cron), never auto-resume on a weekly limit.
+Plan: merge each helper as it reports DONE (tree-identical branches may reuse the helper's own full-suite result; otherwise run the suite through
+unity-run.sh) -> balance pass + small fixes -> full code check (2 sessions) -> final full run, push, summary for the user.
+Starting NEW sessions without the user: try `start_session` (user_asked) in the side-sessions-event turn; if refused, resume an idle finished helper
+by SendMessage and give it the task (map-followup for balance/small fixes; job-catalog and blueprints or full-map for the two code-check halves),
+telling it to use subagents for reading so its context stays low.
 
 ## Sessions (all Opus, own worktrees; report "<name> DONE @ <commit>" to the lead)
 | name | id | folder |
