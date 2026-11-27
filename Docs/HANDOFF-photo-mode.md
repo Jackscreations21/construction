@@ -18,26 +18,8 @@ Tests: `Assets/Groundbreak/Tests/PhotoTests.cs` (5 batchmode tests + 1 windowed 
 ## Shared files edited
 None.
 
-## Status when paused (2026-11-26, lead asked all sessions to pause)
-- main aa6ed35 merged in. Full PlayMode suite (batchmode): 131 tests, 129 passed, 0 failed, 2 skipped (windowed-only
-  UICapture tests), 0 `error CS`. No photo folders were left under persistentDataPath after the run.
-- Screenshots looked at: photo_mode_capture / _dof / _bw_instant / _sepia_mat, photo_before_after_repair,
-  photo_before_after_build, photo_office_desk_frames, and (windowed) photo_portfolio_app / _slider / _album, photo_mode_ui.
-
-## Resumed 2026-11-27
-- main c1d7e79 merged (d901112). Both full-suite attempts through unity-run.sh failed at launch: "No valid Unity Editor
-  license found" (exit 198). The user needs to sign in to Unity Hub; then do the steps below.
-
-## What is left
-1. One windowed run (through unity-run.sh) of `Groundbreak.Tests.PhotoTests.Capture_PhotoModeUI_AndPortfolioApp`, then LOOK
-   at `Logs/shots/photo_mode_ui.png`: the photo-mode panel overflowed sideways in the first capture (labels and the 2-column
-   filter/frame grids were clipped); commit 3feb653 gives every control a fixed column width. Not yet re-captured.
-2. SendMessage the lead "photo-mode DONE @ <commit>" with branch `claude/angry-chebyshev-e44506` and the test counts above.
-
-## Known / follow-ups
-- A translucent red line (a gameplay guide object from another system, not on the view-model layer) showed up in one
-  photo-mode capture; photo mode does not hide world-space gameplay helpers yet. Could add a hook to hide them.
-- Repair "before" photos are taken from the player's eye height, so close-up sink/outlet shots look steeply down.
-- Loading a different save keeps the other career's PNGs on disk (they can be deleted from the app).
-- Test runs: a `[SetUpFixture]` in PhotoTests.cs redirects every automatic job photo taken during the whole run into
-  `persistentDataPath/Photos-testrun` and deletes it at the end.
+## Final status (2026-11-27): DONE
+- main c1d7e79 merged. Full PlayMode suite (batchmode, via unity-run.sh): 131 tests, 129 passed, 0 failed, 2 skipped
+  (windowed-only UICapture tests), 0 `error CS`. No photo folders left under persistentDataPath after the run.
+- Windowed `PhotoTests.Capture_PhotoModeUI_AndPortfolioApp` passed; `photo_mode_ui.png` checked: panel fits its column.
+- All screenshots looked at (photo_mode_*, photo_before_after_repair/build, photo_office_desk_frames, photo_portfolio_*).
