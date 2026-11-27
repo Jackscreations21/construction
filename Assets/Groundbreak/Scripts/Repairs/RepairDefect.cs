@@ -276,6 +276,7 @@ namespace Groundbreak
         {
             why = null; ctx = ctx ?? RepairContext.Player;
             if (a == null || (a.When != null && !a.When())) { why = "Not possible right now"; return false; }
+            { var wx = SeasonRules.RepairBlock(this, a); if (wx != null) { why = wx; return false; } }   // Seasons: weather
             if (!ctx.IgnoreAccess && !HasAccess()) { why = "Stand the extension ladder at the eave first (it's on the van's rack)"; return false; }
             string hand = Game.Belt != null && Game.Belt.Active != null ? Game.Belt.Active.Id : null;
             if (!ctx.IgnoreTool && !RepairCatalog.ToolMatches(a.Tool, hand)) { why = "Needs: " + a.ToolName; return false; }

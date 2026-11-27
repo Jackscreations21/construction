@@ -13,6 +13,9 @@ namespace Groundbreak
         public static float TemperatureF { get; private set; } = 68f;
         /// <summary>Test/sandbox override: null = simulated.</summary>
         public static bool? ForceRain;
+        /// <summary>Seasons feature (Scripts/Seasons): when set, supplies rain + temperature instead of the built-in random day
+        /// (only while weather is on and ForceRain is not set).</summary>
+        public static Func<(bool rain, float tempF)> Provider;
         public static bool CanPourConcrete => !IsRaining && TemperatureF >= 40f && TemperatureF <= 95f;
         public static bool CanRoof => !IsRaining;
         public static string Label => (IsRaining ? "Rain" : "Clear") + $"  {Mathf.RoundToInt(TemperatureF)}°F";
@@ -50,7 +53,7 @@ namespace Groundbreak
             else { _rainStart = _rainEnd = -1f; }
         }
 
-        float _lastHours = -1;
+        float _lastHours = -1, _providerTemp = 68f;
         void Update()
         {
             var clock = GameClock.I;
@@ -58,9 +61,10 @@ namespace Groundbreak
             if (day != _forecastDay) Forecast(day);
             bool rain = GameSettings.WeatherEnabled && hours >= _rainStart && hours < _rainEnd;
             if (ForceRain.HasValue) rain = ForceRain.Value;
+            else if (Provider != null && GameSettings.WeatherEnabled) { var pv = Provider(); rain = pv.rain; _providerTemp = pv.tempF; }
             if (rain != IsRaining) Game.Toast(rain ? "It's raining - no roofing or pours; tarp your sheet goods" : "Rain stopped");
             IsRaining = rain;
-            TemperatureF = GameSettings.WeatherEnabled ? _mean + 10f * Mathf.Sin((hours - 9f) / 24f * Mathf.PI * 2f) - (rain ? 6f : 0f) : 70f;
+            TemperatureF = !ForceRain.HasValue && Provider != null && GameSettings.WeatherEnabled ? _providerTemp : GameSettings.WeatherEnabled ? _mean + 10f * Mathf.Sin((hours - 9f) / 24f * Mathf.PI * 2f) - (rain ? 6f : 0f) : 70f;
 
             float dh = _lastHours < 0 ? 0 : Mathf.Repeat(hours - _lastHours, 24f);
             _lastHours = hours;

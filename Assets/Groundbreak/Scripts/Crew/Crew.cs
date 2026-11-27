@@ -166,6 +166,7 @@ namespace Groundbreak
             if (!CrewTrades.Matches(w.Trade, taskTrade)) s *= 0.6f;
             s *= Mathf.Lerp(0.75f, 1.1f, Mathf.Clamp01(w.Morale));
             if (Outside && Weather.IsRaining) s *= 0.75f;
+            s *= SeasonRules.CrewSpeed(taskTrade);   // Seasons: heat, cold, mud, snow, wind
             return s;
         }
 

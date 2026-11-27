@@ -148,11 +148,11 @@ namespace Groundbreak
         void Touch() { _dirty = true; Version++; }
 
         /// <summary>Lowers ground to at most targetY within a circle (radius m). Returns removed volume (m³, positive).</summary>
-        public float DigTo(Vector3 center, float radius, float targetY) =>
+        public float DigTo(Vector3 center, float radius, float targetY) => SeasonRules.DigBlocked() ? 0f :
             -Apply(center, radius, false, (x, z, p, h) => Mathf.Min(h, targetY), GroundCover.Dirt);
 
         /// <summary>Lowers ground by `amount` (but never below minY). Returns removed volume (m³).</summary>
-        public float DigBy(Vector3 center, float radius, float amount, float minY = -3f) =>
+        public float DigBy(Vector3 center, float radius, float amount, float minY = -3f) => SeasonRules.DigBlocked() ? 0f :
             -Apply(center, radius, false, (x, z, p, h) => Mathf.Max(minY, Mathf.Min(h, h - amount)), GroundCover.Dirt);
 
         /// <summary>Raises ground up to targetY with the given cover (gravel base, backfill). Returns added volume (m³).</summary>
@@ -169,7 +169,7 @@ namespace Groundbreak
         }
 
         /// <summary>Rectangle versions (axis-aligned, world min/max XZ) for machine work and tests.</summary>
-        public float DigRect(Vector3 min, Vector3 max, float targetY) => RectOp(min, max, h => Mathf.Min(h, targetY), GroundCover.Dirt) * -1f;
+        public float DigRect(Vector3 min, Vector3 max, float targetY) => SeasonRules.DigBlocked() ? 0f : RectOp(min, max, h => Mathf.Min(h, targetY), GroundCover.Dirt) * -1f;
         public float RaiseRect(Vector3 min, Vector3 max, float targetY, GroundCover cover) => RectOp(min, max, h => Mathf.Max(h, targetY), cover);
 
         float RectOp(Vector3 min, Vector3 max, System.Func<float, float> f, GroundCover cover)

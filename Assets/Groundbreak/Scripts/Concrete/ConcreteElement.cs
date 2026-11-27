@@ -43,7 +43,9 @@ namespace Groundbreak
 
         void OnDestroy() { _all.Remove(this); }
 
-        public float AgeHours => (ConcreteTime.Now - PouredAt) / 60f;
+        /// <summary>Seasons: minutes of cure lost to cold (maturity method); age counts as this much younger.</summary>
+        public float CureLagMinutes;
+        public float AgeHours => (ConcreteTime.Now - PouredAt - CureLagMinutes) / 60f;
         public float AgeDays => AgeHours / 24f;
 
         /// <summary>Compressive strength as a fraction of the 28-day design strength (ACI 209 moist-cured curve t/(4+0.85t)).

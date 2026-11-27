@@ -106,6 +106,7 @@ namespace Groundbreak
             msg = "";
             var s = Current;
             if (s == null) { msg = Title + " is complete"; return false; }
+            { var wx = SeasonRules.FramingBlock(Title, s.Label); if (wx != null) { msg = wx; return false; } }   // Seasons: wind / rain
             if (toolId != null && !ToolFits(s, toolId)) { msg = s.Label + " - use: " + string.Join(" / ", s.Tools); return false; }
             string miss = MissingStock(s);
             if (miss != null) { msg = miss; return false; }

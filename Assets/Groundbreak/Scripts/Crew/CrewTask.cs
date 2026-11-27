@@ -505,6 +505,7 @@ namespace Groundbreak
             var g = SiteGround.I;
             if (g == null) return Block("No building pad here");
             if (!SiteGround.InPatch(A) || !SiteGround.InPatch(B)) return Block("Trench runs outside the building pad");
+            { var fz = SeasonRules.DigBlock(); if (fz != null) return Block(fz); }   // Seasons: frozen ground
             for (int i = 0; i < Stations; i++)
             {
                 if (_short.Contains(i) || GroundAt(i) <= TargetY + 0.012f) continue;
