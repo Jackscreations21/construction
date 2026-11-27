@@ -10,6 +10,8 @@ namespace Groundbreak
     /// </summary>
     public static class TownBuilder
     {
+        /// <summary>False = free lots get no baked-in for-sale sign (MapFollowup draws hideable per-lot signs instead).</summary>
+        public static bool ForSaleSigns = true;
         const float Sq = 5f * Units.Foot;                                     // sidewalk square
         const float Top = Town.CurbHeight;
         const float CurbOut = Town.RoadHalf + Town.CurbWidth;
@@ -258,7 +260,7 @@ namespace Groundbreak
                     sh.transform.rotation = rot;
                 }
             }
-            else if (lot.Use == LotUse.Free)
+            else if (lot.Use == LotUse.Free && ForSaleSigns)
             {
                 int post = _d.M(SurfaceKind.PineLumber), red = _d.M(new Color(0.75f, 0.1f, 0.08f)), wht = _d.M(new Color(0.95f, 0.95f, 0.93f));
                 Vector3 p = lot.Local(-Mathf.Min(6f, lot.Frontage / 2f - 2f), 2.5f);
