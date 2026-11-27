@@ -27,8 +27,13 @@ Branch `claude/eloquent-tharp-51b6ca`. Code: `Assets/Groundbreak/Scripts/MapFoll
 ## Tests
 `MapFollowupTests` (4): vacant lots dressed/hidden on claim + 6 shots; plans on buildings + diner/townhome blueprint shots; catalog jobs reach ≥3 districts / map lots / commercial builds + outer-map service call shot; crew arrival off the road.
 
+## Status
+Full PlayMode suite (main 01bd5aa merged, run through the shared unity-run.sh lock): 125 total, 124 passed, 0 failed, 1 skipped (UICapture, by design).
+Dressing size: 65 lots + build-site margins = ~1.03 M vertices (grass blades and trees); meshes are destroyed with the town.
+
 ## Follow-ups
 - Commercial/industrial buildings have plans but no interiors, so service calls there aren't possible yet (catalog places need a `TownHouse`). A commercial interior (diner kitchen, office RTU on the roof) would open the catalog's commercial work.
 - More enterable houses: only `ranch2` on standard lots convert; two-storeys/capes would need HouseBuilder variants.
 - The Town Plans app's IMGUI is not in the batchmode shots (run UICaptureTests windowed to see `ui_tablet_Town Plans`).
+- Dressing could be thinned (fewer blades per clump) if the frame budget gets tight.
 - Plans are larger than some map models (e.g. the diner model vs diner-3000), so the overlay overhangs the building.
