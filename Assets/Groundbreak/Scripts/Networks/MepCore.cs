@@ -180,9 +180,26 @@ namespace Groundbreak
         static GUIStyle H => Tablet.I != null ? Tablet.I.HeaderStyle : GUI.skin.label;
         static GUIStyle B => Tablet.I != null ? Tablet.I.ButtonStyle : GUI.skin.button;
 
+        static Action _deferred;
+
+        /// <summary>Queues a state change made by a button inside the MEP Plans app (tab switch, install/land/remove a breaker,
+        /// run a test...). It is applied after the whole app has drawn, so IMGUI sees the same controls in the click event as
+        /// in its Layout pass (changing the content mid-draw throws "Getting control N's position..." / mismatched LayoutGroup).</summary>
+        public static void Defer(Action a) { if (a != null) _deferred += a; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() { _deferred = null; _tab = 0; }
+
         static void Draw()
         {
-            _tab = GUILayout.Toolbar(_tab, Tabs, B);
+            try { DrawBody(); }
+            finally { var a = _deferred; _deferred = null; a?.Invoke(); }
+        }
+
+        static void DrawBody()
+        {
+            int pick = GUILayout.Toolbar(_tab, Tabs, B);
+            if (pick != _tab) Defer(() => _tab = pick);
             GUILayout.Space(6);
             if (_tab < 3)
             {
@@ -193,7 +210,10 @@ namespace Groundbreak
             }
             GUILayout.BeginHorizontal();
             foreach (Trade t in Enum.GetValues(typeof(Trade)))
-                if (GUILayout.Button("Call rough " + t.ToString().ToLower() + " inspection", B)) MepInspection.Run(t);
+            {
+                var trade = t;
+                if (GUILayout.Button("Call rough " + t.ToString().ToLower() + " inspection", B)) Defer(() => MepInspection.Run(trade));
+            }
             if (GUILayout.Button("Clear markers", B)) MepInspection.ClearMarkers();
             GUILayout.EndHorizontal();
             foreach (var kv in MepInspection.LastPassed)

@@ -76,6 +76,7 @@ namespace Groundbreak
         void OnDestroy()
         {
             NetGraph.Runs.Remove(this);
+            if (_vis != null) { var mf = _vis.GetComponent<MeshFilter>(); if (mf != null && mf.sharedMesh != null) Destroy(mf.sharedMesh); }
             var a = A; var b = B;
             if (a != null) Detach(a);
             if (b != null) Detach(b);
@@ -176,7 +177,7 @@ namespace Groundbreak
 
         public void Rebuild()
         {
-            if (_vis != null) Destroy(_vis);
+            if (_vis != null) MepMesh.DestroyVisual(_vis);
             foreach (Transform c in transform) if (c.name == "Seg") Destroy(c.gameObject);
             transform.position = Points[0];
             var mm = new MepMesh { Origin = Points[0] };

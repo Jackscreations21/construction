@@ -86,7 +86,7 @@ namespace Groundbreak
 
         public static void Build(NetRun r)
         {
-            for (int i = r.transform.childCount - 1; i >= 0; i--) { var c = r.transform.GetChild(i); if (c.name == "Detail") Object.Destroy(c.gameObject); }
+            for (int i = r.transform.childCount - 1; i >= 0; i--) { var c = r.transform.GetChild(i); if (c.name == "Detail") MepMesh.DestroyVisual(c.gameObject); }
             var s = r.Spec;
             var mm = new MepMesh { Origin = r.transform.position };
             var mats = new List<Material> { HvacLook.Galv, Mastic, MepPrint.FoilTape, Jacket, Fiberglass };

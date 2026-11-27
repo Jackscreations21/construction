@@ -37,7 +37,7 @@ namespace Groundbreak
         public static void Build(NetNode n)
         {
             var t = n.transform;
-            for (int i = t.childCount - 1; i >= 0; i--) if (t.GetChild(i).name == "WhTrim") Object.Destroy(t.GetChild(i).gameObject);
+            for (int i = t.childCount - 1; i >= 0; i--) if (t.GetChild(i).name == "WhTrim") MepMesh.DestroyVisual(t.GetChild(i).gameObject);
             var mm = new MepMesh { Origin = t.position };
             var mats = new List<Material>
             {

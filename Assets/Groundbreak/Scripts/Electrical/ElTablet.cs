@@ -67,8 +67,13 @@ namespace Groundbreak
                         GUILayout.Label("— empty —", L, GUILayout.Width(220));
                         if (stock.Count > 0 && GUILayout.Button("Install", B, GUILayout.Width(90)))
                         {
-                            var nb = p.Install(stock[Mathf.Clamp(_pick, 0, stock.Count - 1)], slot);
-                            Game.Toast(nb != null ? "Installed " + nb.Name + " in space " + slot : "Doesn't fit there");
+                            // structural changes are deferred until the app has drawn (IMGUI layout must match this event)
+                            string defId = stock[Mathf.Clamp(_pick, 0, stock.Count - 1)]; int s = slot; var panel = p;
+                            MepTablet.Defer(() =>
+                            {
+                                var nb = panel.Install(defId, s);
+                                Game.Toast(nb != null ? "Installed " + nb.Name + " in space " + s : "Doesn't fit there");
+                            });
                         }
                     }
                     else
@@ -77,17 +82,20 @@ namespace Groundbreak
                         b.Label = GUILayout.TextField(b.Label ?? "", GUILayout.Width(160));
                         if (GUILayout.Button(b.Tripped ? "Reset" : b.On ? "Off" : "On", B, GUILayout.Width(70)))
                         { if (b.Tripped) b.Reset(); else b.On = !b.On; p.Touch(); }
+                        var br = b; var panel = p;
                         if (b.Run == null)
                         {
-                            if (unl.Count > 0 && GUILayout.Button("Land " + unl[0].Spec.Name.Split(' ')[1], B, GUILayout.Width(130))) Game.Toast(p.Land(b, unl[0]));
+                            if (unl.Count > 0 && GUILayout.Button("Land " + unl[0].Spec.Name.Split(' ')[1], B, GUILayout.Width(130)))
+                            { var run = unl[0]; MepTablet.Defer(() => Game.Toast(panel.Land(br, run))); }
                         }
                         else
                         {
                             string ok = b.Run.Spec.Ampacity + 0.01f < b.Amps ? " VIOLATION" : "";
                             GUILayout.Label($"{b.Run.Spec.Name.Split(' ')[1]}{ok} · {b.LoadA:0.0}/{b.Amps} A", L, GUILayout.Width(200));
-                            if (GUILayout.Button("Unland", B, GUILayout.Width(80))) { b.Run = null; p.Touch(); }
+                            if (GUILayout.Button("Unland", B, GUILayout.Width(80))) MepTablet.Defer(() => { br.Run = null; panel.Touch(); });
                         }
-                        if (b.Run == null && GUILayout.Button("Remove", B, GUILayout.Width(80))) { p.Remove(b); GUILayout.EndHorizontal(); break; }
+                        // removing used to 'break' out of the slot loop mid-layout (rest of the panel skipped for that event)
+                        if (b.Run == null && GUILayout.Button("Remove", B, GUILayout.Width(80))) MepTablet.Defer(() => panel.Remove(br));
                     }
                     GUILayout.EndHorizontal();
                 }

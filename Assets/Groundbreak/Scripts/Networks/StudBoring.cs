@@ -64,7 +64,7 @@ namespace Groundbreak
 
         public void Rebuild()
         {
-            if (_vis != null) Destroy(_vis);
+            if (_vis != null) MepMesh.DestroyVisual(_vis);
             if (Holes.Count == 0) return;
             var mm = new MepMesh { Origin = transform.position };
             var dark = MepLook.Get(SurfaceKind.MatteBlack, new Color(0.35f, 0.25f, 0.18f));

@@ -460,7 +460,7 @@ namespace Groundbreak
             if (p == null || p.Node == null || p.Run != null) return;
             p.Capped = true;
             var old = p.Node.transform.Find("TestCap " + p.Label);
-            if (old != null) Object.Destroy(old.gameObject);
+            if (old != null) MepMesh.DestroyVisual(old.gameObject);
             float r = Mathf.Max(I(0.4f), I(p.NominalIn) * 0.75f);
             var mm = new MepMesh { Origin = p.WorldPos };
             mm.Band(p.WorldPos - p.WorldDir * I(0.2f), p.WorldPos + p.WorldDir * I(0.9f), MepMesh.Circle(r, 16), 0);
@@ -473,7 +473,7 @@ namespace Groundbreak
             if (p == null || p.Node == null) return;
             p.Capped = false;
             var old = p.Node.transform.Find("TestCap " + p.Label);
-            if (old != null) Object.Destroy(old.gameObject);
+            if (old != null) MepMesh.DestroyVisual(old.gameObject);
             NetGraph.Touch();
         }
     }

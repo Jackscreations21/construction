@@ -35,7 +35,8 @@ namespace Groundbreak
 
         static void Kill(Transform t, string name)
         {
-            for (int i = t.childCount - 1; i >= 0; i--) { var c = t.GetChild(i); if (c.name == name) Object.Destroy(c.gameObject); }
+            // the guts / device meshes are built per box, so destroy them too (rebuilt on every graph change)
+            for (int i = t.childCount - 1; i >= 0; i--) { var c = t.GetChild(i); if (c.name == name) MepMesh.DestroyVisual(c.gameObject); }
         }
 
         // ================================================================== box body

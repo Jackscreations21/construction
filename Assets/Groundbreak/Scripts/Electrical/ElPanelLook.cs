@@ -41,8 +41,11 @@ namespace Groundbreak
 
         static void Kill(Transform t, string name)
         {
-            for (int i = t.childCount - 1; i >= 0; i--) { var c = t.GetChild(i); if (c.name == name) Object.Destroy(c.gameObject); }
+            // wires / connectors / labels / dead-front meshes are built per panel (rebuilt on every graph change): destroy them too
+            for (int i = t.childCount - 1; i >= 0; i--) { var c = t.GetChild(i); if (c.name == name) MepMesh.DestroyVisual(c.gameObject); }
         }
+
+        const string BodyMeshName = "GB_ElPanelBody";
 
         static void KO(MeshBuilder mb, Vector3 cIn, Quaternion rot)
         {
@@ -164,7 +167,17 @@ namespace Groundbreak
                 if (b.Type != ElCatalog.BreakerType.Standard)
                     mb.AddBevelBox(V(sgn * 0.85f, yc, F + 0.04f), V(0.3f, 0.26f, 0.1f), Quaternion.identity, I(0.02f), b.Gfci ? Yellow : White);
             }
+            // free the body mesh from the previous rebuild (ReplaceVisual only destroys the GameObject); the piece's
+            // original catalog visual is left alone since its mesh may be shared
+            for (int i = p.transform.childCount - 1; i >= 0; i--)
+            {
+                var c = p.transform.GetChild(i);
+                if (c.name != "Visual") continue;
+                var mf = c.GetComponent<MeshFilter>();
+                if (mf != null && mf.sharedMesh != null && mf.sharedMesh.name == BodyMeshName) Object.Destroy(mf.sharedMesh);
+            }
             var go = Spawn(p.transform, "Visual", mb, Mats);
+            go.GetComponent<MeshFilter>().sharedMesh.name = BodyMeshName;
             MepAutoAttach.ReplaceVisual(p.Piece, go);
 
             BuildWires(p, hx, hy, hz, F, busTop, busBot, gy);
