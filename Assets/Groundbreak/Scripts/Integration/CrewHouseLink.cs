@@ -80,7 +80,13 @@ namespace Groundbreak
             if (string.IsNullOrEmpty(jobId) || jobId == Crew.SiteJobId) return null;
             var j = Company.ActiveJobs.Find(x => x.Id == jobId);
             var tl = j != null ? Town.Find(j.Address) : null;
-            if (tl != null) return tl.Parking + tl.Rotation * new Vector3(-2.5f, 0f, 0f);
+            if (tl != null)
+            {
+                var at = tl.Parking + tl.Rotation * new Vector3(-2.5f, 0f, 0f);
+                // empty lots park at the curb: the crew waits inside the lot, past the sidewalk, never in the street
+                if (Town.OnRoad(at) || tl.Use != LotUse.Customer) at = tl.Local(-1.5f, 2.5f);
+                return at;
+            }
             var p = Projects.Get(jobId) ?? Projects.ForJob(jobId);
             if (p != null && p.Lot != null) return p.Lot.FrontMid - p.Lot.Front * 2f;
             return null;
