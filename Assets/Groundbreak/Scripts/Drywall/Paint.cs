@@ -130,6 +130,9 @@ namespace Groundbreak
         {
             s.Refresh();
             if (!Ready(s, primer, out var why)) { Game.Toast(why); return 0; }
+            // nothing in the opened can/bucket and none on site: no coat (was: painted for free, then failed to consume)
+            string id = primer ? PrimerId : PaintId;
+            if ((primer ? _primerGal : _paintGal) <= 0.0001f && !FinishStock.Has(id)) { FinishStock.Take(id); return 0; }
             int n = s.CoatRect(r, primer, c, PaintRules.Smoothness(sh), minEdge, maxEdge);
             Consume(n, primer);
             return n;

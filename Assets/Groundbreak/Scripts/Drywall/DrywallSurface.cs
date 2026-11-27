@@ -662,6 +662,23 @@ namespace Groundbreak
 
         public float VisibleSqFt { get { int tot = 0; for (int i = 0; i < W * H; i++) if (Visible(i)) tot++; return tot * T * T / (Units.Foot * Units.Foot); } }
 
-        void OnDestroy() { Drywall.Surfaces.Remove(this); }
+        void OnDestroy()
+        {
+            Drywall.Surfaces.Remove(this);
+            // per-surface skin textures/material and the meshes built for it are runtime assets: free them with the surface
+            if (_alb != null) Destroy(_alb);
+            if (_nrm != null) Destroy(_nrm);
+            if (_mask != null) Destroy(_mask);
+            if (_mat != null) Destroy(_mat);
+            foreach (var sh in Sheets) DestroyMesh(sh.Go);
+            DestroyMesh(_screwGo); DestroyMesh(_shadow);
+        }
+
+        static void DestroyMesh(GameObject go)
+        {
+            if (go == null) return;
+            var mf = go.GetComponent<MeshFilter>();
+            if (mf != null && mf.sharedMesh != null) Destroy(mf.sharedMesh);
+        }
     }
 }

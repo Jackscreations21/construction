@@ -446,10 +446,13 @@ namespace Groundbreak
             if (System.Array.IndexOf(TextureKinds, kind) < 0) { Game.Toast("Unknown texture " + kind); return false; }
             if (!AllSanded(s)) { Game.Toast("Finish and sand all joints before texturing"); return false; }
             if (s.TextureKind != null && s.TextureKind != kind) { Game.Toast($"This surface already has {s.TextureKind} texture"); return false; }
+            string mudId = kind == "smooth" ? "dw-mud-ap" : TextureMudId;
+            // no mud on site (and none left in an opened bucket): refuse before marking texels textured
+            if (!(_mudLeft.TryGetValue(mudId, out float mudLeft) && mudLeft > 0f) && !FinishStock.Has(mudId)) { FinishStock.Take(mudId); return false; }
             int c = s.TextureRect(area ?? s.Area);
             if (c == 0) return s.TextureKind == kind;
             float sq = c * DrywallSurface.T * DrywallSurface.T / (Units.Foot * Units.Foot);
-            TakeMud(kind == "smooth" ? "dw-mud-ap" : TextureMudId, sq * 0.6f);
+            TakeMud(mudId, sq * 0.6f);
             s.TextureKind = kind; s.TextureTime = FinishTime.Now - (kind == "smooth" ? DrywallRules.TextureDryHours - DrywallRules.SkimDryHours : 0f);
             s.Changed(false); s.Refresh();
             return true;
@@ -541,6 +544,7 @@ namespace Groundbreak
             var a = s.FrontWorld(seam.P0); var b = s.FrontWorld(seam.P1);
             foreach (var bd in Beads)
             {
+                if (bd.Go == null) continue; // bead torn out / scene cleaned: no longer on the corner
                 var mid = (a + b) * 0.5f;
                 var d = bd.B - bd.A; float t = Mathf.Clamp01(Vector3.Dot(mid - bd.A, d) / Mathf.Max(1e-6f, d.sqrMagnitude));
                 if ((bd.A + d * t - mid).magnitude < 0.04f) return true;

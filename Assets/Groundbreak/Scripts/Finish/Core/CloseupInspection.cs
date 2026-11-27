@@ -67,6 +67,7 @@ namespace Groundbreak
 
         static readonly Dictionary<string, List<GameObject>> _markers = new Dictionary<string, List<GameObject>>();
         static Material _red;
+        static Mesh _markerMesh;
 
         public static void ClearMarkers(string phase = null)
         {
@@ -90,13 +91,18 @@ namespace Groundbreak
             }
             var root = new GameObject("InspectionMarker_" + v.RuleId);
             root.transform.position = v.Position;
-            var b = new MeshBuilder();
-            b.AddCylinder(new Vector3(0, 0.12f, 0), 0.006f, 0.24f, 8, 0);                        // pin
-            b.AddLathe(Vector3.zero, Quaternion.identity, new[] { new Vector2(0f, 0.24f), new Vector2(0.025f, 0.26f), new Vector2(0.025f, 0.28f), new Vector2(0f, 0.30f) }, 12, 0); // head
-            b.AddBox(new Vector3(0.05f, 0.21f, 0f), new Vector3(0.09f, 0.055f, 0.002f), 0);       // flag
+            if (_markerMesh == null)   // one shared mesh (was rebuilt per marker and never destroyed)
+            {
+                var b = new MeshBuilder();
+                b.AddCylinder(new Vector3(0, 0.12f, 0), 0.006f, 0.24f, 8, 0);                        // pin
+                b.AddLathe(Vector3.zero, Quaternion.identity, new[] { new Vector2(0f, 0.24f), new Vector2(0.025f, 0.26f), new Vector2(0.025f, 0.28f), new Vector2(0f, 0.30f) }, 12, 0); // head
+                b.AddBox(new Vector3(0.05f, 0.21f, 0f), new Vector3(0.09f, 0.055f, 0.002f), 0);       // flag
+                _markerMesh = b.Build("InspectionMarker");
+                _markerMesh.hideFlags = HideFlags.DontUnloadUnusedAsset;
+            }
             var go = new GameObject("Visual");
             go.transform.SetParent(root.transform, false);
-            go.AddComponent<MeshFilter>().sharedMesh = b.Build("InspectionMarker");
+            go.AddComponent<MeshFilter>().sharedMesh = _markerMesh;
             go.AddComponent<MeshRenderer>().sharedMaterial = _red;
             var lbl = root.AddComponent<InspectionMarkerLabel>(); lbl.Text = v.Message;
             root.AddComponent<FinishLayer>().Kind = "marker";
@@ -122,7 +128,8 @@ namespace Groundbreak
                 GUILayout.BeginHorizontal();
                 int n = 0; foreach (var r in _rules) if (r.Phase == ph) n++;
                 GUILayout.Label($"{ph}: {n} rules", t.HeaderStyle, GUILayout.Width(260));
-                if (GUILayout.Button("Request inspection", t.ButtonStyle, GUILayout.Width(220))) { var r = Run(ph); t.ShowMessage(r.ToString()); }
+                // Run adds result rows below: end this GUI event so they aren't laid out against the pre-click Layout pass
+                if (GUILayout.Button("Request inspection", t.ButtonStyle, GUILayout.Width(220))) { var r = Run(ph); t.ShowMessage(r.ToString()); GUIUtility.ExitGUI(); }
                 if (GUILayout.Button("Clear flags", t.ButtonStyle, GUILayout.Width(140))) ClearMarkers(ph);
                 GUILayout.EndHorizontal();
                 if (Last.TryGetValue(ph, out var res))

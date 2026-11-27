@@ -264,13 +264,16 @@ namespace Groundbreak
     public class StiltsRig : MonoBehaviour
     {
         PlayerRig _rig;
+        float _liftedY = float.NaN;   // camera y we last set; PlayerRig overwrites it every Update
         void Awake() { _rig = GetComponent<PlayerRig>(); }
         void Apply()
         {
             if (_rig == null || _rig.Cam == null || !Stilts.Worn) return;
             var t = _rig.Cam.transform; var p = t.localPosition;
-            float baseY = PlayerRig.EyeHeight;
-            if (p.y < baseY + Stilts.Lift - 0.01f) t.localPosition = new Vector3(p.x, p.y + Stilts.Lift, p.z);
+            // lift once per PlayerRig reset (the old "below standing eye + lift" test lifted a crouched camera twice per frame)
+            if (Mathf.Abs(p.y - _liftedY) < 1e-5f) return;
+            _liftedY = p.y + Stilts.Lift;
+            t.localPosition = new Vector3(p.x, _liftedY, p.z);
         }
         void Update() { Apply(); }
         void LateUpdate() { Apply(); }
