@@ -46,11 +46,15 @@ namespace Groundbreak
             var names = new string[near.Count];
             for (int i = 0; i < near.Count; i++) names[i] = $"{near[i].Address} ({Kind(near[i])})";
             int sel = Mathf.Max(0, near.FindIndex(x => x.Id == _sel));
+            int was = sel;
             sel = GUILayout.SelectionGrid(sel, names, 2);
             _sel = near[Mathf.Clamp(sel, 0, near.Count - 1)].Id;
+            if (sel != was) { _floor = 0; GUIUtility.ExitGUI(); }   // another plan: the rows below change, end this GUI event
             var lot = Town.Find(_sel);
             var plan = MapLayout.PlanFor(lot);
             if (plan == null) return;
+            _floor = Mathf.Clamp(_floor, 0, Mathf.Max(0, plan.Floors - 1));   // e.g. floor 2 of a 2-story kept for a ranch
+            bool overlayShown = PlanOverlay.Root != null;   // as in the Layout pass, so the Hide button doesn't appear mid-event
             GUILayout.Space(6);
             GUILayout.Label($"{lot.Address} · {(string.IsNullOrEmpty(lot.Resident) ? Kind(lot) : lot.Resident)} · {MapLayout.DistrictAt(lot.Center)?.Name ?? "Old Town"}");
             GUILayout.Label($"Plan on file: {plan.Name} ({plan.Id}) — {plan.SqFt:N0} sq ft, {plan.WidthFt:0}' x {plan.DepthFt:0}', {plan.Floors} floor(s)");
@@ -58,7 +62,7 @@ namespace Groundbreak
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Lay the blueprint over the building")) { ShowOver(lot, _floor); Game.Toast("Blueprint laid over " + lot.Address); }
             if (plan.Floors > 1 && GUILayout.Button($"Floor {_floor + 1} of {plan.Floors}")) { _floor = (_floor + 1) % plan.Floors; if (PlanOverlay.Root != null) ShowOver(lot, _floor); }
-            if (PlanOverlay.Root != null && GUILayout.Button("Hide")) PlanOverlay.Hide();
+            if (overlayShown && GUILayout.Button("Hide")) PlanOverlay.Hide();
             GUILayout.EndHorizontal();
             float w = Tablet.I != null ? Tablet.I.ContentWidth - 30f : 600f;
             var r = GUILayoutUtility.GetRect(w, w * 0.5f);
