@@ -322,6 +322,8 @@ namespace Groundbreak
         public static IReadOnlyList<HousePlan> All { get { if (_all == null) Build(); return _all; } }
         public static HousePlan Get(string id) { foreach (var p in All) if (p.Id == id) return p; return null; }
         public static void Register(HousePlan p) { if (_all == null) Build(); _all.RemoveAll(x => x.Id == p.Id); _all.Add(p.Finish()); }
+        /// <summary>Removes a plan by id (PlanDesigner: deleted custom plans). Returns true when one was removed.</summary>
+        public static bool Unregister(string id) { if (_all == null) Build(); return _all.RemoveAll(x => x.Id == id) > 0; }
 
         static void Build()
         {

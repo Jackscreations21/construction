@@ -8,7 +8,9 @@ namespace Groundbreak
     public static class DevApps
     {
         static int _plan, _floor, _dev, _specPlan = 1, _finish = 1, _grp, _cat;
-        static readonly string[] Groups = { "All", "Residential", "Outbuilding", "Commercial", "Industrial" };
+        static readonly string[] Groups = { "All", "Residential", "Outbuilding", "Commercial", "Industrial", "My plans" };
+        // "My plans" (PlanDesigner): the player's own custom-* plans
+        static bool InGroup(HousePlan x, int g) => g == 0 || (g == 5 ? x.Id.StartsWith("custom-") : x.Group == (PlanGroup)(g - 1));
         static readonly string[] FinishNames = { "Builder grade", "Standard", "Premium" };
         static readonly float[] FinishLevels = { 0.35f, 0.6f, 0.9f };
         public static string SelectedPlanId { get => HousePlans.All[Mathf.Clamp(_plan, 0, HousePlans.All.Count - 1)].Id; set { for (int i = 0; i < HousePlans.All.Count; i++) if (HousePlans.All[i].Id == value) _plan = i; } }
@@ -48,12 +50,12 @@ namespace Groundbreak
             // filters (Blueprints): group, then type within the group
             _grp = GUILayout.Toolbar(Mathf.Clamp(_grp, 0, Groups.Length - 1), Groups, B);
             var cats = new List<string> { "All types" };
-            foreach (var x in plans) if ((_grp == 0 || x.Group == (PlanGroup)(_grp - 1)) && !cats.Contains(x.Category)) cats.Add(x.Category);
+            foreach (var x in plans) if (InGroup(x, _grp) && !cats.Contains(x.Category)) cats.Add(x.Category);
             if (cats.Count > 2) _cat = GUILayout.SelectionGrid(Mathf.Clamp(_cat, 0, cats.Count - 1), cats.ToArray(), 6, B); else _cat = 0;
             var idx = new List<int>();
             for (int i = 0; i < plans.Count; i++)
-                if ((_grp == 0 || plans[i].Group == (PlanGroup)(_grp - 1)) && (_cat <= 0 || _cat >= cats.Count || plans[i].Category == cats[_cat])) idx.Add(i);
-            if (idx.Count == 0) { GUILayout.Label("No plans in this filter.", L); return; }
+                if (InGroup(plans[i], _grp) && (_cat <= 0 || _cat >= cats.Count || plans[i].Category == cats[_cat])) idx.Add(i);
+            if (idx.Count == 0) { GUILayout.Label(_grp == 5 ? "No plans of your own yet: draw one in the Plan Designer app." : "No plans in this filter.", L); return; }
             var names = new string[idx.Count]; for (int i = 0; i < names.Length; i++) names[i] = plans[idx[i]].Name.Replace("The ", "") + $" {plans[idx[i]].SqFt:N0}";
             int sel = Mathf.Max(0, idx.IndexOf(_plan));
             sel = GUILayout.SelectionGrid(sel, names, 3, B); _plan = idx[Mathf.Clamp(sel, 0, idx.Count - 1)];
