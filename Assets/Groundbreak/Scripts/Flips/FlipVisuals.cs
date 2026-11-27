@@ -43,6 +43,7 @@ namespace Groundbreak
         {
             Clear(f);
             if (f == null || !Town.Exists) return;
+            if (f.Status == FlipStatus.Listed && !Flips.Unlocked) return;       // market listings only show in a career that can flip
             var lot = f.Lot; if (lot == null) return;
             var house = lot.House;
             var go = new GameObject("Flip " + f.address);
@@ -110,7 +111,7 @@ namespace Groundbreak
             }
 
             // ---- 20-yard roll-off dumpster on the lawn while it's being renovated
-            if (f.Status == FlipStatus.Owned)
+            if (f.Status == FlipStatus.Owned && lot.Contains(DumpsterPos(lot, side, driveSide)))
             {
                 var p = DumpsterPos(lot, side, driveSide);
                 var rot = Quaternion.LookRotation(front, Vector3.up);
@@ -164,6 +165,9 @@ namespace Groundbreak
         /// <summary>No tufts on the house, the driveway, the front walk or the dumpster pad.</summary>
         static bool Blocked(TownLot lot, TownHouse house, Vector3 p, float driveSide, Vector3 side, bool keepOffHouse = true)
         {
+            if (!lot.Contains(p)) return true;                                                                    // never outside the lot
+            var r = lot.Rect;
+            if (p.x < r.xMin + 0.3f || p.x > r.xMax - 0.3f || p.z < r.yMin + 0.3f || p.z > r.yMax - 0.3f) return true;
             if (house != null)
             {
                 var l = house.transform.InverseTransformPoint(p);

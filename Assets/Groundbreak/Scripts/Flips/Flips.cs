@@ -639,6 +639,7 @@ namespace Groundbreak
             Company.Changed += () => { if (!_pruning && All.Count > 0) PruneOffers(); };
             Town.Built += Rebuild;
             Town.Destroyed += FlipVisuals.ClearAll;
+            MainMenu.NewGameStarted += m => ResetState();       // a new game starts with an empty market
         }
     }
 }

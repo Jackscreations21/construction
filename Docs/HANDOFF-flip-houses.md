@@ -18,6 +18,22 @@ Tests: `Tests/FlipTests.cs` (5 batch tests + `CaptureFlipsApp`, category UICaptu
   so flips don't claim lots). Offers at a flip address are pruned on `Company.Changed`.
 - `Crew.JobLabel("flip-…")` shows "(finished job)" in the Crew app for a worker on a flip (shared file, not edited).
 
+## Status when paused (2026-11-27, lead's "pause for the night")
+- Feature complete and committed. main aa6ed35 (map-followup) is merged into this branch.
+- Filtered run `FlipTests` + `JobCatalogTests`: all pass (UICapture skipped in batch). Exterior/kitchen shots looked at.
+- Last full suite (after the main merge): 131 total, 128 passed, **1 failed**, 2 skipped. The failure was
+  `TownTests.TownBuildsWithHousesAndAnchors` ("Overgrowth inside the build site"): a market listing left over from an earlier test
+  (Career playthrough) was dressed on a core-town house and some grass fell outside its lot. **Fixed, not yet re-run**:
+  grass/saplings are clipped to the lot, the dumpster is skipped if it would leave the lot, listings are only dressed while
+  flipping is unlocked, and `MainMenu.NewGameStarted` resets the flip market.
+- A first full-suite attempt before that crashed in `FullMapTests` (GPU out of memory with 7 Unity editors open) — environment.
+
+## Left to do (in order)
+1. One full PlayMode run through the lock wrapper (`unity-run.sh`, see CLAUDE.md command). Expect 0 failures; check `flip_*.png`.
+2. If 0 error CS: windowed app capture through the wrapper (no `-batchmode`):
+   `-testFilter Groundbreak.Tests.FlipTests.CaptureFlipsApp` → `Logs/shots/flip_app_market.png`, `flip_app_my_flip.png`; look at them.
+3. Merge main again if it moved, commit, SendMessage the lead "flip-houses DONE @ <commit>" with branch and test counts.
+
 ## Follow-ups (not done)
 - Kitchen/bath upgrades barely change the look: the catalog task models (cabinet, sinkbase…) are small; a renovated kitchen
   should get new painted cabinet fronts/counter (see `flip_03_dated_kitchen` vs `flip_05_renovated_kitchen`).
