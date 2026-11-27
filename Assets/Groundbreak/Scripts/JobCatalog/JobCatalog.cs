@@ -253,6 +253,9 @@ namespace Groundbreak
         public static bool ForceGenerate;
 
         /// <summary>A customer address with no job on it whose house has every spot the definition needs.</summary>
+        /// <summary>Optional: chooses among the free addresses (MapFollowup spreads calls over the map, weighted by travel).</summary>
+        public static Func<List<TownLot>, TownLot> AddressPicker;
+
         public static TownLot FreeAddressFor(JobDef d)
         {
             var free = new List<TownLot>();
@@ -262,7 +265,9 @@ namespace Groundbreak
                 if (l.House == null || !Fits(l.House, d)) continue;   // every catalog place is anchored on an enterable TownHouse (map lots without one get no service calls)
                 free.Add(l);
             }
-            return free.Count == 0 ? null : free[UnityEngine.Random.Range(0, free.Count)];
+            if (free.Count == 0) return null;
+            if (AddressPicker != null) { var picked = AddressPicker(free); if (picked != null) return picked; }
+            return free[UnityEngine.Random.Range(0, free.Count)];
         }
 
         public static bool Fits(TownHouse h, JobDef d)

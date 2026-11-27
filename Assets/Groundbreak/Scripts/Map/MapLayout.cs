@@ -351,7 +351,11 @@ namespace Groundbreak
             BuildDevLand(mill, rt9, cr9);
             BuildCoreFill();
             BuildCreek();
+            AfterLayout?.Invoke();
         }
+
+        /// <summary>Raised once the map layout (parcels, lots) exists and before the 3D map is built: post-process parcels here (MapFollowup).</summary>
+        public static event Action AfterLayout;
 
         // ------------------------------------------------------------------ downtown
 
