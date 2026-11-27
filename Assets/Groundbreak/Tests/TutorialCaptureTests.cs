@@ -661,10 +661,10 @@ namespace Groundbreak.Tests
 
             // tablet apps + main menu (real IMGUI)
             PutPlayer(new Vector3(2f, 0f, -6f), 20f, 8f);
-            foreach (var (app, pic) in new[] { ("Inspections", "i_03_schedule"), ("Garden Center", "biz_00_garden"), ("Job Board", "biz_04_career") })
+            foreach (var (app, pic) in new[] { ("Inspections", "i_03_schedule"), ("Garden Center", "biz_00_garden"), ("Jobs", "biz_04_career") })
             {
                 var mode = GameSettings.Mode;
-                if (app == "Job Board") GameSettings.Mode = GameMode.Career; // the board lists contracts only in career mode
+                if (app == "Jobs") { GameSettings.Mode = GameMode.Career; JobsHub.Tab = 0; } // the Jobs app is career only
                 Tablet.I.ShowApp(app);
                 yield return Frames(3);
                 Assert.AreEqual(app, Tablet.I.CurrentApp, app + " app missing");

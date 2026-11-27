@@ -322,8 +322,8 @@ namespace Groundbreak
                 .Step("Save and load", "Every piece, your stock, money, tools, the clock and the site are saved, and the game autosaves. The main menu starts a new career or free build, loads a slot, or changes settings.",
                       "F5 quick save · F9 quick load · F10 main menu", "biz_03_save");
             Tutorials.New("biz-career", BIZ, "Career mode", "Bid jobs, build to the contract, get paid.")
-                .Step("Take a job", "Pick a contract on the Job Board: it sets the lot, the house and the deposit. Build it, pass every inspection, and you're paid at the final. Good work raises your reputation and unlocks bigger jobs and tools.",
-                      "Job Board app: Sign a contract", "biz_04_career", "Job Board");
+                .Step("Take a job", "Career mode is a business: every job is in the Jobs app - service calls, contractor jobs, client houses and land, one tab each. Accept a job, do the work, pass the inspections and get paid. Good work raises your reputation and unlocks bigger jobs. The 'Running the business' tutorials walk through every stage.",
+                      "Tablet → Jobs → Accept", "biz_04_career", "Jobs");
         }
     }
 }
