@@ -79,7 +79,7 @@ namespace Groundbreak
                         var basePt = p + Quaternion.Euler(0, a, 0) * new Vector3(0, 0, R() * 0.06f);
                         k.B.AddFrustum(basePt + rot * Vector3.up * (h / 2f), rot, 0.014f, 0.002f, h, 3, mat, false);
                     }
-                    if (R() < 0.1f) k.B.AddFrustum(p + Vector3.up * 0.5f, Quaternion.Euler(0, R() * 360f, 0), 0.2f, 0.05f, 0.9f + R() * 0.4f, 6, weed, false);
+                    if (R() < 0.03f) k.B.AddFrustum(p + Vector3.up * 0.35f, Quaternion.Euler(0, R() * 360f, 0), 0.12f, 0.03f, 0.7f, 6, weed, false);
                 }
                 // volunteer saplings along the foundation and fence
                 if (!weedsGone && house != null)

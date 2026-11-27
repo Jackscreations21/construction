@@ -14,6 +14,19 @@ namespace Groundbreak
         static readonly Dictionary<string, string> _priceText = new Dictionary<string, string>();
         static string _msg = "";
         static string _open;
+        static GUIStyle _card;
+        /// <summary>A dark card (the default box skin is white, which hides the tablet's white text).</summary>
+        static GUIStyle Card
+        {
+            get
+            {
+                if (_card != null && _card.normal.background != null) return _card;
+                var tex = new Texture2D(1, 1); tex.SetPixel(0, 0, new Color(1f, 1f, 1f, 0.07f)); tex.Apply();
+                _card = new GUIStyle { padding = new RectOffset(8, 8, 6, 6), margin = new RectOffset(0, 0, 4, 6) };
+                _card.normal.background = tex;
+                return _card;
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
@@ -55,7 +68,7 @@ namespace Groundbreak
             GUILayout.Label("Distressed houses on the market in Millbrook. ARV = after-repair value (comps for a renovated house). Buyers pay a 2% closing cost; a hard-money loan covers 90% of the price at 11.5% interest-only + 2 points.", label);
             foreach (var f in new List<FlipHouse>(Flips.Listings))
             {
-                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.BeginVertical(Card);
                 var lot = f.Lot;
                 GUILayout.Label($"<b>{f.address}</b> · {f.sqft:N0} sq ft ranch · {(lot != null ? lot.District : "")} · seller: {f.seller} · on the market {day - f.listedDay} days", label);
                 int arv = Flips.Arv(f, day), rehab = Flips.RehabEstimate(f, false), up = Flips.RehabEstimate(f, true) - rehab;
@@ -69,7 +82,7 @@ namespace Groundbreak
                 GUILayout.Label($"Cash to close ${cash:N0}" + (fin ? $" (loan ${Flips.LoanAmount(f):N0}, ~${Mathf.RoundToInt(Flips.LoanAmount(f) * Flips.LoanApr / 365f + f.asking * Flips.TaxRate / 365f + Flips.InsurancePerYear / 365f + Flips.UtilitiesPerDay):N0}/day to hold)" : $" (~${Mathf.RoundToInt(f.asking * Flips.TaxRate / 365f + Flips.InsurancePerYear / 365f + Flips.UtilitiesPerDay):N0}/day to hold)") +
                     $" · profit if you do the work yourself: about ${projected:N0} before materials and holding", label);
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(fin ? "Financing: hard-money loan" : "Financing: all cash", btn, GUILayout.Width(230))) _financed[f.id] = !fin;
+                if (GUILayout.Button(fin ? "Financing: hard-money loan" : "Financing: all cash", btn, GUILayout.Width(300))) _financed[f.id] = !fin;
                 string why = Flips.BuyBlocker(f, fin);
                 GUI.enabled = why == null;
                 if (GUILayout.Button($"Buy for ${f.asking:N0}", btn, GUILayout.Width(200))) { Flips.Buy(f, fin, out _msg); if (f.Status == FlipStatus.Owned) { _tab = 1; _open = f.id; } }
@@ -92,7 +105,7 @@ namespace Groundbreak
             if (owned.Count == 0) { GUILayout.Label("You don't own a flip yet. Buy one on the For sale tab.", label); return; }
             foreach (var f in owned)
             {
-                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.BeginVertical(Card);
                 bool open = _open == f.id || owned.Count == 1;
                 int value = Flips.Value(f, day), arv = Flips.Arv(f, day);
                 GUILayout.BeginHorizontal();
@@ -129,7 +142,7 @@ namespace Groundbreak
                 _priceText[f.id] = txt;
                 int.TryParse(txt.Replace(",", "").Replace("$", ""), out int price);
                 int exp = price > 0 ? Flips.ExpectedDaysToOffer(f, price, day) : int.MaxValue;
-                if (GUILayout.Button($"Use value (${suggested:N0})", btn, GUILayout.Width(190))) _priceText[f.id] = suggested.ToString();
+                if (GUILayout.Button($"Use value (${suggested:N0})", btn, GUILayout.Width(250))) _priceText[f.id] = suggested.ToString();
                 GUI.enabled = price > 0;
                 if (GUILayout.Button("List it for sale", btn, GUILayout.Width(150))) Flips.List(f, price, out _msg);
                 GUI.enabled = true;
