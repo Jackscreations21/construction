@@ -48,6 +48,11 @@ Usage watch: session cron every 10 min (pause helpers at 85%). It dies with the 
    van model polish; boxy toilet model (`jobcat_toilet_*`); blueprint overlay room labels overlap fixture markers; map edge shows a dark void from the air.
 3. User request (2026-11-26): after everything above is finished, have one or two sessions go through every bit of code checking for errors
    (split by folder, e.g. Core+building trades / Business+Town+Map+Integration; fix real bugs, add tests, report). Tracker row `n-codecheck`.
+4. New features the user picked (2026-11-26), to build after the code check, each in its own folder/session (tracker rows `f-*`):
+   flip houses (buy run-down map house, renovate, sell); subcontractors (hire out a trade at a premium); seasons + weather effects + storm events
+   (frozen ground, rain delays, hail/wind repair surges; one session); heavy equipment you operate (excavator, skid steer, boom lift, truss crane);
+   design-your-own blueprint on the tablet (code check + pricing, on the `HousePlan` format); photo mode + before/after job gallery.
+   Not picked: walkthroughs/callbacks, bidding, permits, safety/accidents, co-op.
 - The user wants the checklist of everything left written in every reply (the pinned list disappears) and the tracker artifact kept current.
 
 ## First things for the new lead
