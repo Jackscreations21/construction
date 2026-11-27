@@ -7,7 +7,8 @@ namespace Groundbreak
     /// and "Development" (land, subdivision, spec houses, market, profit). Plus the neighborhood completion screen.</summary>
     public static class DevApps
     {
-        static int _plan, _floor, _dev, _specPlan = 1, _finish = 1;
+        static int _plan, _floor, _dev, _specPlan = 1, _finish = 1, _grp, _cat;
+        static readonly string[] Groups = { "All", "Residential", "Outbuilding", "Commercial", "Industrial" };
         static readonly string[] FinishNames = { "Builder grade", "Standard", "Premium" };
         static readonly float[] FinishLevels = { 0.35f, 0.6f, 0.9f };
         public static string SelectedPlanId { get => HousePlans.All[Mathf.Clamp(_plan, 0, HousePlans.All.Count - 1)].Id; set { for (int i = 0; i < HousePlans.All.Count; i++) if (HousePlans.All[i].Id == value) _plan = i; } }
@@ -44,8 +45,18 @@ namespace Groundbreak
         static void PlansApp()
         {
             var plans = HousePlans.All;
-            var names = new string[plans.Count]; for (int i = 0; i < names.Length; i++) names[i] = plans[i].Name.Replace("The ", "") + $" {plans[i].SqFt:N0}";
-            _plan = GUILayout.SelectionGrid(Mathf.Clamp(_plan, 0, plans.Count - 1), names, 3, B);
+            // filters (Blueprints): group, then type within the group
+            _grp = GUILayout.Toolbar(Mathf.Clamp(_grp, 0, Groups.Length - 1), Groups, B);
+            var cats = new List<string> { "All types" };
+            foreach (var x in plans) if ((_grp == 0 || x.Group == (PlanGroup)(_grp - 1)) && !cats.Contains(x.Category)) cats.Add(x.Category);
+            if (cats.Count > 2) _cat = GUILayout.SelectionGrid(Mathf.Clamp(_cat, 0, cats.Count - 1), cats.ToArray(), 6, B); else _cat = 0;
+            var idx = new List<int>();
+            for (int i = 0; i < plans.Count; i++)
+                if ((_grp == 0 || plans[i].Group == (PlanGroup)(_grp - 1)) && (_cat <= 0 || _cat >= cats.Count || plans[i].Category == cats[_cat])) idx.Add(i);
+            if (idx.Count == 0) { GUILayout.Label("No plans in this filter.", L); return; }
+            var names = new string[idx.Count]; for (int i = 0; i < names.Length; i++) names[i] = plans[idx[i]].Name.Replace("The ", "") + $" {plans[idx[i]].SqFt:N0}";
+            int sel = Mathf.Max(0, idx.IndexOf(_plan));
+            sel = GUILayout.SelectionGrid(sel, names, 3, B); _plan = idx[Mathf.Clamp(sel, 0, idx.Count - 1)];
             var p = plans[_plan]; var t = p.Takeoff;
             GUILayout.Space(6);
             GUILayout.Label(p.Name, Hd);
@@ -181,7 +192,7 @@ namespace Groundbreak
             }
             else if (!dv.SiteWorkDone) { GUILayout.BeginHorizontal(); GUILayout.Label("Site work", L, GUILayout.Width(Fs * 6)); Bar(dv.SiteWorkProgress, Fs * 12, new Color(1f, 0.75f, 0.2f)); GUILayout.EndHorizontal(); }
 
-            var plans = HousePlans.All;
+            var plans = new List<HousePlan>(); foreach (var x in HousePlans.All) if (x.Group == PlanGroup.Residential && x.WidthFt <= 60f) plans.Add(x);   // spec homes only (single lots)
             GUILayout.BeginHorizontal();
             GUILayout.Label("Spec plan:", L, GUILayout.Width(Fs * 5));
             if (GUILayout.Button(plans[_specPlan % plans.Count].Name, B)) _specPlan = (_specPlan + 1) % plans.Count;

@@ -76,9 +76,10 @@ namespace Groundbreak.Tests
             Assert.AreEqual(37, t.ShingleBundles, "32'x32' roof at 5/12 = 11.09 sq x 1.10 x 3");
             foreach (var pl in HousePlans.All)
                 Debug.Log($"[Dev] {pl.Id}: {pl.SqFt} sf, walls {pl.Walls.Count}, openings {pl.Openings.Count}, materials ${pl.Takeoff.MaterialTotal:N0}, total ${pl.Takeoff.Total:N0} (${pl.Takeoff.Total / pl.SqFt:0}/sf), {pl.TotalDays} days");
-            Assert.AreEqual(6, HousePlans.All.Count);
+            Assert.GreaterOrEqual(HousePlans.All.Count, 6, "Development's six plans (+ the Blueprints library)");
             Assert.AreEqual(2400f, HousePlans.Get("twostory-2400").SqFt);
-            foreach (var pl in HousePlans.All) Assert.That(pl.Takeoff.Total / pl.SqFt, Is.InRange(110f, 200f), pl.Id + " $/sq ft");
+            foreach (var id in new[] { "starter-900", "cottage-1200", "ranch-1600", "craftsman-1920", "twostory-2400", "estate-3500" })
+            { var pl = HousePlans.Get(id); Assert.That(pl.Takeoff.Total / pl.SqFt, Is.InRange(110f, 200f), pl.Id + " $/sq ft"); }
         }
 
         // ------------------------------------------------------------------ overlay

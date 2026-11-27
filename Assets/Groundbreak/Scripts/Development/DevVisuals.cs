@@ -11,6 +11,8 @@ namespace Groundbreak
         public static HousePlan Plan { get; private set; }
         public static readonly Color ExtColor = new Color(0.15f, 0.45f, 1f), IntColor = new Color(0.45f, 0.75f, 1f), DoorColor = new Color(0.2f, 0.9f, 0.3f), WindowColor = new Color(0.1f, 0.95f, 0.95f);
         public static int WallCount, OpeningCount, LabelCount;
+        /// <summary>Raised at the end of Show (plan, placement, floor); listeners may add children under Root.</summary>
+        public static event System.Action<HousePlan, PlanPlacement, int> Shown;
 
         public static void Hide() { if (Root != null) Object.Destroy(Root); Root = null; Plan = null; }
 
@@ -63,6 +65,7 @@ namespace Groundbreak
                 Label(font, at.World(p.x, p.y, 0.05f), at, (o.IsDoor ? "D " : "W ") + $"{o.RoughWidthIn:0.#}\" RO", 0.05f, o.IsDoor ? DoorColor : WindowColor);
             }
             Label(font, at.World(plan.WidthFt / 2f, -4f, 0.05f), at, plan.Name + (plan.Floors > 1 ? $"  (floor {floor + 1})" : ""), 0.12f, new Color(1f, 0.85f, 0.3f));
+            Shown?.Invoke(plan, at, floor);   // extension point (Blueprints adds fixtures + stairs under Root)
             return Root;
         }
 
