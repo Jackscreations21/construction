@@ -524,6 +524,10 @@ namespace Groundbreak
             float d = Mathf.Sqrt(dx * dx + dz * dz);
             if (d >= 1f) return 0f;
             float s = Mathf.Cos(d * Mathf.PI) * 0.5f + 0.5f;
+            // hills only rise outside the playable map (roads and fields at the edge stay at grade)
+            var bd = MapLayout.Bounds;
+            float ox = Mathf.Max(bd.xMin - x, x - bd.xMax, 0f), oz = Mathf.Max(bd.yMin - z, z - bd.yMax, 0f);
+            s *= Mathf.SmoothStep(0f, 1f, (Mathf.Sqrt(ox * ox + oz * oz) - 30f) / 80f);
             return a.Height * s * (0.85f + 0.15f * Mathf.Sin(x * 0.02f + a.Seed) * Mathf.Cos(z * 0.017f));
         }
 
@@ -734,22 +738,23 @@ namespace Groundbreak
                 if (tries > 8) { prev = null; continue; }
                 var pos = r.At(aa, side * off, y);
                 if (Blocking.Blocked(pos, true)) { prev = null; continue; }
-                // crossarm across the line: the pole's +Z faces the road
-                var rot = Quaternion.LookRotation(r.EW ? new Vector3(0, 0, -side) : new Vector3(-side, 0, 0));
+                // the crossarm (model X) must cross the line: model +Z runs along the road
+                var rot = Quaternion.LookRotation(r.EW ? Vector3.right : Vector3.forward);
                 Place(Prop("powerpole", seed++, "", n % 5 == 2 ? 2 : 1), pos, rot);
                 if (prev.HasValue)
                 {
                     var cell = CellAt((prev.Value + pos) * 0.5f);
                     var b = Ctx(cell.Bld, seed);
                     int wire = cell.Bld.M(new Color(0.12f, 0.12f, 0.12f));
-                    Vector3 across = rot * Vector3.right;
-                    float[] xs = { -1.0f, 0f, 1.0f };
-                    foreach (float x in xs)
+                    foreach (float x in PropModels.ConductorX)
                     {
-                        float h = x == 0f ? PoleTop + 0.25f : PoleTop;
-                        PropModels.Wire(b, prev.Value + across * x + Vector3.up * h, pos + across * x + Vector3.up * h, 0.6f, wire);
+                        var at = rot * new Vector3(x, PropModels.ConductorY, PropModels.ConductorZ);
+                        PropModels.Wire(b, prev.Value + at, pos + at, 0.6f, wire);
                     }
-                    PropModels.Wire(b, prev.Value + Vector3.up * (PoleTop - 1.6f), pos + Vector3.up * (PoleTop - 1.6f), 0.7f, wire);
+                    var nt = rot * PropModels.NeutralPos;
+                    PropModels.Wire(b, prev.Value + nt, pos + nt, 0.7f, wire);
+                    var cm = rot * PropModels.CommPos;
+                    PropModels.Wire(b, prev.Value + cm, pos + cm, 0.8f, wire);
                     cell.Bld.B.ResetTransform();
                 }
                 prev = pos; n++;

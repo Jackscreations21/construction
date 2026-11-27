@@ -149,6 +149,26 @@ namespace Groundbreak
         static int _seed = 1234;
 
         /// <summary>A lot on one side of a road. side +1 = north (EW road) / east (NS road). a0..a1 along the road, depth back from the lot line.</summary>
+        static Rect LotRect(MapRoad r, int side, float a0, float a1, float depth) => r.EW
+            ? (side > 0 ? Rect.MinMaxRect(a0, r.Perp + r.RowHalf, a1, r.Perp + r.RowHalf + depth) : Rect.MinMaxRect(a0, r.Perp - r.RowHalf - depth, a1, r.Perp - r.RowHalf))
+            : (side > 0 ? Rect.MinMaxRect(r.Perp + r.RowHalf, a0, r.Perp + r.RowHalf + depth, a1) : Rect.MinMaxRect(r.Perp - r.RowHalf - depth, a0, r.Perp - r.RowHalf, a1));
+
+        /// <summary>True when a fill lot (houses / vacant) here would not overlap another lot, the build site or any street right-of-way.
+        /// Bulk fill skips lots that fail (corners where a cross street's lots already are).</summary>
+        static bool Fits(MapRoad r, int side, float a0, float a1, float depth)
+        {
+            var rect = LotRect(r, side, a0, a1, depth);
+            var inner = Rect.MinMaxRect(rect.xMin + 0.05f, rect.yMin + 0.05f, rect.xMax - 0.05f, rect.yMax - 0.05f);
+            if (inner.Overlaps(Town.BuildSiteRect)) return false;
+            foreach (var l in Town.Lots) if (l.Rect.Overlaps(inner)) return false;
+            foreach (var o in Roads)
+            {
+                var row = o.EW ? Rect.MinMaxRect(o.Min, o.Perp - o.RowHalf, o.Max, o.Perp + o.RowHalf) : Rect.MinMaxRect(o.Perp - o.RowHalf, o.Min, o.Perp + o.RowHalf, o.Max);
+                if (row.Overlaps(inner)) return false;
+            }
+            return true;
+        }
+
         static TownLot NewLot(MapRoad r, int side, float a0, float a1, float depth, int number, LotUse use, string resident, string district, string category)
         {
             Rect rect;
@@ -213,6 +233,8 @@ namespace Groundbreak
                     lot.FrontDoor = lot.Local(offsetX, Mathf.Max(-1f, setback - 1.5f));
                     break;
             }
+            // gas station: pull up between the middle pump islands under the canopy (the price pylon owns the front corner)
+            if (type == "gasstation") lot.Parking = lot.Local(offsetX, setback + d - Mathf.Min(11f, d * 0.33f) - 9.5f);
             Parcels.Add(p);
             return p;
         }
@@ -370,7 +392,7 @@ namespace Groundbreak
                             if (x - a0 - w < 7.4f) w = x - a0;        // last building takes the rest of the block
                             if (w > 12.5f) w = 12.5f;
                             sign = NextShop(); stories = (k + bi) % 5 == 4 ? 1 : (k % 4 == 3 ? 3 : 2);
-                            if (side < 0 && bi == 0 && k == 3) { Vacant(main, side, x - w, x, Deep, num, "downtown", "commercial", FieldKind.Pasture); num += 2; x -= w; k++; continue; }
+                            if (k % 6 == 3 && (bi + side) % 2 != 0) { Vacant(main, side, x - w, x, Deep, num, "downtown", "commercial", FieldKind.Pasture); num += 2; x -= w; k++; continue; }
                         }
                         float lotW = w;
                         Building(main, side, x - lotW, x, Deep, num, type, lotW - (type == "storefront" ? 0f : 4f), type == "storefront" ? D : Mathf.Min(D, Deep - setback - 2f), setback,
@@ -401,6 +423,7 @@ namespace Groundbreak
             int k = 0;
             for (float x = a0; x + lotW <= a1 + 0.01f; x += lotW, k++, num += 2)
             {
+                if (!Fits(r, side, x, x + lotW, depth)) continue;
                 if (vacantEvery > 0 && k % vacantEvery == vacantEvery - 1) { Vacant(r, side, x, x + lotW, depth, num, district, "residential"); continue; }
                 string t = types[(k + num / 2) % types.Length];
                 float w = t == "townhomes" ? lotW - 4f : t == "duplex" ? Mathf.Min(16f, lotW - 4f) : t == "twostory" || t == "ranch2" ? Mathf.Min(13.5f, lotW - 5f) : Mathf.Min(10.5f, lotW - 6f);
@@ -431,7 +454,7 @@ namespace Groundbreak
             Houses(court, -1, 10f, 130f, 20f, 34f, 201, "westside", OldTypes, 4);
             // south of Cedar on Church/Court down to Route 9
             Houses(church, -1, -310f, Town.CedarZ - R, 20f, 34f, 1, "westside", OldTypes, 3);
-            Houses(church, 1, -310f, Town.CedarZ - R, 20f, 34f, 2, "westside", OldTypes);
+            Houses(church, 1, -240f, Town.CedarZ - R, 20f, 34f, 2, "westside", OldTypes);
             Houses(court, 1, -310f, Town.CedarZ - R, 20f, 34f, 2, "westside", OldTypes, 4);
             // west end of Main St: a few farmhouse-style homes beyond downtown
             Houses(mainW2, 1, -600f, -510f, 30f, 50f, 701, "westside", new[] { "farmhouse", "ranch2", "cape" }, 0, 14f);
@@ -659,7 +682,7 @@ namespace Groundbreak
             }
             // gaps around the build site and behind lots: tree lines
             Areas.Add(new MapArea { Kind = AreaKind.Woods, R = Rect.MinMaxRect(-226f, 148f, 226f, 156f), Density = 0.5f, Seed = 71 });
-            Areas.Add(new MapArea { Kind = AreaKind.Woods, R = Rect.MinMaxRect(-55f, 97f, 55f, 145f), Density = 0.25f, Seed = 72 });
+            Areas.Add(new MapArea { Kind = AreaKind.Woods, R = Rect.MinMaxRect(-55f, 97f, 55f, 145f), Density = 0.6f, Seed = 72 });
         }
 
         static void BuildCreek()

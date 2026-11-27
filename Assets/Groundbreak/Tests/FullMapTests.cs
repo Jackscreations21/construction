@@ -34,21 +34,23 @@ namespace Groundbreak.Tests
             var lots = Town.Lots.ToList();
             Assert.Greater(lots.Count(l => l.External), 250, "map lots");
             // no two parcels overlap, every map lot is inside the map and off every street right-of-way
+            var bad = new List<string>();
             for (int i = 0; i < lots.Count; i++)
                 for (int j = i + 1; j < lots.Count; j++)
-                    Assert.IsFalse(lots[i].Rect.Overlaps(lots[j].Rect), $"{lots[i].Id} overlaps {lots[j].Id}");
+                    if (lots[i].Rect.Overlaps(lots[j].Rect)) bad.Add($"{lots[i].Id} overlaps {lots[j].Id}");
             foreach (var l in lots.Where(l => l.External))
             {
                 Assert.IsTrue(MapLayout.Bounds.Overlaps(l.Rect), l.Id + " outside the map");
                 foreach (var r in MapLayout.Roads)
                 {
                     var row = r.EW ? Rect.MinMaxRect(r.Min, r.Perp - r.RowHalf + 0.05f, r.Max, r.Perp + r.RowHalf - 0.05f) : Rect.MinMaxRect(r.Perp - r.RowHalf + 0.05f, r.Min, r.Perp + r.RowHalf - 0.05f, r.Max);
-                    Assert.IsFalse(row.Overlaps(l.Rect), $"{l.Id} is in the right-of-way of {r.Name}");
+                    if (row.Overlaps(l.Rect)) bad.Add($"{l.Id} is in the right-of-way of {r.Name}");
                 }
                 Assert.AreSame(l, Town.Find(l.Id)); Assert.AreSame(l, Town.Find(l.Address));
                 Assert.AreSame(l, MapLayout.DistrictAt(l.Center) != null ? l : null, l.Id + " in no district");
                 Assert.IsFalse(Town.BuildSiteRect.Overlaps(l.Rect), l.Id + " in the build site");
             }
+            Assert.IsEmpty(bad, string.Join("; ", bad));
             // job-capable addresses in every built-up district, free lots for new builds in several
             foreach (var id in DistrictIds.Where(d => d != "devland"))
                 Assert.Greater(Town.Addresses.Count(l => l.External && l.District == id) + (id == "oldtown" ? 17 : 0), 0, "no job sites in " + id);
@@ -234,7 +236,7 @@ namespace Groundbreak.Tests
             Shot(home + Vector3.back * 10f, home + Vector3.right * 50f, "map_33_home_east");
             Shot(new Vector3(450f, 1.7f, 605f), new Vector3(700f, 1f, 640f), "map_34_county_rd_tracts");
             Shot(new Vector3(-330f + 12f, 1.7f, Town.MainZ - 12f), new Vector3(-330f, 2f, Town.MainZ), "map_35_downtown_corner");
-            Shot(new Vector3(612f, 1.7f, 140f), new Vector3(640f, 0.5f, 300f), "map_36_creek");
+            Shot(new Vector3(641f, 2.2f, -321f), new Vector3(630f, 0.3f, -230f), "map_36_creek");   // from the Route 9 culvert
             MapWorld.ShowAll(false);
         }
     }
