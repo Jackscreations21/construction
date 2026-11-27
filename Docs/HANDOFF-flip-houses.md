@@ -28,6 +28,8 @@ Tests: `Tests/FlipTests.cs` (5 batch tests + `CaptureFlipsApp`, category UICaptu
   flipping is unlocked, and `MainMenu.NewGameStarted` resets the flip market.
 - A first full-suite attempt before that crashed in `FullMapTests` (GPU out of memory with 7 Unity editors open) — environment.
 
+- 2026-11-27 resume: main c1d7e79 merged. Two full-suite attempts through unity-run.sh failed before running any test: "No valid Unity Editor license found" (exit 198). Needs the license re-activated in Unity Hub.
+
 ## Left to do (in order)
 1. One full PlayMode run through the lock wrapper (`unity-run.sh`, see CLAUDE.md command). Expect 0 failures; check `flip_*.png`.
 2. If 0 error CS: windowed app capture through the wrapper (no `-batchmode`):
