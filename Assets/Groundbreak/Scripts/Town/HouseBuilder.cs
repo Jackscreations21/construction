@@ -357,9 +357,8 @@ namespace Groundbreak
             Solid(new Vector3(tx0, th, tz0), new Vector3(tx1, F + 1.83f, tz0 + 0.008f), _tile);
             // toilet
             float toX = P + 1.0f, toZ = -0.6f - Ti / 2;
-            Solid(new Vector3(toX - 0.19f, F, toZ - 0.2f), new Vector3(toX + 0.19f, F + 0.76f, toZ), por);     // tank
-            Solid(new Vector3(toX - 0.18f, F, toZ - 0.7f), new Vector3(toX + 0.18f, F + 0.4f, toZ - 0.2f), por); // bowl
-            Col(new Vector3(toX - 0.19f, F, toZ - 0.7f), new Vector3(toX + 0.19f, F + 0.76f, toZ));
+            ToiletModel.Build(_k.B, new Vector3(toX, F, toZ), Quaternion.LookRotation(Vector3.back), por, _k.M(SurfaceKind.PaintedWhite), chrome, chrome); // two-piece, bowl toward -Z
+            Col(new Vector3(toX - 0.25f, F, toZ - ToiletModel.Depth), new Vector3(toX + 0.25f, F + ToiletModel.Height, toZ));
         }
 
         static void Deck(float hd)

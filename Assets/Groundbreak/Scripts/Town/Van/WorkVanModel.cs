@@ -14,6 +14,7 @@ namespace Groundbreak
         public const float RackY = 2.23f;                         // top of the crossbars
         public const float ShelfDepth = 14f * Units.Inch;
         const float PX = 0.995f;                                  // side panel centre (40 mm panels)
+        const float RoofR = 0.05f, ArchR = 0.43f;                 // rolled roof edge radius, wheel opening radius
 
         static readonly Quaternion SideRot = Quaternion.Euler(0f, -90f, 0f);
         static readonly float[] TierY = { 0.92f, 1.30f, 1.66f };
@@ -28,35 +29,123 @@ namespace Groundbreak
 
         static Vector2 P(float z, float y) => new Vector2(z, y);
 
+        /// <summary>Fills the two upper corners of a side panel's square wheel cut-out so the opening is a round arch
+        /// (radius ArchR about the axle) — both skins plus the inner edge strip.</summary>
+        static void ArchFill(MeshBuilder b, float sx, float az, int sub)
+        {
+            float xo = sx * (PX + 0.02f), xi = sx * (PX - 0.02f), cy = TireRadius, top = 0.80f;
+            const int n = 6;
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var zy = new List<Vector2> { new Vector2(az + side * ArchR, top) };
+                for (int i = 0; i <= n; i++)
+                {
+                    float a = i / (float)n * Mathf.PI * 0.5f;
+                    zy.Add(new Vector2(az + side * ArchR * Mathf.Cos(a), Mathf.Min(top, cy + ArchR * Mathf.Sin(a))));
+                }
+                for (int f = 0; f < 2; f++)
+                {
+                    float x = f == 0 ? xo : xi;
+                    var pts = new List<Vector3>(zy.Count);
+                    foreach (var p in zy) pts.Add(new Vector3(x, p.y, p.x));
+                    b.AddPolygon(pts, sub, new Vector3(f == 0 ? sx : -sx, 0f, 0f));
+                }
+                for (int i = 1; i + 1 < zy.Count; i++)
+                {
+                    Vector2 p = zy[i], q = zy[i + 1];
+                    var toAxle = new Vector3(0f, cy - (p.y + q.y) * 0.5f, az - (p.x + q.x) * 0.5f);
+                    b.AddQuad(new Vector3(xo, p.y, p.x), new Vector3(xo, q.y, q.x), new Vector3(xi, q.y, q.x), new Vector3(xi, p.y, p.x), sub, toAxle);
+                }
+            }
+        }
+
+        /// <summary>Black plastic flare following the round wheel opening (9 short segments over the top half).</summary>
+        static void ArchTrim(MeshBuilder b, float sx, float az, int sub)
+        {
+            const int n = 9;
+            float r = ArchR + 0.02f, seg = 2f * r * Mathf.Sin(Mathf.PI / n * 0.5f) + 0.012f;
+            for (int i = 0; i < n; i++)
+            {
+                float a = (i + 0.5f) / n * Mathf.PI;
+                var c = new Vector3(sx * (PX + 0.022f), TireRadius + r * Mathf.Sin(a), az + r * Mathf.Cos(a));
+                b.AddBox(c, new Vector3(0.05f, 0.04f, seg), Quaternion.Euler(-(90f + a * Mathf.Rad2Deg), 0f, 0f), sub);
+            }
+        }
+
+        // hood loft stations: z, half width, top height, edge radius (cowl at the windshield base down to the nose)
+        static readonly float[] HoodZ = { CowlZ, 2.30f, 2.60f, 2.80f, 2.92f, NoseZ };
+        static readonly float[] HoodW = { 1.015f, 1.015f, 1.01f, 0.995f, 0.97f, 0.94f };
+        static readonly float[] HoodTop = { 1.25f, 1.19f, 1.13f, 1.08f, 1.04f, 1.00f };
+        static readonly float[] HoodR = { 0.06f, 0.09f, 0.12f, 0.14f, 0.16f, 0.17f };
+        const float HoodBase = 0.80f;
+
+        static List<Vector3> HoodSection(int i)
+        {
+            float z = HoodZ[i], hw = HoodW[i], top = HoodTop[i], r = HoodR[i];
+            const int seg = 4;
+            var pts = new List<Vector3> { new Vector3(-hw, HoodBase, z) };
+            for (int k = 0; k <= seg; k++) { float a = Mathf.PI - k * Mathf.PI * 0.5f / seg; pts.Add(new Vector3(-hw + r + r * Mathf.Cos(a), top - r + r * Mathf.Sin(a), z)); }
+            for (int k = 0; k <= seg; k++) { float a = Mathf.PI * 0.5f - k * Mathf.PI * 0.5f / seg; pts.Add(new Vector3(hw - r + r * Mathf.Cos(a), top - r + r * Mathf.Sin(a), z)); }
+            pts.Add(new Vector3(hw, HoodBase, z));
+            return pts;
+        }
+
+        /// <summary>Hood + upper fenders: rounded cross-sections lofted from the cowl to the nose, closed at the front.</summary>
+        static void Hood(MeshBuilder b, int sub)
+        {
+            var prev = HoodSection(0);
+            for (int i = 1; i < HoodZ.Length; i++)
+            {
+                var cur = HoodSection(i);
+                for (int k = 0; k + 1 < cur.Count; k++)
+                {
+                    Vector3 mid = (prev[k] + prev[k + 1] + cur[k] + cur[k + 1]) * 0.25f;
+                    b.AddQuad(prev[k], prev[k + 1], cur[k + 1], cur[k], sub, new Vector3(mid.x, mid.y - HoodBase + 0.2f, 0f));
+                }
+                prev = cur;
+            }
+            b.AddPolygon(prev, sub, Vector3.forward);
+        }
+
         public static GameObject BuildBody(Transform parent)
         {
             var m = new LandModel(); var b = m.B;
             int W = m.M(SurfaceKind.PaintedWhite), G = m.M(SurfaceKind.Glass), D = m.M(SurfaceKind.DarkPlastic), K = m.M(SurfaceKind.MatteBlack),
-                S = m.M(SurfaceKind.BrushedSteel), Gal = m.M(SurfaceKind.Galvanized), Ply = m.M(SurfaceKind.Plywood), Red = m.M(SurfaceKind.TruckPaint);
+                S = m.M(SurfaceKind.BrushedSteel), Gal = m.M(SurfaceKind.Galvanized), Ply = m.M(SurfaceKind.Plywood), Red = m.M(SurfaceKind.TruckPaint),
+                Amber = m.M(new Color(1f, 0.55f, 0.08f));
             float arch = 0.43f;
 
             for (int sx = -1; sx <= 1; sx += 2)
             {
                 float x = sx * PX, xo = x - 0.02f, xi = x + 0.02f;
-                Box(b, xo, xi, 0.80f, RoofY, RearZ, CabZ, W);                                   // cargo side, above the arches
+                float eave = RoofY - RoofR;
+                Box(b, xo, xi, 0.80f, eave, RearZ, CabZ, W);                                    // cargo side, above the arches
                 Box(b, xo, xi, 0.30f, 0.80f, RearZ, RearAxleZ - arch, W);                       // behind the rear wheel
                 Box(b, xo, xi, 0.30f, 0.80f, RearAxleZ + arch, FrontAxleZ - arch, W);           // between the wheels (cargo + cab door bottom)
                 Box(b, xo, xi, 0.80f, 1.22f, CabZ, CowlZ, W);                                   // cab door below the glass
-                Box(b, xo, xi, 1.22f, RoofY, CabZ, 0.64f, W);                                   // B pillar
-                Side(b, x, 0.04f, W, P(0.64f, 1.92f), P(1.31f, 1.92f), P(1.22f, 2.08f), P(0.64f, 2.08f));     // door header
-                Side(b, x, 0.04f, W, P(1.83f, 1.22f), P(1.97f, 1.22f), P(1.24f, 2.06f), P(1.31f, 1.92f));     // A pillar
+                Box(b, xo, xi, 1.22f, eave, CabZ, 0.64f, W);                                    // B pillar
+                Side(b, x, 0.04f, W, P(0.64f, 1.92f), P(1.31f, 1.92f), P(1.22f, eave), P(0.64f, eave));       // door header
+                Side(b, x, 0.04f, W, P(1.83f, 1.22f), P(1.97f, 1.22f), P(1.24f, eave), P(1.31f, 1.92f));      // A pillar
                 Side(b, x, 0.012f, G, P(0.64f, 1.22f), P(1.83f, 1.22f), P(1.31f, 1.92f), P(0.64f, 1.92f));    // door glass
                 foreach (float az in new[] { RearAxleZ, FrontAxleZ })
-                    Box(b, x - 0.026f, x + 0.026f, 0.79f, 0.84f, az - arch - 0.03f, az + arch + 0.03f, K);     // arch trim
-                // mirror, door handle
-                b.AddBox(new Vector3(sx * 1.07f, 1.38f, 1.80f), new Vector3(0.12f, 0.04f, 0.05f), D);
-                b.AddBox(new Vector3(sx * 1.17f, 1.42f, 1.80f), new Vector3(0.07f, 0.26f, 0.17f), D);
+                {
+                    ArchFill(b, sx, az, W);                                                     // round wheel openings
+                    ArchTrim(b, sx, az, K);                                                     // black flare around them
+                }
+                // mirror (two arms, rounded head, glass facing back), door handle
+                b.AddBox(new Vector3(sx * 1.07f, 1.38f, 1.80f), new Vector3(0.12f, 0.035f, 0.045f), D);
+                b.AddBox(new Vector3(sx * 1.07f, 1.30f, 1.80f), new Vector3(0.12f, 0.025f, 0.03f), D);
+                b.AddBevelBox(new Vector3(sx * 1.17f, 1.40f, 1.80f), new Vector3(0.07f, 0.30f, 0.17f), Quaternion.identity, 0.025f, D);
+                b.AddBox(new Vector3(sx * 1.17f, 1.40f, 1.80f - 0.087f), new Vector3(0.05f, 0.25f, 0.004f), S);
                 b.AddBox(new Vector3(sx * 1.02f, 1.12f, 0.72f), new Vector3(0.02f, 0.03f, 0.14f), D);
-                // rear corner pillar + tail light, headlight
-                Box(b, sx * HingeX, sx * 1.015f, 0.30f, RoofY, RearZ, RearZ + 0.06f, W);
+                // rear corner pillar + tail light, headlight + turn signal, amber side marker
+                Box(b, sx * HingeX, sx * 1.015f, 0.30f, eave, RearZ, RearZ + 0.06f, W);
                 b.AddBox(new Vector3(sx * 0.957f, 1.35f, RearZ - 0.005f), new Vector3(0.09f, 0.55f, 0.02f), Red);
-                b.AddBox(new Vector3(sx * 0.76f, 0.90f, NoseZ - 0.005f), new Vector3(0.36f, 0.18f, 0.05f), S);
-                b.AddBox(new Vector3(sx * 0.76f, 0.90f, NoseZ + 0.022f), new Vector3(0.34f, 0.16f, 0.006f), G);
+                b.AddBox(new Vector3(sx * 0.957f, 1.10f, RearZ - 0.006f), new Vector3(0.07f, 0.10f, 0.02f), Amber);
+                b.AddBox(new Vector3(sx * 0.71f, 0.89f, NoseZ - 0.005f), new Vector3(0.30f, 0.15f, 0.05f), S);
+                b.AddBox(new Vector3(sx * 0.71f, 0.89f, NoseZ + 0.022f), new Vector3(0.28f, 0.13f, 0.006f), G);
+                b.AddBox(new Vector3(sx * 0.71f, 0.785f, NoseZ + 0.01f), new Vector3(0.24f, 0.045f, 0.02f), Amber);
+                b.AddBox(new Vector3(sx * 1.006f, 0.70f, 2.70f), new Vector3(0.012f, 0.035f, 0.07f), Amber);
                 // wheel housings inside
                 Box(b, sx * 0.685f, sx * 0.975f, FloorTop, 0.87f, RearAxleZ - 0.46f, RearAxleZ + 0.46f, W);
                 Box(b, sx * 0.685f, sx * 0.975f, FloorTop, 0.86f, FrontAxleZ - 0.43f, CowlZ, D);
@@ -71,7 +160,14 @@ namespace Groundbreak
             }
 
             // roof, floor, underbody, drivetrain
-            Box(b, -1.015f, 1.015f, 2.06f, RoofY, RearZ, 1.22f, W);
+            Box(b, -1.015f + RoofR, 1.015f - RoofR, 2.06f, RoofY, RearZ, 1.22f, W);
+            for (int sx = -1; sx <= 1; sx += 2)                                                     // rolled roof edges
+            {
+                var c = new Vector2(sx * (1.015f - RoofR), RoofY - RoofR);
+                var q = new List<Vector2> { c };
+                for (int i = 0; i <= 4; i++) { float a = i * Mathf.PI * 0.125f; q.Add(c + new Vector2(sx * Mathf.Cos(a), Mathf.Sin(a)) * RoofR); }
+                b.AddExtrude(q, new Vector3(0f, 0f, (RearZ + 1.29f) * 0.5f), Quaternion.identity, 1.29f - RearZ, W);
+            }
             Box(b, -0.975f, 0.975f, 0.56f, 0.62f, RearZ, CowlZ, K);
             b.AddBox(new Vector3(0f, 0.6275f, (RearZ + CabZ) * 0.5f), new Vector3(1.90f, 0.015f, CabZ - RearZ - 0.06f), Quaternion.identity, Ply, Vector3.forward);
             Box(b, -0.74f, 0.74f, 0.30f, 0.56f, -2.5f, 1.55f, K);
@@ -79,19 +175,25 @@ namespace Groundbreak
             Box(b, -0.15f, 0.15f, 0.17f, 0.50f, RearAxleZ - 0.16f, RearAxleZ + 0.16f, K);           // differential: 0.17 m ground clearance
             Box(b, -0.74f, 0.74f, 0.30f, 0.80f, FrontAxleZ - arch, FrontAxleZ + arch, K);           // engine bay between the front wheels
 
-            // nose: fenders/hood, grille, bumpers, lights
-            Box(b, -1.015f, 1.015f, 0.30f, 0.80f, FrontAxleZ + arch, NoseZ, W);
-            Side(b, 0f, Width, W, P(CowlZ, 0.80f), P(NoseZ, 0.80f), P(NoseZ, 0.95f), P(2.80f, 1.08f), P(CowlZ, 1.25f));
-            Box(b, -0.55f, 0.55f, 0.55f, 0.89f, NoseZ - 0.01f, NoseZ + 0.015f, K);
-            for (int i = 0; i < 3; i++) Box(b, -0.5f, 0.5f, 0.615f + i * 0.1f, 0.64f + i * 0.1f, NoseZ + 0.015f, NoseZ + 0.024f, S);
-            Box(b, -1.015f, 1.015f, 0.32f, 0.56f, 2.90f, 3.0f, D);                                   // front bumper
+            // nose: sloped hood with rolled edges (lofted), front fascia rounded in plan, grille, wrap-around bumper
+            Hood(b, W);
+            var plan = new List<Vector2>();
+            for (int i = 0; i < HoodZ.Length; i++) if (HoodZ[i] > FrontAxleZ + arch) plan.Add(new Vector2(HoodW[i], HoodZ[i]));
+            plan.Insert(0, new Vector2(1.015f, FrontAxleZ + arch));
+            for (int i = plan.Count - 1; i >= 0; i--) plan.Add(new Vector2(-plan[i].x, plan[i].y));
+            b.AddExtrude(plan, new Vector3(0f, 0.55f, 0f), Quaternion.Euler(90f, 0f, 0f), 0.50f, W);   // fenders below the hood line
+            Box(b, -0.50f, 0.50f, 0.56f, 0.86f, NoseZ - 0.01f, NoseZ + 0.015f, K);
+            for (int i = 0; i < 3; i++) Box(b, -0.46f, 0.46f, 0.615f + i * 0.09f, 0.64f + i * 0.09f, NoseZ + 0.015f, NoseZ + 0.024f, S);
+            Box(b, -0.86f, 0.86f, 0.32f, 0.56f, 2.92f, 3.0f, D);                                    // front bumper
+            for (int sx = -1; sx <= 1; sx += 2)
+                b.AddBox(new Vector3(sx * 0.93f, 0.44f, 2.905f), new Vector3(0.24f, 0.24f, 0.10f), Quaternion.Euler(0f, sx * 50.5f, 0f), D);
             Box(b, -1.0f, 1.0f, 0.34f, 0.54f, -3.0f, -2.91f, D);                                    // rear step bumper
             Box(b, -0.15f, 0.15f, 0.38f, 0.53f, -3.004f, -3.0f, W);                                 // plate
             Box(b, -HingeX, HingeX, 2.02f, RoofY, RearZ, RearZ + 0.06f, W);                         // rear header
 
             // windshield, header, dash, column
             b.AddBox(new Vector3(0f, 1.635f, 1.60f), new Vector3(1.84f, 1.04f, 0.012f), Quaternion.Euler(-42.3f, 0f, 0f), G);
-            Box(b, -1.015f, 1.015f, 2.00f, RoofY, 1.19f, 1.29f, W);
+            Box(b, -1.015f + RoofR, 1.015f - RoofR, 2.00f, RoofY, 1.19f, 1.29f, W);
             Box(b, -0.975f, 0.975f, 0.95f, 1.25f, 1.49f, CowlZ, D);
             Box(b, -0.69f, -0.27f, 1.24f, 1.33f, 1.55f, 1.78f, D);
             Box(b, -0.15f, 0.15f, 0.86f, 1.16f, 1.38f, 1.50f, D);
@@ -158,9 +260,31 @@ namespace Groundbreak
             var m = new LandModel(); var b = m.B;
             int T = m.M(SurfaceKind.Tire), S = m.M(SurfaceKind.BrushedSteel), K = m.M(SurfaceKind.MatteBlack);
             var along = Quaternion.Euler(0f, 0f, 90f);
-            b.AddCylinder(Vector3.zero, along, TireRadius, TireWidth, 24, T);
-            b.AddCylinder(Vector3.zero, along, 0.215f, TireWidth + 0.008f, 16, S);
-            b.AddCylinder(Vector3.zero, along, 0.07f, TireWidth + 0.03f, 10, K);
+            float hw = TireWidth * 0.5f, R = TireRadius;
+            // 29" LT tyre (225/75R16): rounded shoulders, sidewall bulge, bore hidden by the rim
+            b.AddLathe(Vector3.zero, along, new[]
+            {
+                new Vector2(0.205f, -hw + 0.01f), new Vector2(0.30f, -hw), new Vector2(R - 0.02f, -hw + 0.012f), new Vector2(R - 0.004f, -hw + 0.04f),
+                new Vector2(R, -hw + 0.06f), new Vector2(R, hw - 0.06f), new Vector2(R - 0.004f, hw - 0.04f), new Vector2(R - 0.02f, hw - 0.012f),
+                new Vector2(0.30f, hw), new Vector2(0.205f, hw - 0.01f),
+            }, 28, T, 50f);
+            // 16" steel wheel: flange, dished face on both sides, centre cap, vent holes, lug nuts
+            b.AddLathe(Vector3.zero, along, new[]
+            {
+                new Vector2(0f, -0.085f), new Vector2(0.06f, -0.085f), new Vector2(0.075f, -0.07f), new Vector2(0.17f, -0.07f),
+                new Vector2(0.19f, -0.095f), new Vector2(0.212f, -0.11f), new Vector2(0.212f, 0.11f), new Vector2(0.19f, 0.095f),
+                new Vector2(0.17f, 0.07f), new Vector2(0.075f, 0.07f), new Vector2(0.06f, 0.085f), new Vector2(0f, 0.085f),
+            }, 24, S, 30f);
+            for (int f = -1; f <= 1; f += 2)
+            {
+                b.AddCylinder(along * new Vector3(0f, f * 0.09f, 0f), along, 0.045f, 0.016f, 12, K);           // centre cap
+                for (int i = 0; i < 8; i++)
+                {
+                    float a = i * Mathf.PI * 0.25f, a2 = a + Mathf.PI * 0.125f;
+                    b.AddDisc(along * new Vector3(Mathf.Cos(a) * 0.125f, f * 0.0715f, Mathf.Sin(a) * 0.125f), along, 0.018f, 8, K, f > 0);   // vent holes
+                    b.AddCylinder(along * new Vector3(Mathf.Cos(a2) * 0.068f, f * 0.083f, Mathf.Sin(a2) * 0.068f), along, 0.009f, 0.014f, 6, S); // lug nuts
+                }
+            }
             var go = m.Make(parent, "Wheel");
             go.transform.localPosition = localPos;
             return go;

@@ -14,6 +14,7 @@ namespace Groundbreak
         public float crewHours;                    // labor hours crews have put into the current defect
         public bool done;                          // every defect fixed (kept in sync with the live defects)
         public float quality = 1f;
+        public int matsCounted = -1;               // $ of parts used on its defects already in costSpent (-1: older save, not tracked yet)
         public FlipItemDef Def => FlipDefs.Get(id);
     }
 
@@ -210,7 +211,7 @@ namespace Groundbreak
         static void Add(FlipHouse f, FlipItemDef d, System.Random rng)
         {
             if (d == null) return;
-            var it = new FlipItem { id = d.Id, upgrade = d.Upgrade };
+            var it = new FlipItem { id = d.Id, upgrade = d.Upgrade, matsCounted = 0 };
             foreach (var did in d.Defs)
             {
                 var jd = JobCatalog.Get(did); if (jd == null || jd.Where == null) continue;
@@ -336,6 +337,7 @@ namespace Groundbreak
             foreach (var it in f.items)
             {
                 if (it.defects.Count == 0) continue;
+                CountParts(f, it);
                 bool all = true; float q = 0f; int n = 0; bool any = false;
                 foreach (var s in it.defects)
                 {
@@ -349,6 +351,22 @@ namespace Groundbreak
                 if (n > 0) it.quality = q / n;
             }
             return changed;
+        }
+
+        /// <summary>Our cost of the parts used so far on an item's defects (out of the van / stock), rounded to dollars.</summary>
+        public static int PartsUsed(FlipItem it)
+        {
+            float c = 0f;
+            foreach (var s in it.defects) if (s.used != null) foreach (var u in s.used) c += RepairCatalog.UnitCost(u.id) * u.n;
+            return Mathf.RoundToInt(c);
+        }
+
+        /// <summary>Adds parts the player used on the item since the last look to the flip's costs (each use once).</summary>
+        static void CountParts(FlipHouse f, FlipItem it)
+        {
+            int used = PartsUsed(it);
+            if (it.matsCounted < 0) { it.matsCounted = used; return; }        // older save: start counting from here
+            if (used > it.matsCounted) { f.costSpent += used - it.matsCounted; it.matsCounted = used; }
         }
 
         public static void SyncAll()
@@ -418,6 +436,8 @@ namespace Groundbreak
         public static void FinishByCrew(FlipHouse f, FlipItem it, float quality, Worker w = null)
         {
             int mats = 0;
+            CountParts(f, it);                                   // parts the player already put in are in the costs...
+            int playerParts = Mathf.Max(0, it.matsCounted);
             foreach (var s in it.defects)
             {
                 var jd = JobCatalog.Get(s.def);
@@ -425,6 +445,8 @@ namespace Groundbreak
                 var d = LiveDefect(f, s);
                 if (d != null) { JobCatalog.Solve(d); s.quality = Mathf.Min(s.quality, quality); }
             }
+            mats = Mathf.Max(0, mats - playerParts);             // ...so the crew only buys the rest
+            it.matsCounted = PartsUsed(it);                      // the solver's parts are billed here, not again by Sync
             it.done = true; it.quality = Mathf.Clamp01(quality);
             if (mats > 0 && !GameSettings.UnlimitedMoney) { Game.Wallet.TrySpend(mats, $"Materials for crew: {it.Def?.Label} ({f.address})"); }
             f.costSpent += mats;

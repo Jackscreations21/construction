@@ -23,6 +23,9 @@ namespace Groundbreak
         const float Drop = 1.25f;                             // tip pin height above the platform floor
         const float TipToCenter = 0.705f;                     // tip pin → platform centre, horizontally (outward)
         public const float MaxExtend = 6.05f;                 // gives 12.2 m (40') floor height at 75°
+        /// <summary>Max horizontal reach, slew axis to platform centre (S-40 class: ~31' to the rail + basket). Booming out
+        /// low past it is cut out by the telescope limit, like the real machine's envelope control.</summary>
+        public const float MaxReach = 10.5f;
         const float PlatW = 1.83f, PlatD = 0.91f, RailH = 1.1f;
         const float StowDeg = -3f;
 
@@ -298,7 +301,21 @@ namespace Groundbreak
                 float floorMin = 0.15f, pivotY = TurntableY + PivotLocal.y;
                 if (drop > 1e-4f) maxExt = Mathf.Min(maxExt, (pivotY - Drop - floorMin) / drop - RetractedLen);
             }
+            // reach envelope: platform centre = pivot z + boom length * cos + tip-to-centre offset (turntable local)
+            float cos = Mathf.Cos(Rad(BoomDeg));
+            if (cos > 1e-3f) maxExt = Mathf.Min(maxExt, (MaxReach - PivotLocal.z - TipToCenter) / cos - RetractedLen);
             ExtendM = Mathf.Clamp(ExtendM, 0f, Mathf.Max(0f, maxExt));
+        }
+
+        /// <summary>Horizontal distance from the slew axis to the platform centre.</summary>
+        public float Reach
+        {
+            get
+            {
+                if (_platform == null || _turntable == null) return 0f;
+                Vector3 d = _platform.position - _turntable.position; d.y = 0f;
+                return d.magnitude;
+            }
         }
 
         void ApplyPose()
@@ -402,9 +419,9 @@ namespace Groundbreak
         {
             get
             {
-                Vector3 d = _platform.position - _turntable.position; d.y = 0f;
+                float reach = Reach;
                 return $"Platform height {Units.Format(Mathf.Max(0f, PlatformHeight))}\n" +
-                       $"Reach {Units.Format(d.magnitude)}\n" +
+                       $"Reach {Units.Format(reach)}" + (reach > MaxReach - 0.05f ? " (envelope limit)" : "") + "\n" +
                        $"Boom angle {BoomDeg:0}°   telescope {Units.Format(ExtendM)}\n" +
                        "Capacity 500 lb (unrestricted)\n" +
                        (Elevated ? "Drive: elevated - creep speed" : "Drive: stowed");

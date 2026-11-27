@@ -104,7 +104,9 @@ namespace Groundbreak
             return Mathf.Lerp(Mathf.Lerp(Hash(X(x0), X(y0), s), Hash(X(x0 + 1), X(y0), s), tx), Mathf.Lerp(Hash(X(x0), X(y0 + 1), s), Hash(X(x0 + 1), X(y0 + 1), s), tx), ty);
         }
 
-        /// <summary>Bare winter crown: tileable alpha-tested branch/twig network, mips keep their coverage so distant trees stay a grey-brown haze.</summary>
+        /// <summary>Bare winter crown: tileable alpha-tested network of thin, upward-forking twigs (V runs up the crown clumps, so
+        /// the twigs grow up and out). Mips average the true coverage (no dither speckle): near crowns read as fine twigs, far
+        /// crowns thin out so the trunk and scaffold limbs carry the silhouette.</summary>
         static Texture2D Twigs
         {
             get
@@ -112,49 +114,63 @@ namespace Groundbreak
                 if (_twigs != null) return _twigs;
                 const int n = 256; var a = new float[n * n]; var c = new float[n * n];
                 var r = new System.Random(77);
+                float Rf() => (float)r.NextDouble();
                 void Dot(float x, float y, float rad, float shade)
                 {
                     int ri = Mathf.CeilToInt(rad);
                     for (int dy = -ri; dy <= ri; dy++)
                         for (int dx = -ri; dx <= ri; dx++)
                         {
-                            float d = Mathf.Sqrt(dx * dx + dy * dy); if (d > rad + 0.5f) continue;
+                            float d = Mathf.Sqrt(dx * dx + dy * dy); if (d > rad + 0.35f) continue;
                             int px = ((Mathf.RoundToInt(x) + dx) % n + n) % n, py = ((Mathf.RoundToInt(y) + dy) % n + n) % n;
-                            int i = py * n + px; a[i] = 1f; c[i] = shade;
+                            int i = py * n + px; a[i] = 1f; c[i] = Mathf.Min(c[i] > 0f ? c[i] : 9f, shade);
                         }
                 }
+                // one limb: walks len px with a slight wander and upward pull, then forks in two (depth levels), plus short spurs
                 void Branch(float x, float y, float ang, float len, float w, int depth)
                 {
-                    float step = 1f; int steps = Mathf.CeilToInt(len / step); float shade = 0.75f + (float)r.NextDouble() * 0.3f;
+                    int steps = Mathf.CeilToInt(len); float shade = 0.7f + Rf() * 0.3f;
                     for (int s = 0; s < steps; s++)
                     {
-                        ang += ((float)r.NextDouble() - 0.5f) * 0.25f;
-                        x += Mathf.Cos(ang) * step; y += Mathf.Sin(ang) * step;
-                        Dot(x, y, Mathf.Lerp(w, w * 0.5f, s / (float)steps), shade);
-                        if (depth > 0 && r.NextDouble() < 0.07) Branch(x, y, ang + (r.NextDouble() < 0.5 ? -1 : 1) * (0.4f + (float)r.NextDouble() * 0.6f), len * 0.55f, w * 0.6f, depth - 1);
+                        ang += (Rf() - 0.5f) * 0.12f + (Mathf.PI * 0.5f - ang) * 0.015f;
+                        x += Mathf.Cos(ang); y += Mathf.Sin(ang);
+                        Dot(x, y, Mathf.Lerp(w, w * 0.7f, s / (float)steps), shade);
+                        if (depth == 0 && s > 3 && Rf() < 0.06f)
+                        {
+                            float sa = ang + (Rf() < 0.5f ? -1f : 1f) * (0.5f + Rf() * 0.5f), sx = x, sy = y;
+                            for (int k = 0; k < 6 + r.Next(6); k++) { sx += Mathf.Cos(sa); sy += Mathf.Sin(sa); Dot(sx, sy, 0.45f, shade); }
+                        }
                     }
+                    if (depth <= 0) return;
+                    float spread = 0.35f + Rf() * 0.3f;
+                    Branch(x, y, ang - spread, len * (0.6f + Rf() * 0.15f), w * 0.72f, depth - 1);
+                    Branch(x, y, ang + spread, len * (0.6f + Rf() * 0.15f), w * 0.72f, depth - 1);
                 }
-                for (int i = 0; i < 15; i++) Branch((float)r.NextDouble() * n, (float)r.NextDouble() * n, (float)(r.NextDouble() * Mathf.PI * 2), 60f + (float)r.NextDouble() * 70f, 2.0f, 3);
+                for (int i = 0; i < 9; i++)
+                    Branch(i * n / 9f + Rf() * 12f, Rf() * n, Mathf.PI * 0.5f + (Rf() - 0.5f) * 0.9f, 34f + Rf() * 16f, 1.3f, 3);
                 _twigs = new Texture2D(n, n, TextureFormat.RGBA32, true) { name = "GB_WinterTwigs", wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Trilinear, anisoLevel = 4 };
                 var col = new Color[n * n];
-                for (int i = 0; i < col.Length; i++) { float s = c[i]; col[i] = new Color(0.30f * s, 0.27f * s, 0.24f * s, a[i]); }
-                // mip chain by hand: colour average, alpha boosted so coverage survives into the distance
-                int size = n, level = 0; var cur = col;
+                for (int i = 0; i < col.Length; i++) { float s = c[i] > 1f ? 1f : c[i]; col[i] = new Color(0.30f * s, 0.27f * s, 0.24f * s, a[i]); }
+                // mip chain by hand: colour and true coverage averaged; alpha = coverage x 2 so a 2-px twig survives one level,
+                // then fades out cleanly instead of turning into a dithered speckle
+                int size = n, level = 0; var cur = col; var cov = a;
                 while (true)
                 {
                     _twigs.SetPixels(cur, level);
                     if (size == 1) break;
-                    int ns = size / 2; var next = new Color[ns * ns];
+                    int ns = size / 2; var next = new Color[ns * ns]; var ncov = new float[ns * ns];
                     for (int y = 0; y < ns; y++)
                         for (int x = 0; x < ns; x++)
                         {
-                            Color s = cur[(2 * y) * size + 2 * x] + cur[(2 * y) * size + 2 * x + 1] + cur[(2 * y + 1) * size + 2 * x] + cur[(2 * y + 1) * size + 2 * x + 1];
-                            s /= 4f;
-                            // keep coverage at distance as a dithered see-through speckle (a far bare crown is a grey-brown haze)
-                            float cov = Mathf.Clamp01(s.a * 1.1f), al = Hash(x, y, 31 + level) < cov ? 1f : 0f;
-                            next[y * ns + x] = new Color(0.27f, 0.25f, 0.22f, al);
+                            int i0 = (2 * y) * size + 2 * x, i1 = i0 + 1, i2 = i0 + size, i3 = i2 + 1;
+                            float cv = (cov[i0] + cov[i1] + cov[i2] + cov[i3]) * 0.25f;
+                            ncov[y * ns + x] = cv;
+                            float wsum = cov[i0] + cov[i1] + cov[i2] + cov[i3];
+                            Color s = wsum > 0f ? (cur[i0] * cov[i0] + cur[i1] * cov[i1] + cur[i2] * cov[i2] + cur[i3] * cov[i3]) / wsum : new Color(0.27f, 0.25f, 0.22f);
+                            s.a = Mathf.Clamp01(cv * 2f);
+                            next[y * ns + x] = s;
                         }
-                    cur = next; size = ns; level++;
+                    cur = next; cov = ncov; size = ns; level++;
                 }
                 _twigs.Apply(false);
                 return _twigs;

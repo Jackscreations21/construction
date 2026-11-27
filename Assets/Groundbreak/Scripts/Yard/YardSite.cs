@@ -465,6 +465,7 @@ namespace Groundbreak
         {
             int shelf = 0, longS = 0, bulk = 0;
             var holder = _contents;
+            var shelfOrder = ShelfFillOrder();
             var entries = new List<KeyValuePair<string, int>>(Yard.Stock.Entries);
             entries.Sort((a, b) => string.CompareOrdinal(a.Key, b.Key));
             foreach (var kv in entries)
@@ -482,11 +483,30 @@ namespace Groundbreak
                 bool hasSize = def != null && def.Size.sqrMagnitude > 1e-6f;
                 bool isLong = hasSize && !def.IsProduct && def.Size.z > 1.8f;
                 if (isLong && longS < _longSlots.Count) { Stack(holder, def, _longSlots[longS++], purchases, true); continue; }
-                if (shelf >= _shelfSlots.Count) continue;
-                var slot = _shelfSlots[shelf++];
-                if (hasSize && !isLong) Stack(holder, def, slot, purchases, false);
-                else Pallet(holder, slot.pos, def != null && def.Category == PieceCategory.Consumable ? SurfaceKind.DarkPlastic : SurfaceKind.PaperBag, Mathf.Min(purchases, 20));
+                if (shelf >= shelfOrder.Count) continue;
+                var slot = _shelfSlots[shelfOrder[shelf++]];
+                if (def != null && def.IsProduct)
+                {
+                    Stack(holder, def, slot, purchases, false);
+                    RackStock.Label(holder, slot.pos, slot.room.z + 0.12f, slot.pos.y > 0.5f, $"{def.Name}  x{purchases}");
+                }
+                else RackStock.Build(holder, id, def, slot.pos, slot.room, purchases);
             }
+        }
+
+        /// <summary>Shelf slots in fill order: the chest-high beam level first (easiest to see and pick), then the
+        /// floor level, then the top beams; rack/bay order is kept within a level.</summary>
+        List<int> ShelfFillOrder()
+        {
+            var order = new List<int>();
+            for (int pass = 0; pass < 3; pass++)
+                for (int i = 0; i < _shelfSlots.Count; i++)
+                {
+                    float y = _shelfSlots[i].pos.y;
+                    int lvl = y < 0.5f ? 1 : y < 2.2f ? 0 : 2;
+                    if (lvl == pass) order.Add(i);
+                }
+            return order;
         }
 
         static GameObject Visual(PieceDefinition def, Transform parent, Vector3 pos, Quaternion rot)
@@ -512,7 +532,8 @@ namespace Groundbreak
                     bool lay = s.y > slot.room.y + 0.3f;
                     var rot = lay ? Quaternion.Euler(0, 0, 90) : Quaternion.identity;
                     float w = lay ? s.y : s.x, h = lay ? s.x : s.y;
-                    Visual(def, parent, slot.pos + new Vector3(-slot.room.x / 2 + (i + 0.5f) * w, h / 2 + 0.01f, 0), rot);
+                    float zFront = s.z < slot.room.z ? -slot.room.z / 2 + s.z / 2 + 0.02f : 0f;   // pulled to the aisle side
+                    Visual(def, parent, slot.pos + new Vector3(-slot.room.x / 2 + (i + 0.5f) * w, h / 2 + 0.01f, zFront), rot);
                 }
                 return;
             }

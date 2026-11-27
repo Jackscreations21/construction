@@ -60,6 +60,7 @@ namespace Groundbreak
             }
             Label(font, at, new Vector2(bp.WidthFt / 2f, -6.5f), $"{bp.Occupancy} · {bp.ConstructionType} · {bp.WallFrame} walls, {bp.RoofFrame} roof", 0.06f, new Color(1f, 0.85f, 0.3f));
             k.Make(PlanOverlay.Root.transform, "BlueprintLayers");
+            PlanLabelLayout.Arrange(plan, bp, at, floor);   // move room labels off the fixture markers
         }
 
         static void Label(Font font, PlanPlacement at, Vector2 ft, string text, float size, Color c)

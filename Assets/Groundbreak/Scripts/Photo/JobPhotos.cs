@@ -124,6 +124,12 @@ namespace Groundbreak
             if (d > ArrivalRadius(j)) return false;
             if (Physics.Linecast(eye, t, out var hit, ~(1 << PhotoRender.ViewModelLayer), QueryTriggerInteraction.Ignore)
                 && Vector3.Distance(hit.point, t) > (IsService(j) ? 1.2f : 3f) && d > 2f) return false;   // a wall in the way: not there yet
+            if (IsService(j))
+            {
+                // close-ups (a sink, an outlet): drop toward a crouch so the shot isn't steeply down from standing eye height
+                var low = CloseUpEye(eye, t);
+                if (!Physics.Linecast(eye, low, ~(1 << PhotoRender.ViewModelLayer), QueryTriggerInteraction.Ignore)) { eye = low; d = Vector3.Distance(eye, t); }
+            }
             var dir = (t - eye).normalized;
             if (d < 1.6f && !Physics.CheckSphere(t - dir * 1.6f, 0.15f, ~(1 << PhotoRender.ViewModelLayer), QueryTriggerInteraction.Ignore))
                 eye = t - dir * 1.6f;                         // step back a little for a close-up
@@ -131,6 +137,17 @@ namespace Groundbreak
             a.BeforeId = Take(a, "before", "Before")?.Id;
             PhotoStore.NotifyChanged();
             return a.BeforeId != null;
+        }
+
+        /// <summary>Lowers the eye (never below the target) until the view looks down at most maxDownDeg on the target.</summary>
+        public static Vector3 CloseUpEye(Vector3 eye, Vector3 target, float maxDownDeg = 35f)
+        {
+            Vector3 flat = target - eye; flat.y = 0f;
+            if (flat.magnitude < 0.5f) return eye;           // straight overhead: leave it to the step-back
+            float maxDrop = flat.magnitude * Mathf.Tan(maxDownDeg * Mathf.Deg2Rad);
+            float y = Mathf.Max(target.y, target.y + maxDrop);
+            if (eye.y > y) eye.y = y;
+            return eye;
         }
 
         // ------------------------------------------------------------------ where to look

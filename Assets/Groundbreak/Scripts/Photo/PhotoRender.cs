@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Groundbreak
@@ -36,6 +37,33 @@ namespace Groundbreak
         static Camera _cam;
         static Material _mat;
         static Light _flash;
+
+        // ---- world-space gameplay helpers (layout lines, guides, ghosts) that should never show in photos
+        static readonly HashSet<Renderer> _hidden = new HashSet<Renderer>();
+        static readonly List<Renderer> _hiddenNow = new List<Renderer>();
+
+        /// <summary>Hook for other features: renderers registered here are switched off while a photo (or the photo-mode
+        /// preview) renders. Destroyed renderers drop out on their own.</summary>
+        public static void HideInPhotos(Renderer r) { if (r != null) _hidden.Add(r); }
+        public static void HideInPhotos(GameObject go) { if (go != null) foreach (var r in go.GetComponentsInChildren<Renderer>(true)) _hidden.Add(r); }
+        public static void ShowInPhotos(Renderer r) { if (r != null) _hidden.Remove(r); }
+        public static bool IsHiddenInPhotos(Renderer r) => r != null && _hidden.Contains(r);
+
+        static void HideHelpers()
+        {
+            _hiddenNow.Clear();
+            _hidden.RemoveWhere(r => r == null);
+            foreach (var r in _hidden) if (r.enabled) { r.enabled = false; _hiddenNow.Add(r); }
+        }
+
+        static void RestoreHelpers()
+        {
+            foreach (var r in _hiddenNow) if (r != null) r.enabled = true;
+            _hiddenNow.Clear();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void StaticReset() { _hidden.Clear(); _hiddenNow.Clear(); }
 
         public static Material Mat
         {
@@ -110,7 +138,9 @@ namespace Groundbreak
             }
             if (_flash != null) _flash.enabled = s.Flash;
             cam.targetTexture = rt;
-            cam.Render();
+            HideHelpers();
+            try { cam.Render(); }
+            finally { RestoreHelpers(); }
             cam.targetTexture = null;
             cam.ResetProjectionMatrix();
             if (_flash != null) _flash.enabled = false;

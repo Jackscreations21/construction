@@ -26,6 +26,13 @@ namespace Groundbreak
         public const float UsedCondition = 0.72f;
         /// <summary>Real seconds for a supplier/warehouse run. Tests set this to 0.</summary>
         public static float TripSeconds = 45f;
+        /// <summary>Setting: charge the supplier's <see cref="DeliveryFee"/> on tablet store orders (Career only; Free Build
+        /// delivers free). Your own truck (<see cref="Haul"/>) never pays it - that's what owning one saves.</summary>
+        public static bool ChargeSupplierDelivery = true;
+        /// <summary>Delivery fee a supply-store order pays right now ($0 when it doesn't apply).</summary>
+        public static int SupplierDeliveryFee => ChargeSupplierDelivery && GameSettings.IsCareer ? DeliveryFee : 0;
+        /// <summary>What a supply-store order costs in total: materials + supplier delivery fee + rush fee.</summary>
+        public static int StoreOrderTotal(int materials, bool rush) => materials + SupplierDeliveryFee + (rush ? DeliveryService.RushFee : 0);
 
         public static readonly List<VehicleInfo> Infos = new List<VehicleInfo>();
         public static readonly List<Trip> Trips = new List<Trip>();
@@ -269,7 +276,7 @@ namespace Groundbreak
         public static void ResetState() { Infos.Clear(); Trips.Clear(); }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void StaticReset() { ResetState(); Changed = null; TripSeconds = 45f; }
+        static void StaticReset() { ResetState(); Changed = null; TripSeconds = 45f; ChargeSupplierDelivery = true; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Init()

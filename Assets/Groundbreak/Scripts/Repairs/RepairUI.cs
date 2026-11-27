@@ -91,7 +91,7 @@ namespace Groundbreak
                     }
                 }
             }
-            if (GInput.GetKeyDown(KeyCode.B) && _target != null && _target.Job != null)
+            if (GInput.GetKeyDown(KeyCode.B) && _target != null && _target.Job != null && !(_target.Job.Id ?? "").StartsWith("flip-"))   // flips are never invoiced
             {
                 var job = _target.Job;
                 if (RepairJobs.AllFixed(job) || Time.time < _billConfirmUntil) { RepairJobs.SendInvoice(job); _target = null; }
@@ -143,7 +143,10 @@ namespace Groundbreak
             if (_acts.Count == 0) lines.Add((d.IsFixed ? "Nothing more to do here." : "Nothing to do at this spot right now.", _small, false));
             if (Time.time < _whyUntil && _why.Length > 0) lines.Add(("<color=#ffe08a>" + _why + "</color>", _label, false));
             bool all = RepairJobs.AllFixed(d.Job);
-            lines.Add((all ? "<color=#8fe28f>All repairs done — B sends the invoice</color>" : "Hold LMB = work · Q / Z / wheel = choose · B = invoice", _small, false));
+            if (d.Job != null && (d.Job.Id ?? "").StartsWith("flip-"))   // your own flip house: no customer, no invoice
+                lines.Add((d.IsFixed ? "<color=#8fe28f>Flip punch list item done — see the Flips app</color>" : "Hold LMB = work · Q / Z / wheel = choose · your flip (Flips app)", _small, false));
+            else
+                lines.Add((all ? "<color=#8fe28f>All repairs done — B sends the invoice</color>" : "Hold LMB = work · Q / Z / wheel = choose · B = invoice", _small, false));
 
             float h = pad * 2 + 10f;
             var hs = new float[lines.Count];

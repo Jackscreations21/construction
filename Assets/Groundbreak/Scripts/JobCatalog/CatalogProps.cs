@@ -67,29 +67,23 @@ namespace Groundbreak
             // ================================================================ plumbing
             Register("toilet", (m, c) =>
             {
-                int por = m.Mat(SurfaceKind.Porcelain), chrome = m.Mat(SurfaceKind.Nickel), braid = m.Mat(SurfaceKind.BrushedSteel), dark = m.Mat(SurfaceKind.DarkPlastic);
-                // tank (back on the wall), bowl toward +Z, seat
-                m.Box(new Vector3(0, 0.56f, 0.11f), new Vector3(0.43f, 0.38f, 0.2f), por);
-                if (!c.Has("lid-off")) m.Box(new Vector3(0, 0.765f, 0.11f), new Vector3(0.45f, 0.03f, 0.22f), por);
-                else
+                int por = m.Mat(SurfaceKind.Porcelain), seat = m.Mat(SurfaceKind.PaintedWhite), chrome = m.Mat(SurfaceKind.Nickel), braid = m.Mat(SurfaceKind.BrushedSteel), dark = m.Mat(SurfaceKind.DarkPlastic);
+                // two-piece elongated toilet on a 12" rough-in: tank on the wall, bowl toward +Z, seat lid up, stop + supply (shared shape: ToiletModel)
+                bool lidOff = c.Has("lid-off");
+                ToiletModel.Build(m.L.B, Vector3.zero, Quaternion.identity, por, seat, chrome, braid, !lidOff);
+                float tz = ToiletModel.TankZ, sx = ToiletModel.StopX;
+                if (lidOff)
                 {
-                    m.Box(new Vector3(0.45f, 0.015f, 0.25f), new Vector3(0.45f, 0.03f, 0.22f), por);   // lid on the floor
-                    var water = c.Has("water-off") ? 0.42f : 0.68f;
-                    m.Box(new Vector3(0, water, 0.11f), new Vector3(0.39f, 0.004f, 0.16f), m.Mat(Water));
-                    m.Cyl(new Vector3(-0.12f, 0.6f, 0.11f), 0.016f, 0.3f, m.Mat(SurfaceKind.DarkPlastic));    // fill valve
-                    m.Cyl(new Vector3(0.03f, 0.43f, 0.11f), 0.035f, 0.012f, c.CauseId == "flapper" && c.Bad ? m.Mat(new Color(0.45f, 0.2f, 0.18f)) : dark); // flapper
-                    m.Cyl(new Vector3(0.09f, 0.55f, 0.11f), 0.013f, 0.24f, m.Mat(SurfaceKind.PaintedWhite));  // overflow tube
+                    ToiletModel.TankLid(m.L.B, new Vector3(-0.5f, 0f, 0.35f), Quaternion.Euler(0f, 90f, 0f), por);   // lid on the floor
+                    var water = c.Has("water-off") ? 0.46f : 0.68f;
+                    m.Box(new Vector3(0, water, tz), new Vector3(0.43f, 0.004f, 0.125f), m.Mat(Water));
+                    m.Cyl(new Vector3(sx * 0.8f, 0.58f, tz), 0.016f, 0.28f, dark);                                   // fill valve (supply side)
+                    m.Cyl(new Vector3(0f, 0.432f, tz), 0.035f, 0.012f, c.CauseId == "flapper" && c.Bad ? m.Mat(new Color(0.45f, 0.2f, 0.18f)) : dark); // flapper
+                    m.Cyl(new Vector3(-0.07f, 0.56f, tz), 0.013f, 0.24f, seat);                                       // overflow tube
                 }
-                m.Box(new Vector3(0, 0.2f, 0.36f), new Vector3(0.36f, 0.4f, 0.36f), por);
-                m.Cyl(new Vector3(0, 0.39f, 0.43f), 0.19f, 0.02f, por, 18);
-                m.Cyl(new Vector3(0, 0.41f, 0.43f), 0.2f, 0.018f, m.Mat(SurfaceKind.PaintedWhite), 18);
-                m.Box(new Vector3(-0.18f, 0.66f, 0.2f), new Vector3(0.06f, 0.015f, 0.02f), chrome);              // trip lever
-                // shut-off stop and supply on the wall, left
-                m.Cyl(new Vector3(-0.15f, 0.16f, 0.03f), Qx, 0.012f, 0.06f, chrome);
-                m.Tube(new Vector3(-0.15f, 0.17f, 0.06f), new Vector3(-0.15f, 0.37f, 0.08f), 0.006f, braid);
-                if (c.CauseId == "stop" && c.Bad || c.CauseId == "wax" && c.Bad) Puddle(m, new Vector3(c.CauseId == "stop" ? -0.15f : 0.05f, 0, 0.3f), 0.18f);
-                if (c.CauseId == "clog" && c.Bad) m.Disc(new Vector3(0, 0.36f, 0.45f), 0.13f, m.Mat(new Color(0.5f, 0.45f, 0.35f)), 14);
-                else m.Disc(new Vector3(0, 0.33f, 0.45f), 0.11f, m.Mat(Water), 14);
+                if (c.CauseId == "stop" && c.Bad || c.CauseId == "wax" && c.Bad) Puddle(m, new Vector3(c.CauseId == "stop" ? sx : 0.05f, 0, c.CauseId == "stop" ? 0.2f : 0.55f), 0.2f);
+                if (c.CauseId == "clog" && c.Bad) ToiletModel.Water(m.L.B, Vector3.zero, Quaternion.identity, ToiletModel.WaterY + 0.045f, m.Mat(new Color(0.5f, 0.45f, 0.35f)));
+                else ToiletModel.Water(m.L.B, Vector3.zero, Quaternion.identity, ToiletModel.WaterY, m.Mat(Water));
             });
 
             Register("waterheater", (m, c) =>

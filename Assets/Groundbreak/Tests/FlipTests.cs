@@ -89,6 +89,25 @@ namespace Groundbreak.Tests
             Object.DestroyImmediate(light.gameObject);
         }
 
+        /// <summary>From the bath door side, looking at the tub's back and end walls.</summary>
+        static void BathShot(TownLot lot, string name)
+        {
+            var h = lot.House;
+            var a = h.transform.InverseTransformPoint(h.Anchor(HouseSpot.TubCaulk).position);   // (tub end wall x, rim, zb + 30")
+            var cam = h.transform.TransformPoint(new Vector3(HouseBuilder.P + 0.45f, a.y + 1.15f, a.z + 1.5f));
+            var look = h.transform.TransformPoint(new Vector3(a.x - 0.35f, a.y + 0.55f, a.z - 0.45f));
+            var light = new GameObject("FlipTestLight").AddComponent<Light>();
+            light.type = LightType.Point; light.range = 6f; light.intensity = 1.4f; light.transform.position = h.transform.TransformPoint(new Vector3(a.x - 1.2f, a.y + 1.6f, a.z + 0.6f));
+            SiteLookTests.Shot(cam, look, name, 70f);
+            Object.DestroyImmediate(light.gameObject);
+        }
+
+        static Transform Interior(FlipHouse f, string name)
+        {
+            var root = FlipVisuals.RootOf(f);
+            return root != null ? root.transform.Find(name) : null;
+        }
+
         static void PlayAll(FlipHouse f, bool upgrades)
         {
             foreach (var it in f.items)
@@ -170,6 +189,12 @@ namespace Groundbreak.Tests
             StreetShot(lot, "flip_02_distressed_exterior");
             StreetShot(lot, "flip_02b_distressed_side", -9f);
             KitchenShot(lot, "flip_03_dated_kitchen");
+            Assert.NotNull(Interior(f, FlipInterior.KitchenDated), "dated oak fronts + almond laminate in the kitchen");
+            Assert.NotNull(Interior(f, FlipInterior.BathDated), "almond/pink tile on the tub walls");
+            Assert.IsNull(Interior(f, FlipInterior.KitchenNew));
+            var kd = Interior(f, FlipInterior.KitchenDated);
+            Assert.IsNull(kd.GetComponent<Collider>(), "dressing never blocks the repair spots");
+            BathShot(lot, "flip_03b_dated_bath");
         }
 
         [UnityTest]
@@ -204,6 +229,11 @@ namespace Groundbreak.Tests
             StreetShot(lot, "flip_04_after_renovation");
             StreetShot(lot, "flip_04b_after_renovation_side", -9f);
             KitchenShot(lot, "flip_05_renovated_kitchen");
+            BathShot(lot, "flip_05b_renovated_bath");
+            Assert.NotNull(Interior(f, FlipInterior.KitchenNew), "white shaker fronts + quartz once the kitchen upgrade is done");
+            Assert.NotNull(Interior(f, FlipInterior.BathNew), "white subway tile once the bath refresh is done");
+            Assert.IsNull(Interior(f, FlipInterior.KitchenDated));
+            Assert.IsNull(Interior(f, FlipInterior.BathDated));
             // offers come at value; accept and close
             Assert.Less(Flips.ExpectedDaysToOffer(f, value, Flips.Today), 30);
             Assert.AreEqual(int.MaxValue, Flips.ExpectedDaysToOffer(f, Mathf.RoundToInt(value * 1.2f), Flips.Today), "15%+ over value: no buyers");
@@ -243,6 +273,34 @@ namespace Groundbreak.Tests
             PlayAll(f, false);
             int fast = Flips.ExpectedDaysToOffer(f, Flips.Value(f, day), day);
             Assert.Less(fast, slow, "a house with open problems sits longer");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PartsUsed_CountInFlipCosts_Once()
+        {
+            var f = ListAndBuy();
+            // the player does the kitchen: the faucet, paint and pulls used on its steps go into the flip's costs
+            var kitchen = f.items.Find(i => i.id == "kitchen");
+            Assert.NotNull(kitchen);
+            int spent = f.costSpent;
+            foreach (var s in kitchen.defects) { var d = Flips.LiveDefect(f, s); Assert.NotNull(d, s.def); JobCatalog.Solve(d); }
+            int parts = Flips.PartsUsed(kitchen);
+            Assert.Greater(parts, 0, "the kitchen steps use parts");
+            Flips.SyncAll();
+            Assert.AreEqual(spent + parts, f.costSpent, "parts used on the flip are flip costs");
+            Flips.SyncAll();
+            Flips.Sync(f);
+            Assert.AreEqual(spent + parts, f.costSpent, "each use is counted once");
+            // a crew finishes the bath: its materials are billed once (not again from the parts the solver records)
+            var bath = f.items.Find(i => i.id == "bath");
+            int crewMats = 0;
+            foreach (var s in bath.defects) { var jd = JobCatalog.Get(s.def); crewMats += Mathf.RoundToInt(jd.MaterialCostFor(jd.Causes[s.cause])); }
+            int before = f.costSpent, cash = Game.Wallet.Money;
+            Flips.FinishByCrew(f, bath, 0.9f);
+            Flips.SyncAll();
+            Assert.AreEqual(before + crewMats, f.costSpent, "crew materials counted once");
+            Assert.AreEqual(cash - crewMats, Game.Wallet.Money);
             yield return null;
         }
 
