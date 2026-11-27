@@ -26,7 +26,7 @@ namespace Groundbreak
                 Description = "Crawlspace foundation, full MEP, insulation, drywall, siding, landscaping.", Phases = (InspectionPhase[])Enum.GetValues(typeof(InspectionPhase)) },
             new Contract { Id = "twostory", Title = "Two-story family home 2,400 sq ft", Client = "The Okafors", Price = 395000, Days = 150, MinRep = 75, Lot = LotType.Sloped, LotFeet = new Vector2(120, 160),
                 Description = "Basement, engineered floor system, 9' walls, 4 bed / 2.5 bath.", Phases = (InspectionPhase[])Enum.GetValues(typeof(InspectionPhase)) },
-            new Contract { Id = "custom", Title = "Custom home 3,500 sq ft (architect plans)", Client = "Halvorsen family", Price = 720000, Days = 210, MinRep = 85, Lot = LotType.Wooded, LotFeet = new Vector2(160, 220),
+            new Contract { Id = "custom", Title = "Custom home 3,500 sq ft (architect plans)", Client = "Halvorsen family", Price = 660000, Days = 210, MinRep = 85, Lot = LotType.Wooded, LotFeet = new Vector2(160, 220),
                 Description = "Wooded lot: clearing, walkout basement, timber accents, full landscape plan.", Phases = (InspectionPhase[])Enum.GetValues(typeof(InspectionPhase)) },
         };
 
