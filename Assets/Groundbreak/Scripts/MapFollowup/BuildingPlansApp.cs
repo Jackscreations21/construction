@@ -106,8 +106,10 @@ namespace Groundbreak
             var p = MapPlans.ParcelOf(lot);
             if (p != null && !p.Ranch)
             {
-                rot = p.Rotation; size = new Vector2(p.Spec.Width, p.Spec.Depth);
-                centre = p.Origin + rot * new Vector3(0, 0, -p.Spec.Depth / 2f);
+                // the building itself (a gas station's store behind its forecourt, a yard's shop), not the whole spec footprint
+                var body = MapBodies.Body(p.Spec);
+                rot = p.Rotation; size = new Vector2(body.width, body.height);
+                centre = p.Origin + rot * new Vector3(body.center.x, 0, body.center.y);
             }
             else if (lot.House != null)
             {
