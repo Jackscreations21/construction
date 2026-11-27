@@ -396,6 +396,9 @@ namespace Groundbreak
         }
 
         /// <summary>A new-build contract on a free development lot (Builder pays draws on inspections via its own hooks).</summary>
+        /// <summary>Optional: candidate lots for a build of this plan, best first (MapFollowup: lots in a matching district).</summary>
+        public static Func<HousePlan, IEnumerable<DevLot>> BuildLots;
+
         public static Job CreateBuild(JobDef d, bool addToOffers)
         {
             if (d == null || d.Mode != JobMode.Build) return null;
@@ -412,7 +415,7 @@ namespace Groundbreak
                 return fj;
             }
             DevLot lot = null;
-            foreach (var l in DevLots.Provider.FreeLots())
+            foreach (var l in BuildLots?.Invoke(plan) ?? DevLots.Provider.FreeLots())
             {
                 if (l.FrontageFt < plan.WidthFt + 15f || l.DepthFt < plan.DepthFt + 45f) continue;
                 if (Company.Offers.Exists(j => j.Address == l.Address) || Company.ActiveJobs.Exists(j => j.Address == l.Address)) continue;
