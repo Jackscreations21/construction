@@ -35,8 +35,9 @@ namespace Groundbreak
         static DesignRoom _selected; static string _roomText = "";
         static bool _dragging; static Vector2 _dragA, _dragB; static string _dragBase; static bool _wallDrag;
         static string _renameId, _renameText = "", _confirmDelete;
+        static float _side = 400f;
         static Rect _canvas; static Vector2 _origin; static float _scale = 10f;
-        static GUIStyle _small, _tiny, _field, _bold, _issueStyle;
+        static GUIStyle _note, _small, _tiny, _field, _bold, _issueStyle;
         static readonly Dictionary<string, Texture2D> _thumbs = new Dictionary<string, Texture2D>();
 
         static GUIStyle L => Tablet.I.LabelStyle; static GUIStyle Hd => Tablet.I.HeaderStyle; static GUIStyle B => Tablet.I.ButtonStyle;
@@ -66,6 +67,8 @@ namespace Groundbreak
             _small = new GUIStyle(L) { fontSize = Mathf.RoundToInt(Fs * 0.78f), alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
             _tiny = new GUIStyle(_small) { fontSize = Mathf.RoundToInt(Fs * 0.66f) };
             _tiny.normal.textColor = new Color(0.85f, 0.92f, 1f);
+            _note = new GUIStyle(L) { fontSize = Mathf.RoundToInt(Fs * 0.7f), wordWrap = true };
+            _note.normal.textColor = new Color(0.85f, 0.92f, 1f);
             _field = new GUIStyle(GUI.skin.textField) { fontSize = Mathf.RoundToInt(Fs * 0.95f) };
             _bold = new GUIStyle(L) { fontStyle = FontStyle.Bold };
             _issueStyle = new GUIStyle(B) { alignment = TextAnchor.MiddleLeft, wordWrap = true, fontSize = Mathf.RoundToInt(Fs * 0.85f) };
@@ -138,7 +141,8 @@ namespace Groundbreak
         static void MyPlanRow(PlanDesign d)
         {
             var plan = PlanDesigner.PlanOf(d.id);
-            GUILayout.BeginHorizontal(GUI.skin.box);
+            GUILayout.Space(4);
+            GUILayout.BeginHorizontal();
             GUILayout.Label(Thumb(d), GUILayout.Width(128), GUILayout.Height(96));
             GUILayout.BeginVertical();
             if (_renameId == d.id)
@@ -187,15 +191,17 @@ namespace Groundbreak
             if (!string.IsNullOrEmpty(d.id) && PlanDesigner.GetDesign(d.id) != null && GUILayout.Button("Save as new", B)) { GUIUtility.keyboardControl = 0; PlanDesigner.Save(ed, true, out var m); Msg(m); }
             GUI.enabled = ed.CanUndo; if (GUILayout.Button("Undo", B, GUILayout.Width(Fs * 4))) { ed.Undo(); _selected = null; } GUI.enabled = ed.CanRedo;
             if (GUILayout.Button("Redo", B, GUILayout.Width(Fs * 4))) { ed.Redo(); _selected = null; } GUI.enabled = true;
-            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            // row 2: tools
+            int t = GUILayout.SelectionGrid((int)Tool, ToolLabels, 5, B);
+            if (t != (int)Tool) { Tool = (DTool)t; _dragging = false; }
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(ToolHelp[(int)Tool], _note, GUILayout.Width(Tablet.I.ContentWidth - Fs * 4.7f * (d.floors + 2) - 16f));
+            GUILayout.Space(8);
             for (int f = 0; f < d.floors; f++) if (GUILayout.Toggle(Floor == f, $"Floor {f + 1}", B, GUILayout.Width(Fs * 4.5f)) && Floor != f) { Floor = f; _selected = null; }
             if (d.floors < 3 && GUILayout.Button("+ Floor", B, GUILayout.Width(Fs * 4.5f))) { ed.AddFloor(); Floor = d.floors - 1; Msg(ed.Message); }
             if (d.floors > 1 && GUILayout.Button("− Floor", B, GUILayout.Width(Fs * 4.5f))) { ed.RemoveTopFloor(); Msg(ed.Message); }
             GUILayout.EndHorizontal();
-            // row 2: tools
-            int t = GUILayout.Toolbar((int)Tool, ToolLabels, B);
-            if (t != (int)Tool) { Tool = (DTool)t; _dragging = false; }
-            GUILayout.Label(ToolHelp[(int)Tool], _tiny);
 
             float cw = Mathf.Round(Tablet.I.ContentWidth * 0.63f), ch = Mathf.Round(Mathf.Min(cw * 0.78f, Screen.height * 0.5f));
             GUILayout.BeginHorizontal();
@@ -206,7 +212,8 @@ namespace Groundbreak
             Issues();
             GUILayout.EndVertical();
             GUILayout.Space(8);
-            GUILayout.BeginVertical();
+            _side = Mathf.Max(Fs * 14f, Tablet.I.ContentWidth - cw - 12f);
+            GUILayout.BeginVertical(GUILayout.Width(_side));
             SidePanel();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
@@ -429,7 +436,7 @@ namespace Groundbreak
                 }
                 GUI.color = c;
             }
-            if (issues.Count > shown) GUILayout.Label($"… and {issues.Count - shown} more", _tiny);
+            if (issues.Count > shown) GUILayout.Label($"… and {issues.Count - shown} more", _note);
         }
 
         // ------------------------------------------------------------------ side panel
@@ -493,7 +500,7 @@ namespace Groundbreak
                         _roomText = GUILayout.TextField(_roomText ?? "", 30, _field);
                         if (GUILayout.Button("Rename", B, GUILayout.Width(Fs * 5))) { ed.RenameRoom(_selected, _roomText); GUIUtility.keyboardControl = 0; Msg(ed.Message); }
                         GUILayout.EndHorizontal();
-                        GUILayout.Label("Names decide what a room is: Bed…, Master, Bath, Powder, Kitchen, Living, Hall, Closet, Garage, Stair…", _tiny);
+                        GUILayout.Label("Names decide what a room is: Bed…, Master, Bath, Powder, Kitchen, Living, Hall, Closet, Garage, Stair…", _note);
                     }
                     else GUILayout.Label("Click a room to select it.", L);
                     break;
@@ -524,18 +531,18 @@ namespace Groundbreak
         static void Building(DesignEditor ed, PlanDesign d)
         {
             GUILayout.Label("Building", Hd);
-            int g = GUILayout.Toolbar(d.group, GroupNames, B);
+            int g = GUILayout.SelectionGrid(d.group, GroupNames, 2, B);
             if (g != d.group) { ed.Set(x => x.ApplyGroupDefaults((PlanGroup)g), $"Building type: {GroupNames[g]} (walls, roof and code rules changed to suit)."); Msg(ed.Message); }
             GUILayout.Label("Walls", _bold);
-            int wp = GUILayout.Toolbar(d.WallPreset, PlanDesign.WallPresets, B);
+            int wp = GUILayout.SelectionGrid(d.WallPreset, PlanDesign.WallPresets, 3, B);
             if (wp != d.WallPreset) { ed.Set(x => x.SetWallPreset(wp), "Walls: " + PlanDesign.WallPresets[wp]); Msg(ed.Message); }
             GUILayout.Label("Foundation", _bold);
-            int fd = GUILayout.Toolbar(d.foundation, FoundNames, B);
+            int fd = GUILayout.SelectionGrid(d.foundation, FoundNames, 3, B);
             if (fd != d.foundation) { ed.Set(x => { x.foundation = fd; if (fd == (int)FoundationType.PostFrame) x.SetWallPreset(2); else if (x.WallFrame == WallSystem.PostFrame) x.SetWallPreset(0); }, "Foundation: " + (FoundationType)fd); Msg(ed.Message); }
             GUILayout.Label("Roof", _bold);
-            int rf = GUILayout.Toolbar(d.roof, RoofNames, B);
+            int rf = GUILayout.SelectionGrid(d.roof, RoofNames, 3, B);
             if (rf != d.roof) { ed.Set(x => x.SetRoof((RoofType)rf), "Roof: " + (RoofType)rf); Msg(ed.Message); }
-            int cv = GUILayout.Toolbar(d.covering, CoverNames, B);
+            int cv = GUILayout.SelectionGrid(d.covering, CoverNames, 2, B);
             if (cv != d.covering) { ed.Set(x => x.covering = cv, "Roofing: " + CoverNames[cv]); Msg(ed.Message); }
             GUILayout.BeginHorizontal();
             GUILayout.Label($"Pitch {d.pitch:0.##}/12", L, GUILayout.Width(Fs * 6));
@@ -546,14 +553,12 @@ namespace Groundbreak
             if (GUILayout.Button("+", B, GUILayout.Width(Fs * 2f))) ed.Set(x => x.wallHeight = Mathf.Min(40f, x.wallHeight + 1f), "Walls raised");
             GUILayout.EndHorizontal();
             int fi = d.quality < 0.5f ? 0 : d.quality < 0.75f ? 1 : 2;
-            int nf = GUILayout.Toolbar(fi, FinishNames, B);
+            int nf = GUILayout.SelectionGrid(fi, FinishNames, 3, B);
             if (nf != fi) ed.Set(x => x.quality = FinishLevels[nf], "Finish: " + FinishNames[nf]);
-            GUILayout.BeginHorizontal();
-            bool auto = GUILayout.Toggle(d.autoStructure, " Auto structure", GUILayout.Width(Fs * 8));
+            bool auto = GUILayout.Toggle(d.autoStructure, " Auto structure (size joists + girders)");
             if (auto != d.autoStructure) ed.Set(x => x.autoStructure = auto, auto ? "Joists and girders sized automatically" : "Structure as copied");
-            GUILayout.Label($"{d.joist} joists, {d.bearingLines} girder line{(d.bearingLines == 1 ? "" : "s")}", _tiny);
-            GUILayout.EndHorizontal();
-            if (ed.Plan != null) GUILayout.Label($"{ed.Plan.Occupancy} · {ed.Plan.ConstructionType}", _tiny);
+            GUILayout.Label($"{d.joist} joists, {d.bearingLines} girder line{(d.bearingLines == 1 ? "" : "s")}", _note);
+            if (ed.Plan != null) GUILayout.Label($"{ed.Plan.Occupancy} · {ed.Plan.ConstructionType}", _note);
             // build it
             GUILayout.Space(6);
             GUILayout.Label("Build it", Hd);
@@ -563,7 +568,7 @@ namespace Groundbreak
             {
                 if (GUILayout.Button("Show it on my building site", B)) { PlanDesigner.ShowOverlay(reg, Floor, out var m); Msg(m); }
                 if (GUILayout.Button("Find a client to build it for", B)) { PlanDesigner.OfferToClient(reg, out var m); Msg(m); }
-                if (reg.Group == PlanGroup.Residential && reg.WidthFt <= 60f) GUILayout.Label("Also listed as a spec-house plan in the Development app.", _tiny);
+                if (reg.Group == PlanGroup.Residential && reg.WidthFt <= 60f) GUILayout.Label("Also listed as a spec-house plan in the Development app.", _note);
             }
         }
     }
