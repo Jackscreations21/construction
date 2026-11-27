@@ -68,6 +68,7 @@ namespace Groundbreak
             var mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterials = mats;
             mr.shadowCastingMode = shadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+            OwnedMesh.Attach(go, mesh);   // freed when the yard contents/shell are rebuilt
             return go;
         }
     }

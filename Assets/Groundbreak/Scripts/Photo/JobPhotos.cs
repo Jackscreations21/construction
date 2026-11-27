@@ -32,7 +32,7 @@ namespace Groundbreak
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void StaticReset() { ExternalTarget = null; }
+        static void StaticReset() { ExternalTarget = null; _retryAfter = 0f; }
 
         // ------------------------------------------------------------------ events
 
@@ -225,17 +225,25 @@ namespace Groundbreak
         static PhotoEntry Take(JobAlbum a, string kind, string caption)
         {
             if (!a.HasPose) return null;
+            if (Time.unscaledTime < _retryAfter) return null;
+            Texture2D tex = null;
             try
             {
                 var s = new PhotoSettings { Fov = a.Fov, Flash = a.Flash, Vignette = 0.15f };
-                var tex = PhotoRender.Capture(a.CamPos, a.CamRot, s, Width, Height);
+                tex = PhotoRender.Capture(a.CamPos, a.CamRot, s, Width, Height);
                 var e = PhotoStore.Add(tex, kind, a.JobId, caption);
-                Destroy(tex);
                 if (kind == "after") a.AfterId = e.Id;
                 return e;
             }
-            catch (Exception ex) { Debug.LogException(ex); return null; }
+            catch (Exception ex)
+            {
+                // e.g. the photo folder can't be written: don't re-render a 1280x720 shot every 0.4 s
+                Debug.LogException(ex); _retryAfter = Time.unscaledTime + 60f; return null;
+            }
+            finally { if (tex != null) Destroy(tex); }   // freed on failure too
         }
+
+        static float _retryAfter;
 
         // ------------------------------------------------------------------ pay & rating
 

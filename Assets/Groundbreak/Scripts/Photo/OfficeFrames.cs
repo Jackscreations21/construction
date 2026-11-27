@@ -105,7 +105,12 @@ namespace Groundbreak
 
         void Clear()
         {
-            if (_root != null) Destroy(_root);
+            if (_root != null)
+            {
+                // the frame and print meshes are built per frame: free them with the objects
+                foreach (var mf in _root.GetComponentsInChildren<MeshFilter>(true)) if (mf.sharedMesh != null) Destroy(mf.sharedMesh);
+                Destroy(_root);
+            }
             _root = null;
             foreach (var m in _mats) if (m != null) Destroy(m);
             _mats.Clear();

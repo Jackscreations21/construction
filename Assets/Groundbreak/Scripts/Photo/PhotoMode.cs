@@ -90,8 +90,15 @@ namespace Groundbreak
             string where = "";
             try { var lot = Town.Exists ? Town.LotAt(Position) : null; if (lot != null) where = lot.Address; } catch { }
             string when = GameClock.I != null ? GameClock.I.TimeLabel : "";
-            LastPhoto = PhotoStore.Add(tex, "player", null, string.IsNullOrEmpty(where) ? when : where + " · " + when);
-            Destroy(tex);
+            try { LastPhoto = PhotoStore.Add(tex, "player", null, string.IsNullOrEmpty(where) ? when : where + " · " + when); }
+            catch (System.Exception e)
+            {
+                // disk full / no write access: tell the player instead of throwing out of Update, and don't leak the texture
+                Debug.LogWarning("[Photo] save failed: " + e.Message);
+                _msg = "Couldn't save the photo: " + e.Message; _msgUntil = Time.unscaledTime + 4f;
+                return null;
+            }
+            finally { Destroy(tex); }
             _flashUntil = Time.unscaledTime + 0.18f;
             _msg = "Saved " + LastPhoto.File; _msgUntil = Time.unscaledTime + 3f;
             Sfx.Play("click", Position, 0.8f);
