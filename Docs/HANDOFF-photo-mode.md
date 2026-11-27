@@ -24,6 +24,10 @@ None.
 - Screenshots looked at: photo_mode_capture / _dof / _bw_instant / _sepia_mat, photo_before_after_repair,
   photo_before_after_build, photo_office_desk_frames, and (windowed) photo_portfolio_app / _slider / _album, photo_mode_ui.
 
+## Resumed 2026-11-27
+- main c1d7e79 merged (d901112). Both full-suite attempts through unity-run.sh failed at launch: "No valid Unity Editor
+  license found" (exit 198). The user needs to sign in to Unity Hub; then do the steps below.
+
 ## What is left
 1. One windowed run (through unity-run.sh) of `Groundbreak.Tests.PhotoTests.Capture_PhotoModeUI_AndPortfolioApp`, then LOOK
    at `Logs/shots/photo_mode_ui.png`: the photo-mode panel overflowed sideways in the first capture (labels and the 2-column
