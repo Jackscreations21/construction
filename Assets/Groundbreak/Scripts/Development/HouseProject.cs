@@ -136,7 +136,12 @@ namespace Groundbreak
                 if (!before[i] && p.PhaseDone((BuildPhase)i))
                 {
                     p.Progress[i] = 1f;
-                    if (i == 4) { p.DoneDay = Day; p.Quality = p.Id == OnSiteId ? QualityFromInspections(p) : Crew.Quality(p); }
+                    if (i == 4)
+                    {
+                        p.DoneDay = Day; p.Quality = p.Id == OnSiteId ? QualityFromInspections(p) : Crew.Quality(p);
+                        // spec houses have no Job, so Company.Complete never frees their crew: release them here
+                        foreach (var w in Company.Workers) if (w.AssignedJobId == p.Id) w.AssignedJobId = null;
+                    }
                     try { PhaseCompleted?.Invoke(p, (BuildPhase)i); } catch (Exception e) { Debug.LogException(e); }
                 }
             Changed?.Invoke(p);
