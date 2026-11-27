@@ -156,6 +156,7 @@ namespace Groundbreak
             if (cc != null) cc.enabled = false;
             ViewModel.Enabled = false;
             Operating = true; Current = this; _lookYaw = _lookPitch = 0;
+            TransitionFrame = Time.frameCount;
             if (Trailer != null) { Destroy(Trailer); Trailer = null; }
             if (_engine != null && _engine.clip != null) _engine.Play();
             Sfx.Play("thud", transform.position + Vector3.up, 0.4f);
@@ -172,9 +173,13 @@ namespace Groundbreak
         }
 
         /// <summary>Puts the player back on foot. placeBeside = next to the machine, else where the seat is.</summary>
+        /// <summary>Frame of the last climb in/out: the same E press must not also climb back out/in (Update order is undefined).</summary>
+        public static int TransitionFrame = -1;
+
         protected void Leave(bool placeBeside, Vector3? at = null)
         {
             Operating = false; _speed = 0;
+            TransitionFrame = Time.frameCount;
             if (Current == this) Current = null;
             if (_engine != null) _engine.Stop();
             var p = Game.Player;
@@ -261,7 +266,7 @@ namespace Groundbreak
             if (SeatedNow && !Game.UIOpen)
             {
                 if (GInput.GetKeyDown(KeyCode.V)) ChaseCamera = !ChaseCamera;
-                if (GInput.GetKeyDown(KeyCode.E)) { Exit(); if (!Operating) return; }
+                if (GInput.GetKeyDown(KeyCode.E) && Time.frameCount != TransitionFrame) { Exit(); if (!Operating) return; }
                 if (Cursor.lockState == CursorLockMode.Locked && Game.Player != null)
                 {
                     Vector2 d = GInput.MouseDelta * Game.Player.Sensitivity;

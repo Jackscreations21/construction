@@ -13,10 +13,11 @@ namespace Groundbreak
         public static string Prompt { get; private set; }
 
         static bool _hasPending, _pendRear; static Vector3 _pendPos; static float _pendYaw;
+        static bool _pendExit;   // the save was made while driving: the loaded player stands in the seat, step them out
         float _nextPoll;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void StaticReset() { I = null; Prompt = null; _hasPending = false; }
+        static void StaticReset() { I = null; Prompt = null; _hasPending = false; _pendExit = false; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Init()
@@ -31,7 +32,16 @@ namespace Groundbreak
             I = go.AddComponent<VanSystems>();
         }
 
-        static void Refresh() { WorkVan.EnsureSpawned(); }
+        static void Refresh()
+        {
+            bool fromSave = _hasPending;
+            var v = WorkVan.EnsureSpawned();
+            if (fromSave && !_hasPending)   // the van was just placed where the save left it
+            {
+                bool exit = _pendExit; _pendExit = false;
+                if (exit && v != null && !v.Driving) v.PlacePlayerBeside();
+            }
+        }
         static void Remove() { WorkVan.Despawn(); TownLadder.ResetState(); }
 
         /// <summary>Pose a loaded save wants the van at (used once by <see cref="WorkVan.EnsureSpawned"/>).</summary>
@@ -48,7 +58,7 @@ namespace Groundbreak
         [Serializable]
         class Data
         {
-            public bool hasVan, rearOpen; public Vector3 pos; public float yaw;
+            public bool hasVan, rearOpen, driving; public Vector3 pos; public float yaw;
             public List<CargoEntry> cargo = new List<CargoEntry>();
             public int ladder; public Vector3 ladFoot, ladAway; public float ladTop;
         }
@@ -57,7 +67,7 @@ namespace Groundbreak
         {
             var d = new Data();
             var v = WorkVan.I;
-            if (v != null) { d.hasVan = true; d.pos = v.transform.position; d.yaw = v.Yaw; d.rearOpen = v.RearOpen; }
+            if (v != null) { d.hasVan = true; d.pos = v.transform.position; d.yaw = v.Yaw; d.rearOpen = v.RearOpen; d.driving = v.Driving; }
             foreach (var kv in VanCargo.Entries) d.cargo.Add(new CargoEntry { id = kv.Key, n = kv.Value });
             var lad = TownLadder.Placed;
             if (lad != null && TownLadder.State == TownLadder.LadderState.Placed)
@@ -72,15 +82,15 @@ namespace Groundbreak
         {
             WorkVan.Despawn(true);
             TownLadder.ResetState();
-            _hasPending = false;
+            _hasPending = false; _pendExit = false;
             if (string.IsNullOrEmpty(json)) { VanCargo.Clear(); return; }     // the van respawns at home when the town + company have one
             var d = JsonUtility.FromJson<Data>(json);
             var list = new List<KeyValuePair<string, int>>();
             foreach (var c in d.cargo) list.Add(new KeyValuePair<string, int>(c.id, c.n));
             VanCargo.SetAll(list);
-            if (d.hasVan) { _hasPending = true; _pendPos = d.pos; _pendYaw = d.yaw; _pendRear = d.rearOpen; }
+            if (d.hasVan) { _hasPending = true; _pendPos = d.pos; _pendYaw = d.yaw; _pendRear = d.rearOpen; _pendExit = d.driving; }
             if (d.ladder == 1) TownLadder.Place(d.ladFoot, d.ladAway, d.ladTop);
-            WorkVan.EnsureSpawned();
+            Refresh();
         }
 
         // ------------------------------------------------------------------ helpers
@@ -128,7 +138,7 @@ namespace Groundbreak
             Ray ray = p.AimRay;
             bool world = p.TryAim(out RaycastHit wh, 6f);
             float worldDist = world ? wh.distance : float.MaxValue;
-            bool e = GInput.GetKeyDown(KeyCode.E);
+            bool e = GInput.GetKeyDown(KeyCode.E) && Time.frameCount != WorkVan.TransitionFrame;   // not the press that just got out
 
             if (lad != null && lad.Aimed(ray, TownLadder.Reach, out float ld) && ld < worldDist + 0.3f)
             {
