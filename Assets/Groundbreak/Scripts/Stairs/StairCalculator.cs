@@ -40,6 +40,11 @@ namespace Groundbreak
             GUIStyle L = tab.LabelStyle, Hd = tab.HeaderStyle, B = tab.ButtonStyle;
             int fs = L.fontSize;
             if (_field == null || _field.fontSize != fs) _field = new GUIStyle(GUI.skin.textField) { fontSize = fs };
+            // IMGUI: the Layout pass and the input pass of one event must draw the same controls. The text fields / buttons below
+            // change _rise / _run / HasLayout mid-pass, so everything that decides WHICH controls follow uses the values from the
+            // start of this pass; edits show from the next event on.
+            string riseNow = _rise, runNow = _run;
+            bool showCurrent = HasLayout;
 
             GUILayout.Label("Stair Calculator", Hd);
             GUILayout.Label("IRC R311.7: risers 7 3/4\" max, treads 10\" min, 36\" min width, 6' 8\" headroom, risers within 3/8\" of each other.", L);
@@ -61,18 +66,18 @@ namespace Groundbreak
             GUILayout.EndHorizontal();
             GUILayout.Space(6);
 
-            if (!StairMath.TryParseInches(_rise, out float rise))
+            if (!StairMath.TryParseInches(riseNow, out float rise))
             {
                 GUILayout.Label("Enter the total rise, e.g. 48, 48 1/2 or 4' 0 1/2\" (measure it with the tape and press 'Use tape').", L);
-                DrawCurrent(L);
+                DrawCurrent(L, showCurrent);
                 return;
             }
-            if (!StairMath.TryParseInches(_run, out float run)) run = StairMath.DefaultRunIn;
+            if (!StairMath.TryParseInches(runNow, out float run)) run = StairMath.DefaultRunIn;
             var r = StairMath.Calculate(rise, run);
             if (!r.Valid || r.Risers < 2)
             {
                 GUILayout.Label("A rise of " + StairMath.FormatIn(rise) + " is a single step - no stringer needed.", L);
-                DrawCurrent(L);
+                DrawCurrent(L, showCurrent);
                 return;
             }
 
@@ -91,7 +96,7 @@ namespace Groundbreak
                 UseForLayout(r);
                 tab.ShowMessage("Framing square set: " + StairMath.FormatIn(r.UnitRiseIn) + " on the tongue, " + StairMath.FormatIn(r.UnitRunIn) + " on the blade.");
             }
-            DrawCurrent(L);
+            DrawCurrent(L, showCurrent);
         }
 
         static void Line(GUIStyle L, string k, string v)
@@ -102,9 +107,9 @@ namespace Groundbreak
             GUILayout.EndHorizontal();
         }
 
-        static void DrawCurrent(GUIStyle L)
+        static void DrawCurrent(GUIStyle L, bool show)
         {
-            if (!HasLayout) return;
+            if (!show) return;
             GUILayout.Space(4);
             GUILayout.Label("Framing square gauges: " + Layout.Risers + " risers @ " + StairMath.FormatIn(Layout.UnitRiseIn) + " / " +
                             StairMath.FormatIn(Layout.UnitRunIn) + " run (total rise " + StairMath.FormatFtIn(Layout.TotalRiseIn) + ")", L);

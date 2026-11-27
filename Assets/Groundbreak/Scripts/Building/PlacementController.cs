@@ -89,7 +89,11 @@ namespace Groundbreak
         {
             if (Game.Placement == this) Game.Placement = null;
             if (_ghost != null) Destroy(_ghost);
-            if (_hl != null) Destroy(_hl.gameObject);
+            if (_hl != null)
+            {
+                if (_hl.sharedMaterial != null) Destroy(_hl.sharedMaterial); // created per controller in UpdateHighlight
+                Destroy(_hl.gameObject);
+            }
         }
 
         float StockLength => Selected != null ? Selected.Size.z : 0f;
