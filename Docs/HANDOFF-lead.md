@@ -34,18 +34,32 @@ before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` 
   job-catalog (492330a, 153 jobs), full-map (6ea95a7, ~260 buildings), blueprints (a267cfc, 46 plans). Nothing is local-only.
 - All helper sessions so far are DONE and merged; notes in `Docs/HANDOFF-<name>.md`, plus `Docs/JOBS.md`, `Docs/MAP.md`, `Docs/BLUEPRINTS.md`.
 
-## Sessions
-None running. Two are PROPOSED as cards in the lead chat (the user must click them or say "start"; then `start_session` with the proposal_id only):
-- map-followup, task_cf34d273: dress empty lots, plan ids on map buildings, catalog jobs across the whole map, workers out of the road,
-  SiteHud "Job Board" text, retire old Career Job Board, for-sale signs on claimed lots. Folder `Scripts/MapFollowup/`.
-- tutorials, task_38148f7b: business tutorials with pictures, and stop normal test runs rewriting `Resources/Tutorials/*.png`. Folder `Scripts/BusinessTutorials/`.
-Usage watch: session cron every 10 min (pause helpers at 85%). It dies with the lead session; re-create it.
+## Sessions (all Opus, own worktrees; report "<name> DONE @ <commit>" to the lead)
+| name | id | folder |
+|---|---|---|
+| map-followup | local_0a9e536b-d192-479a-b75d-c815596ca74b | `Scripts/MapFollowup/` |
+| tutorials | local_226d21d9-1006-4a75-9928-8528661fa526 | `Scripts/BusinessTutorials/` |
+| flip-houses | local_12b6916a-583d-46fb-80c5-ad106fd21131 | `Scripts/Flips/` |
+| subcontractors | local_c5fab46f-a9b2-474e-a19d-f229d99baee8 | `Scripts/Subs/` |
+| seasons-weather | local_f4f06bbe-f15c-4d23-8cef-3e60d6d56685 | `Scripts/Seasons/` |
+| heavy-equipment | local_78093859-acc6-4e64-9e6c-c49716d645da | `Scripts/Equipment/` |
+PROPOSED cards (app cap: 5 working at once per user message; user must click or say start, then `start_session` with proposal_id only):
+blueprint-designer task_94137282 (`Scripts/PlanDesigner/`), photo-mode task_5a052751 (`Scripts/Photo/`).
+User order (2026-11-26): new features BEFORE the code check. Order now: these 8 -> balance pass + small fixes -> full code check.
+Usage watch: session cron every 5 min (pause helpers at 85%). It dies with the lead session; re-create it.
 
 ## Left to do, in order
 1. Merge map-followup and tutorials when they report (look at `followup_*`, `tut_business_*` shots).
 2. Balance pass (prices, wages, pay, growth pace) and small fixes, after those two: stored stock hard to see on warehouse racking; held tool visible
    beside the open tablet; crew drywall/paint/dig/sod tasks lack tests; optional delivery fee (`Fleet.DeliveryFee`); cross-gable wing has no UI button;
    van model polish; boxy toilet model (`jobcat_toilet_*`); blueprint overlay room labels overlap fixture markers; map edge shows a dark void from the air.
+3. User request (2026-11-26): after everything above is finished, have one or two sessions go through every bit of code checking for errors
+   (split by folder, e.g. Core+building trades / Business+Town+Map+Integration; fix real bugs, add tests, report). Tracker row `n-codecheck`.
+4. New features the user picked (2026-11-26), to build after the code check, each in its own folder/session (tracker rows `f-*`):
+   flip houses (buy run-down map house, renovate, sell); subcontractors (hire out a trade at a premium); seasons + weather effects + storm events
+   (frozen ground, rain delays, hail/wind repair surges; one session); heavy equipment you operate (excavator, skid steer, boom lift, truss crane);
+   design-your-own blueprint on the tablet (code check + pricing, on the `HousePlan` format); photo mode + before/after job gallery.
+   Not picked: walkthroughs/callbacks, bidding, permits, safety/accidents, co-op.
 - The user wants the checklist of everything left written in every reply (the pinned list disappears) and the tracker artifact kept current.
 
 ## First things for the new lead
