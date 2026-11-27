@@ -67,6 +67,8 @@ namespace Groundbreak
         public static readonly List<Job> ActiveJobs = new List<Job>();
         public static readonly List<string> CompletedJobIds = new List<string>();
         public static int JobsCompleted, LifetimeRevenue;
+        /// <summary>Jobs paying less than this raise reputation by at most +1 (Docs/BALANCE.md).</summary>
+        public const int SmallJobPayout = 1000;
 
         public static event Action Changed;                 // any state change (UI refresh)
         public static event Action<CompanyStage> StageChanged;
@@ -135,7 +137,9 @@ namespace Groundbreak
             int pay = Mathf.RoundToInt(j.Payout * Mathf.Lerp(0.6f, 1.1f, Mathf.Clamp01(quality)) * (1f - Mathf.Min(0.3f, late * 0.02f)));
             Game.Wallet.Add(pay, $"Paid: {j.Title}");
             LifetimeRevenue += pay;
-            Reputation += Mathf.RoundToInt(Mathf.Lerp(-3f, 3f, Mathf.Clamp01(quality))) - (late > 0 ? 1 : 0);
+            int repGain = Mathf.RoundToInt(Mathf.Lerp(-3f, 3f, Mathf.Clamp01(quality)));
+            if (repGain > 1 && j.Payout < SmallJobPayout) repGain = 1;      // a small service call earns less word of mouth than a deck
+            Reputation += repGain - (late > 0 ? 1 : 0);
             foreach (var w in Workers) if (w.AssignedJobId == j.Id) w.AssignedJobId = null;
             Game.Toast($"Job done: {j.Title}. Paid ${pay:N0}");
             JobCompleted?.Invoke(j); RecomputeStage(); Changed?.Invoke();

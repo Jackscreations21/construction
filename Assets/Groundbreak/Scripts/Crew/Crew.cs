@@ -30,6 +30,7 @@ namespace Groundbreak
         public string JobId;
         public float Progress;      // 0..1
         public float QualitySum, QualityWeight;
+        public int MaterialsCharged;   // $ of the job's material budget bought so far (charged as the crew progresses)
         public float Quality => QualityWeight > 0f ? QualitySum / QualityWeight : 0.7f;
     }
 
@@ -241,6 +242,13 @@ namespace Groundbreak
                 }
                 if (days <= 0f) continue;
                 var sim = SimFor(j.Id, true);
+                // the crew needs the job's materials as it goes (the payout includes them): bought pro rata with progress
+                int matDue = Mathf.RoundToInt(j.MaterialBudget * Mathf.Clamp01(sim.Progress + days / LaborDays(j))) - sim.MaterialsCharged;
+                if (matDue > 0 && GameSettings.IsCareer && !GameSettings.UnlimitedMoney)
+                {
+                    if (!Game.Wallet.TrySpend(matDue, $"Materials (crew job): {j.Title}")) { Game.Toast($"{j.Title}: no money for materials (${matDue:N0}), the crew waited"); continue; }
+                }
+                if (matDue > 0) sim.MaterialsCharged += matDue;
                 sim.Progress += days / LaborDays(j); sim.QualitySum += q; sim.QualityWeight += days;
                 if (sim.Progress >= 1f)
                 {

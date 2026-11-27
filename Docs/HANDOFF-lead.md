@@ -41,27 +41,19 @@ before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` 
 - All helper sessions so far are DONE and merged; notes in `Docs/HANDOFF-<name>.md`, plus `Docs/JOBS.md`, `Docs/MAP.md`, `Docs/BLUEPRINTS.md`.
 
 ## AUTONOMOUS DAY (user away all of 2026-11-27; "you will be on your own to finish the game")
-Resumed the 7 helpers ~15:50 UTC. main = c1d7e79 (map-followup merged, 125 tests / 124 pass / 1 skipped). Usage cron every 15 min: pause at 85%,
-auto-resume after the 5-hour reset (one-shot cron), never auto-resume on a weekly limit.
-Plan: merge each helper as it reports DONE (tree-identical branches may reuse the helper's own full-suite result; otherwise run the suite through
-unity-run.sh) -> balance pass + small fixes -> full code check (2 sessions) -> final full run, push, summary for the user.
-Starting NEW sessions without the user: try `start_session` (user_asked) in the side-sessions-event turn; if refused, resume an idle finished helper
-by SendMessage and give it the task (map-followup for balance/small fixes; job-catalog and blueprints or full-map for the two code-check halves),
-telling it to use subagents for reading so its context stays low.
+**main = be9f58f, pushed: EVERY feature merged** (map-followup, flips, photo mode, heavy equipment, seasons, subcontractors, plan designer,
+business tutorials). 171 tests / 166 pass / 0 fail / 5 skipped by design (windowed-only captures). Normal runs no longer rewrite tutorial PNGs.
+Unity needs the Unity Hub app running for its license (exit 198 otherwise); reopen it from the Start menu (it is a Store app).
+`start_session` is refused in non-user turns, so finishing work was handed to existing sessions / a subagent (started ~17:20 UTC):
+- balance pass: background subagent of the lead (own worktree; reports branch + commit) -> `Tests/BalanceTests.cs`, `Docs/BALANCE.md`.
+- map visual fixes: map-followup session local_0a9e536b-d192-479a-b75d-c815596ca74b (branch claude/eloquent-tharp-51b6ca) -> "map-fixes DONE".
+- small fixes: flip-houses session local_12b6916a-583d-46fb-80c5-ad106fd21131 (branch claude/nifty-swanson-4ed79b) -> "small-fixes DONE", `Docs/HANDOFF-small-fixes.md`.
+After those merge: full code check in two halves (building trades+Core / business+town+map+new features), then final full run, push, summary.
+A SendMessage assigning new work to the tutorials session was denied by the permission classifier; don't retry that route for it.
+Usage cron every 30 min (pause at 80%, auto-resume after 5-hour reset, never on weekly).
 
-## Sessions (all Opus, own worktrees; report "<name> DONE @ <commit>" to the lead)
-| name | id | folder |
-|---|---|---|
-| map-followup | local_0a9e536b-d192-479a-b75d-c815596ca74b | `Scripts/MapFollowup/` |
-| tutorials | local_226d21d9-1006-4a75-9928-8528661fa526 | `Scripts/BusinessTutorials/` |
-| flip-houses | local_12b6916a-583d-46fb-80c5-ad106fd21131 | `Scripts/Flips/` |
-| subcontractors | local_c5fab46f-a9b2-474e-a19d-f229d99baee8 | `Scripts/Subs/` |
-| seasons-weather | local_f4f06bbe-f15c-4d23-8cef-3e60d6d56685 | `Scripts/Seasons/` |
-| heavy-equipment | local_78093859-acc6-4e64-9e6c-c49716d645da | `Scripts/Equipment/` |
-PROPOSED cards (app cap: 5 working at once per user message; user must click or say start, then `start_session` with proposal_id only):
-blueprint-designer task_94137282 (`Scripts/PlanDesigner/`), photo-mode task_5a052751 (`Scripts/Photo/`).
-User order (2026-11-26): new features BEFORE the code check. Order now: these 8 -> balance pass + small fixes -> full code check.
-Usage watch: session cron every 5 min (pause helpers at 85%). It dies with the lead session; re-create it.
+## Sessions
+All earlier helper sessions are DONE and merged; ids are in `list_sessions {linked:true}`.
 
 ## Left to do, in order
 1. Merge map-followup and tutorials when they report (look at `followup_*`, `tut_business_*` shots).
