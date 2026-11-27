@@ -102,7 +102,8 @@ namespace Groundbreak
             if (p.Roll)
             {
                 _rollLeft.TryGetValue(p.Id, out float left);
-                while (left < len) { if (!FinishStock.Take(p.Id)) return null; left += p.Length; }
+                // keep what was already unrolled if a later roll is missing (it's on site, not lost)
+                while (left < len) { if (!FinishStock.Take(p.Id)) { _rollLeft[p.Id] = left; return null; } left += p.Length; }
                 _rollLeft[p.Id] = left - len;
             }
             else
@@ -363,7 +364,7 @@ namespace Groundbreak
         {
             if (HasBaffle(end)) { Game.Toast("Baffle already in this bay"); return null; }
             if (!FinishStock.Take(BaffleId)) return null;
-            if (!FinishStock.Take(StaplesId, 6)) return null;
+            if (!FinishStock.Take(StaplesId, 6)) { Game.Stock.Add(BaffleId, 1); return null; }   // give the baffle back
             // ceiling face: N = down; build in a frame on top of the joists: x across the bay, y along the joist away from the wall
             Vector3 up = -ceiling.N;
             var joistTop = ceiling.World(bay.R.center.x, 0f, -bay.Depth); // depth into framing = up
@@ -403,8 +404,9 @@ namespace Groundbreak
         {
             foreach (var p in Poly) if (p != null && p.Fp.SameFace(fp)) { Game.Toast("Poly already on this wall"); return p; }
             float area = fp.Bounds.width * fp.Bounds.height / (Units.Foot * Units.Foot);
-            if (!FinishStock.Take(PolyId, Mathf.CeilToInt(area * 1.1f))) return null;
-            if (!FinishStock.Take(StaplesId, Mathf.CeilToInt(area / 4f))) return null;
+            int polySf = Mathf.CeilToInt(area * 1.1f);
+            if (!FinishStock.Take(PolyId, polySf)) return null;
+            if (!FinishStock.Take(StaplesId, Mathf.CeilToInt(area / 4f))) { Game.Stock.Add(PolyId, polySf); return null; }   // give the poly back
             var go = new GameObject("VaporPoly");
             go.transform.SetPositionAndRotation(fp.Origin, fp.Rotation);
             go.AddComponent<FinishLayer>().Kind = "poly";

@@ -66,7 +66,7 @@ namespace Groundbreak
         public static FormOutline Active { get { for (int i = All.Count - 1; i >= 0; i--) if (All[i].Closed && !All[i].Stripped) return All[i]; return null; } }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { All.Clear(); Building = null; }
+        static void ResetStatics() { All.Clear(); Building = null; _kickerLeft = 0f; }
 
         static readonly float[] Widths = { 3.5f, 5.5f, 7.25f, 9.25f, 11.25f };
         static readonly string[] Prefix = { "2x4x", "2x6x", "2x8x", "2x10x", "2x12x" };
@@ -238,7 +238,7 @@ namespace Groundbreak
             piece.transform.SetParent(o.Root.transform, true);
             var fp = piece.gameObject.AddComponent<FormPart>(); fp.Run = r; fp.Outline = o; fp.Role = "stake";
             piece.Fasten();
-            foreach (var b in r.Boards) b.Fasten();   // duplex nails through the stake into the board
+            foreach (var b in r.Boards) if (b != null) b.Fasten();   // duplex nails through the stake into the board
             r.StakeT.Add(t); r.StakeT.Sort(); r.Stakes.Add(piece);
             return true;
         }
@@ -392,15 +392,17 @@ namespace Groundbreak
             {
                 foreach (var b in r.Boards)
                 {
+                    if (b == null) continue;   // already pulled with the pry bar (and refunded there)
                     bool clean = o.Oiled || rnd.NextDouble() < 0.4;
                     bool full = b.Size.z >= b.Def.Size.z - 0.001f;
                     if (clean && full) { Game.Stock.Add(b.Def.Id, 1); reused++; }
                     else { Game.Stock.Scrap.Add((b.Def.Id, b.Size.z)); scrap++; }
                     Object.Destroy(b.gameObject);
                 }
-                foreach (var s in r.Stakes) { if (rnd.NextDouble() < 0.85) { Game.Stock.Add(StakeId, 1); stakes++; } Object.Destroy(s.gameObject); }
+                foreach (var s in r.Stakes) { if (s == null) continue; if (rnd.NextDouble() < 0.85) { Game.Stock.Add(StakeId, 1); stakes++; } Object.Destroy(s.gameObject); }
                 foreach (var s in r.Braces)
                 {
+                    if (s == null) continue;
                     if (s.Def.Id == StakeId) { Game.Stock.Add(StakeId, 1); stakes++; } else Game.Stock.Scrap.Add((s.Def.Id, s.Size.z));
                     Object.Destroy(s.gameObject);
                 }

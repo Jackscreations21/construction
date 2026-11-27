@@ -451,6 +451,7 @@ namespace Groundbreak
             }
             if (!Ready(0.4f)) return;
             if (atTruck && BarrowYards <= 0.001f) { BarrowYards = ord.Truck.Discharge(BarrowCubicFeet / 27f); Game.Toast($"Wheelbarrow loaded ({BarrowYards * 27f:0.0} cu ft)"); }
+            else if (pour != null && pour.Element != null) Game.Toast("That concrete has already set");
             else if (pour != null && BarrowYards > 0) { pour.AddConcrete(hit.point, BarrowYards / FormSystem.YardsPerM3, ord); BarrowYards = 0; Game.Toast("Dumped the wheelbarrow"); }
             else if (pour != null) Game.Toast("Out of chute reach - load the wheelbarrow at the chute");
         }

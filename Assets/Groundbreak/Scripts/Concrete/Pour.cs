@@ -54,7 +54,7 @@ namespace Groundbreak
         /// <summary>The pour for the forms containing p (created on demand for the active forms).</summary>
         public static PourSystem ForPoint(Vector3 p)
         {
-            foreach (var ps in All) if (ps.Outline.Contains(p) || ps.Element != null && ps.Element.Contains(p)) return ps;
+            foreach (var ps in All) if (ps != null && (ps.Outline.Contains(p) || ps.Element != null && ps.Element.Contains(p))) return ps;
             var o = FormSystem.Active;
             if (o == null || !o.Contains(p)) return null;
             return Begin(o);
@@ -109,6 +109,8 @@ namespace Groundbreak
             _col = gameObject.AddComponent<MeshCollider>();
         }
 
+        void OnDestroy() { All.Remove(this); }
+
         bool In(int x, int z) => x >= 0 && z >= 0 && x < _w && z < _h && _in[z * _w + x];
         float Thick(int i) => _top[i] - _ground[i];
         bool Cell(Vector3 p, out int i)
@@ -150,6 +152,7 @@ namespace Groundbreak
         /// <summary>Chute discharge for dt real seconds (~1/4 yd per game minute, a typical chute pour rate).</summary>
         public float Discharge(ReadyMixTruck truck, Vector3 at, float dt)
         {
+            if (Element != null) return 0f;   // set slab: don't pull concrete out of the drum (AddConcrete would drop it)
             float rate = 0.25f * 1440f / GameClock.RealSecondsPerDay;   // yd per real second
             float yd = truck.Discharge(rate * dt);
             if (yd > 0) AddConcrete(at, yd / FormSystem.YardsPerM3, truck.Order);
@@ -253,6 +256,7 @@ namespace Groundbreak
                 r.BlownOut = true;
                 foreach (var b in r.Boards)
                 {
+                    if (b == null) continue;   // pried off with the pry bar
                     b.transform.position += r.Out * (2.5f * Units.Inch);
                     b.transform.rotation = Quaternion.AngleAxis(-12f, r.Dir) * b.transform.rotation;
                 }
@@ -355,7 +359,8 @@ namespace Groundbreak
             if (!Plastic) return "Concrete has set";
             Vector2 d = CTool.XZ(b - a); if (d.magnitude < 0.05f) return "Pick two points along the joint";
             d.Normalize();
-            float age = Age(NearestInside(a));
+            int ci = NearestInside(a); if (ci < 0) return "No concrete here";
+            float age = Age(ci);
             if (age > FinalSetMinutes) return "Too hard to groove - you'd have to saw-cut";
             var poly = Outline.Polygon; float t0 = float.MaxValue, t1 = float.MinValue; Vector2 o = CTool.XZ(a);
             for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)

@@ -128,17 +128,26 @@ namespace Groundbreak
         {
             var uv = Fp.ToUV(world);
             float rad = 0.9f, rate = Units.In(6f) * dt, vol = 0f;
-            for (int j = 0; j < Ny; j++)
-                for (int i = 0; i < Nx; i++)
+            // pass 0 measures the volume and pays for it in bags; pass 1 lays it down (no bags = no insulation)
+            for (int pass = 0; pass < 2; pass++)
+            {
+                for (int j = 0; j < Ny; j++)
+                    for (int i = 0; i < Nx; i++)
+                    {
+                        float x = Fp.Bounds.xMin + i * Cell, y = Fp.Bounds.yMin + j * Cell;
+                        float d2 = ((x - uv.x) * (x - uv.x) + (y - uv.y) * (y - uv.y)) / (rad * rad);
+                        if (d2 > 1f) continue;
+                        float add = rate * (1f - d2) * (1f - d2);
+                        if (pass == 0) vol += add * Cell * Cell; else D[j * Nx + i] += add;
+                    }
+                if (pass == 0)
                 {
-                    float x = Fp.Bounds.xMin + i * Cell, y = Fp.Bounds.yMin + j * Cell;
-                    float d2 = ((x - uv.x) * (x - uv.x) + (y - uv.y) * (y - uv.y)) / (rad * rad);
-                    if (d2 > 1f) continue;
-                    float add = rate * (1f - d2) * (1f - d2);
-                    D[j * Nx + i] += add; vol += add * Cell * Cell;
+                    int bags = 0;
+                    while (_volLeft - vol + bags * _bagVolume < 0f) bags++;
+                    if (bags > 0 && !FinishStock.Take(Insulation.LooseFillId, bags)) return false;
+                    _volLeft += bags * _bagVolume - vol;
                 }
-            _volLeft -= vol;
-            while (_volLeft < 0f) { if (!FinishStock.Take(Insulation.LooseFillId)) { _dirty = true; return false; } _volLeft += _bagVolume; }
+            }
             _dirty = true;
             return true;
         }
