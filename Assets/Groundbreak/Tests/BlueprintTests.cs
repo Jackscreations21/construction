@@ -218,10 +218,10 @@ namespace Groundbreak.Tests
                 var at = At();
                 PlanOverlay.Show(p, at, floor);
                 yield return null;
-                float w = p.WidthFt * Units.Foot, d = p.DepthFt * Units.Foot, s = Mathf.Max(w, d * 1.6f);
+                float w = p.WidthFt * Units.Foot, d = p.DepthFt * Units.Foot, s = Mathf.Max(w * 0.62f, d * 1.05f);
                 var c = at.World(p.WidthFt / 2f, p.DepthFt / 2f);
                 string tag = $"bp_{id}" + (p.Floors > 1 ? $"_f{floor + 1}" : "");
-                Shot(Cam(c + new Vector3(0f, s * 0.95f + 3f, -s * 0.22f), c), tag);
+                Shot(Cam(c + new Vector3(0f, s + 3f, -s * 0.2f), c), tag);
                 if (eye) Shot(Cam(at.World(-8f, -16f, 1.7f), c), tag + "_eye");
             }
             PlanOverlay.Hide();

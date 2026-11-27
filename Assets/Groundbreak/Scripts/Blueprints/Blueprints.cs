@@ -61,7 +61,7 @@ namespace Groundbreak
             foreach (var b in _lib) HousePlans.Register(b);
             // Development's own single-story plans get their types
             void Tag(string id, string cat) { var p = HousePlans.Get(id); if (p != null && !(p is Blueprint)) { p.Category = cat; p.Group = PlanGroup.Residential; p.MinStage = CompanyStage.Builder; } }
-            Tag("starter-900", "starter"); Tag("cottage-1200", "cottage"); Tag("ranch-1600", "ranch");
+            Tag("starter-900", "starter");
             _shadows.Clear();
         }
 

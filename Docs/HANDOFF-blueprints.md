@@ -1,6 +1,6 @@
-# Blueprints — WIP handoff (stopped on plan limit, not compiled or tested yet)
-1. Done in `Scripts/Blueprints/`: `Blueprint : HousePlan` (open-plan walls, unit-aware doors, stairs, explicit doors), MEP rules, code checks, system takeoff (wood/post-frame/PEMB/CMU), validator, products, overlay layer, `Blueprints` registry.
-2. Shared edits (additive): HousePlan.cs (virtual Finish/ComputeTakeoff/SqFt/Summary; Category/Group/MinStage; RoofType/FoundationType values; PlanOpening.IsOverhead), DevVisuals.cs (`PlanOverlay.Shown` event), DevApps.cs (group/type filters; spec plans residential ≤ 60'), DevelopmentTests.cs (count ≥ 6, $/sf on Dev's six only).
-3. NOT written yet: `BlueprintLibrary.Define(List<Blueprint>)` (Blueprints.cs calls it — the project won't compile until it exists). Planned ids: shared note `blueprint-ids.md`. Layouts were drafted in-session (ranch modules Garage/Public/Wing at D=30, Hickory/Elm two-story, Laurel split-entry, duplex, townhome unit, ADU, carriage house, barns, shops, retail/diner/office/strip mall/c-store, warehouses, yard bay/shop/HQ).
-4. Next: write the library, compile, `Tests/BlueprintTests.cs` (validator on all plans, takeoff sanity, overlay per plan, `Logs/shots/bp_*.png`), look at the shots, write Docs/BLUEPRINTS.md, merge main (now 9369180), report to the lead.
-5. Not merged with main yet; no tests run.
+# Blueprints — handoff
+1. Done: 46 plans (41 in `BlueprintLibrary.cs` + Development's starter-900 and its own plain plans redrawn where broken). Format, MEP, code checks, takeoff, validator, overlay layer, Plans app filters. See `Docs/BLUEPRINTS.md`.
+2. Tests: `Tests/BlueprintTests.cs` (7 tests: registry/categories/stages, validator on every plan = 0 errors, broken plans caught, takeoff $/sf ranges, code numbers, overlay on all 55 plan floors, 30+ screenshots `Logs/shots/bp_*.png`).
+3. Shared edits (additive): HousePlan.cs, DevVisuals.cs, DevApps.cs, DevelopmentTests.cs (listed in BLUEPRINTS.md). ranch-1600 is now a Blueprint (the original had no way into Bed 2).
+4. Stairwells count on both floors in `SqFt` (keeps twostory-2400 at 2,400 sq ft).
+5. Ideas: 3D shell preview per plan, more commercial types (church, school, clinic), basement plans with finished lower levels.

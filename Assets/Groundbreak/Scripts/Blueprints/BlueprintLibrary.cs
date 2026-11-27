@@ -12,6 +12,7 @@ namespace Groundbreak
         public static void Define(List<Blueprint> l)
         {
             // ------------------------------------------------------------ residential: Development's ids redrawn with stairs/halls
+            l.Add(Ranch1600());
             l.Add(Cottage1200());
             l.Add(Craftsman1920());
             l.Add(TwoStory("twostory-2400", "The Elm (two-story)", "Colonial", 30f, 30f, 9f, true, FoundationType.Basement, 0.7f));
@@ -146,6 +147,17 @@ namespace Groundbreak
             b.R("Bath", 16, 16, 21, 24).R("Laundry", 16, 24, 21, 28).R("Master", 21, 16, 36, 28);
             b.FrontDoorFt = 13.5f;
             b.Notes = "1,008 sq ft starter: 36x28 slab ranch, one hall bath, laundry off the kitchen.";
+            return b;
+        }
+
+        static Blueprint Ranch1600()
+        {
+            var b = House("ranch-1600", "The Cedar (ranch)", "Ranch", "ranch", 50, 32, 3, 4, 0.6f);
+            b.WallHeightFt = 9f; b.Roof = RoofType.Hip; b.Pitch = 6f; b.FrontDoorFt = 16f;
+            b.R("Living", 0, 0, 20, 16).R("Kitchen", 20, 0, 36, 16).R("Dining", 36, 0, 50, 16);
+            b.R("Master", 0, 16, 14, 32).R("Hall", 14, 16, 40, 20).R("Bed 3", 40, 16, 50, 32);
+            b.R("Master Bath", 14, 20, 20, 32).R("Laundry", 20, 20, 26, 32).R("Bath", 26, 20, 32, 32).R("Bed 2", 32, 20, 40, 32);
+            b.Notes = "Development's Cedar redrawn with a bedroom hall (the original had no way into Bed 2).";
             return b;
         }
 
@@ -321,7 +333,7 @@ namespace Groundbreak
         static Blueprint Shed(string id, string name, float w, float d, CompanyStage st, FoundationType fnd)
         {
             var b = Outbuilding(id, name, "Shed", "shed", w, d, st);
-            b.WallHeightFt = 7f; b.Foundation = fnd; b.SlabIn = fnd == FoundationType.Slab ? 4f : 0f; b.Pitch = 6f;
+            b.WallHeightFt = 8f; b.Foundation = fnd; b.SlabIn = fnd == FoundationType.Slab ? 4f : 0f; b.Pitch = 6f;
             b.R("Shed", 0, 0, w, d).Door(0, w / 2f, "door-shed-dbl60");
             b.Notes = fnd == FoundationType.Skids ? "On 4x6 pressure-treated skids over a gravel pad; 2x4 walls, 3/4\" T&G floor." : "On a 4\" slab; 2x4 walls.";
             return b;

@@ -187,6 +187,7 @@ namespace Groundbreak
             if (a == RoomKind.Stair || b == RoomKind.Stair) return (a == RoomKind.Stair ? b : a) == RoomKind.Hall || (a == RoomKind.Stair ? b : a) == RoomKind.Living
                                                                || (a == RoomKind.Stair ? b : a) == RoomKind.Corridor || (a == RoomKind.Stair ? b : a) == RoomKind.Lobby || a == b;
             if (a == RoomKind.Hall || b == RoomKind.Hall) return true;
+            if ((a == RoomKind.Dining || b == RoomKind.Dining) && (a == RoomKind.Corridor || b == RoomKind.Corridor || a == RoomKind.Lobby || b == RoomKind.Lobby)) return true;   // restaurant dining room → corridor
             return resA == resB;
         }
         public static bool Habitable(RoomKind k) => k == RoomKind.Living || k == RoomKind.Kitchen || k == RoomKind.Dining || k == RoomKind.Bedroom || k == RoomKind.Flex || k == RoomKind.Office;
