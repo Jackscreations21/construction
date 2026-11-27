@@ -12,4 +12,12 @@
    `UI/Tablet.cs` (T doesn't close the tablet while typing in a text field).
 4. Limits: rectangular footprint and rooms (no L shapes, no angled walls). Auto window/door rules still run; players can switch single ones off.
    Copying two outbuilding plans can gain one extra auto opening (still valid).
-5. Ideas: L-shaped footprints, 3D shell preview, plans that carry across save games, an "Edit in designer" button in the Plans app.
+5. Status (paused for the night): full PlayMode suite passed on this branch BEFORE merging main (128 passed, 0 failed, 2 skipped = windowed-only
+   UI captures). main aa6ed35 (map-followup) is merged in, conflict-free. Screenshots looked at: designer_drawing_*, designer_overlay_top/eye.
+   LEFT TO DO:
+   a. One full PlayMode run on the merged branch, via `unity-run.sh` (shared notes folder of local_54073d16...), batchmode; expect 0 failures.
+   b. If (a) shows 0 `error CS`: one windowed run via the wrapper with `-testFilter Groundbreak.Tests.PlanDesignerTests.DesignerTabletScreenshots`
+      (no -batchmode) → look at `Logs/shots/designer_ui_editor/doors/problems/start.png` for clipped/overlapping IMGUI and fix if needed.
+   c. Revert test-run artifacts before committing (`git checkout -- Assets/Groundbreak/Resources/Tutorials ProjectSettings`).
+   d. SendMessage the lead: "blueprint-designer DONE @ <commit>" with branch claude/vigorous-napier-eede36 and test counts.
+6. Ideas: L-shaped footprints, 3D shell preview, plans that carry across save games, an "Edit in designer" button in the Plans app.
