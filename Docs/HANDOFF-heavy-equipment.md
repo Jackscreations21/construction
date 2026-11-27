@@ -14,22 +14,14 @@ Unity ONLY via the shared `unity-run.sh` lock wrapper (see lead's rule), run in 
   daily costs, tablet app "Equipment", save key "equipment", on-foot "E: climb into" prompt).
 - **No shared/Core file edited.**
 
-## Test status (filtered run of EquipmentTests, 0 compile errors)
-- Pass: RentBuyAndFreeBuild, SkidSteer_ForksAndGrading, BoomLift_RaisesPlayerToWorkAtHeight.
-- **Fail: MiniExcavator_DigsFootingTrench_SpoilAndTruck** at the spoil-pile check: `Dump()` reports >0.05 m³ dumped but the pad
-  height at the dump point doesn't rise. The test now prints diagnostics (dump point, `Earth.OnPad`, heights, max rise anywhere).
-  Suspects: `MiniExcavator.DumpAmount` takes the "off the lot" branch (done = bank when `!Earth.Workable`), or the deposit lands
-  somewhere else. Run the filtered test once and read the message.
-- **Fail: Crane_LoadChartAndSetsTruss** at `Assert.IsTrue(crane.OutriggersDown)`: the outriggers take ~4 s; the wait is now 5.5 s
-  (not re-run yet). The crane wire rope was drawn at the spawn spot; fixed with `AfterMove` (not re-verified).
-- Screenshots looked at: equip_01 excavator close, equip_05 skid steer forks, equip_07 boom lift raised (all good).
-  Not yet produced / looked at: equip_02 digging, equip_03 loading truck, equip_08–10 crane.
+## Status: DONE
+- Full PlayMode suite (after merging main c1d7e79+): 130 tests, 129 passed, 0 failed, 1 skipped (UICapture, by design). 0 error CS.
+- All 5 EquipmentTests pass. Screenshots `Logs/shots/equip_01..10_*.png` were looked at: excavator close, digging the trench,
+  loading the dump truck; skid steer bucket + forks with an OSB lift; boom lift stowed + raised; crane close, swinging a truss onto
+  the walls, trusses set.
+- Fixes during testing: crane wire rope now follows the truck (`Machine.AfterMove` hook); tests wait for the 4 s outrigger deploy
+  and load the truck from undug ground.
 
-## Left, in order
-1. Filtered run (`-testFilter Groundbreak.Tests.EquipmentTests`), fix the excavator spoil + crane failures, look at all `equip_*.png`.
-2. Merge latest main, ONE full PlayMode suite run via the wrapper, check `Logs/playmode.xml`.
-3. Commit, SendMessage lead "heavy-equipment DONE @ <commit>" with branch and test counts.
-
-## Known simplifications
-Excavator blade only raises/lowers; boom lift doesn't enforce the 10.5 m reach limit; booms don't collide with the world;
-crane bed truss bundle never shrinks; no hook pendulum.
+## Ideas / known simplifications
+Excavator blade only raises/lowers (no dozing); boom lift doesn't enforce the 10.5 m reach limit; booms don't collide with the world;
+crane bed truss bundle never shrinks; no hook pendulum. Crews could later operate machines (Crew dig tasks via `MiniExcavator.DigPass`).
