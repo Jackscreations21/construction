@@ -29,15 +29,26 @@ namespace Groundbreak
             Town.Destroyed -= Clear; Town.Destroyed += Clear;
         }
 
-        static void Clear() { if (Root != null) Object.Destroy(Root); Root = null; ByLot.Clear(); }
+        static void Clear()
+        {
+            // meshes made from code are not freed with their GameObjects: destroy them, or every town rebuild leaks them
+            if (Root != null)
+            {
+                foreach (var mf in Root.GetComponentsInChildren<MeshFilter>(true)) if (mf.sharedMesh != null) Object.Destroy(mf.sharedMesh);
+                Object.Destroy(Root);
+            }
+            Root = null; ByLot.Clear();
+        }
+
+        public static int Vertices { get; private set; }
 
         /// <summary>(Re)builds the dressing for every lot that is free now; claimed lots get theirs too, hidden, so a released lot shows it again.</summary>
         public static void Build()
         {
             Clear();
             if (Town.Root == null) return;
+            // its own root (not under Town.Root): the town itself builds nothing on the player's pad; this is removable scenery
             Root = new GameObject("VacantLotDressing");
-            Root.transform.SetParent(Town.Root.transform, false);
             Root.AddComponent<VacantLotStreamer>();
             foreach (var l in Town.Lots)
             {
@@ -47,6 +58,9 @@ namespace Groundbreak
                 try { ByLot[l.Id] = Dress(l); } catch (System.Exception e) { Debug.LogException(e); }
             }
             Refresh();
+            Vertices = 0;
+            foreach (var mf in Root.GetComponentsInChildren<MeshFilter>(true)) if (mf.sharedMesh != null) Vertices += mf.sharedMesh.vertexCount;
+            Debug.Log($"[VacantLots] dressed {ByLot.Count} lots + build-site margins: {Vertices:N0} vertices");
         }
 
         public static void Refresh()
