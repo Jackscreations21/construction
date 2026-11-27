@@ -5,7 +5,7 @@
   MapWorld (100 m cells, MapStreamer, blocking grid), MapMaterials/MapTextures, and the model library in `Models/`:
   Residential (9 types), Commercial (16), RuralIndustrial (11: warehouse, metalshop, lumberyard, concreteplant, selfstorage,
   contractoryard, watertower, barn, silo, grainbins, machineshed), Props (24 + Wire/Fence), MapText, MapTrees.
-- `Tests/FullMapTests.cs` (5 tests, 26 screenshots `Logs/shots/map_*.png`) pass; full PlayMode suite: see the commit message / report.
+- `Tests/FullMapTests.cs` (5 tests, 26 screenshots `Logs/shots/map_*.png`) pass; full PlayMode suite after merging main 492330a: 114 tests, 113 passed, 0 failed, 1 ignored (UICaptureTests.CaptureAllUI).
 - Build stats (test machine): 318 cells, ~1,020 renderers, ~3.2 M triangles in total (only cells within 460 m are drawn),
   ~6,600 colliders, ~260 map buildings, ~5,900 trees, built in ~2-3 s.
 
