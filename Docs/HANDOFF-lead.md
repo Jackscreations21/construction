@@ -22,6 +22,12 @@ The user is not a programmer: keep replies short and plain, say what changed in 
 - App limits: sessions can only be **started** in a turn the user typed (cron/peer-message turns can only propose cards); resuming an existing
   session by SendMessage works from any turn. `gh` is not installed: merge locally, `git push origin main`.
 
+## ONE Unity at a time, machine-wide (2026-11-27: 8 parallel runs crashed the user's 16 GB PC)
+Every session, the lead included, starts Unity only through the lock wrapper in the shared notes folder:
+`bash "C:/Users/jackf/AppData/Local/Claude-Data/claude_pzs8sxrjxfjjc/side-session-notes/local_54073d16-4b24-4e7f-9bca-a4603ff30909/unity-run.sh" <Unity args>`
+(waits its turn, runs, releases). Put this rule in every new session brief. Windowed runs only after a batchmode run shows 0 `error CS`
+(a windowed Unity with script errors pops a Safe Mode dialog on the user's screen). Prefer at most 4 helpers working at once.
+
 ## Merge procedure
 `git merge --no-ff <branch>`; run all PlayMode tests (command in CLAUDE.md, never `-nographics`, one Unity per folder at a time — check no run is going);
 check `Logs/playmode.xml`; LOOK at new `Logs/shots/*.png`; push; tell running sessions to `git merge main`; update tracker + checklist.

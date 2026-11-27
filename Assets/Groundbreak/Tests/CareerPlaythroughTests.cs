@@ -200,7 +200,8 @@ namespace Groundbreak.Tests
             HandymanStart.MovePlayer(cjLot.Center, 0f);
             yield return new WaitForSeconds(0.7f);
             Assert.AreEqual(cj.Id, Crew.HereJobId, "standing on the job's lot = that job is 'here'");
-            Assert.IsTrue(CrewManager.ArrivalOverride.HasValue && Vector3.Distance(CrewManager.ArrivalOverride.Value, cjLot.Parking) < 4f, "crew truck pulls up at the lot");
+            Assert.IsTrue(CrewManager.ArrivalOverride.HasValue && Vector3.Distance(CrewManager.ArrivalOverride.Value, cjLot.Parking) < 9f, "crew truck pulls up at the lot");
+            Assert.IsFalse(Town.OnRoad(CrewManager.ArrivalOverride.Value), "crew waits off the street (MapFollowup)");
             var task = Crew.AddTask(new StockTask { Ref = "2x4x8", Count = 1, A = cjLot.Center, B = cjLot.Center });
             Assert.AreEqual(cj.Id, task.JobId, "tasks added on a town job are tagged with that job");
             Crew.RemoveTask(task);
