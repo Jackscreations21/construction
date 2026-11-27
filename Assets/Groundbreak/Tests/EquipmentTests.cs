@@ -213,12 +213,12 @@ namespace Groundbreak.Tests
             yield return Frames(2);
             Vector3 bed = truck.transform.TransformPoint(new Vector3(0, 2.3f, -1.55f));
             float loadsBefore = truck.LoadYd;
-            ex.DigPass(new Vector3(-2.0f, grade, 9.0f), bottom);
+            Assert.Greater(ex.DigPass(new Vector3(-2.0f, grade, 8.1f), bottom), 0.02f, "fresh bucketful");
             ex.PoseTipAt(bed);
             Assert.IsTrue(truck.OverBed(ex.BucketTip), "bucket over the dump body");
             Assert.Greater(ex.Dump(), 0f);
             Assert.Greater(truck.LoadYd, loadsBefore, "spoil went into the truck");
-            ex.DigPass(new Vector3(-2.3f, grade, 9.0f), bottom);
+            ex.DigPass(new Vector3(-2.6f, grade, 8.1f), bottom);
             ex.PoseTipAt(bed + Vector3.up * 0.4f);
             yield return Frames(3);
             Vector3 tp = truck.transform.position;
