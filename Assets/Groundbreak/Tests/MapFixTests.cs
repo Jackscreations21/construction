@@ -200,6 +200,30 @@ namespace Groundbreak.Tests
         }
 
         [UnityTest]
+        public IEnumerator RebuildingTheMapDoesNotLeak()
+        {
+            yield return BuildTown();
+            var raw = new List<int>(); var swept = new List<int>(); var mats = new List<int>(); var texs = new List<int>();
+            for (int i = 0; i < 10; i++)
+            {
+                Town.Destroy();
+                yield return Frames(3);
+                raw.Add(Resources.FindObjectsOfTypeAll<Mesh>().Length);   // after the explicit mesh destroys, before the sweep
+                yield return MapMemory.SweepNow();
+                swept.Add(Resources.FindObjectsOfTypeAll<Mesh>().Length);
+                mats.Add(Resources.FindObjectsOfTypeAll<Material>().Length);
+                texs.Add(Resources.FindObjectsOfTypeAll<Texture2D>().Length);
+                Town.Ensure();
+                yield return Frames(2);
+            }
+            Debug.Log($"[MapFix] live meshes after each town teardown: raw {string.Join(",", raw)}; swept {string.Join(",", swept)}; materials {string.Join(",", mats)}; textures {string.Join(",", texs)}");
+            Assert.LessOrEqual(raw[9], raw[1] + 40, "map / far ring / dressing meshes are destroyed with the town: " + string.Join(",", raw));
+            Assert.LessOrEqual(swept[9], swept[1] + 20, "live meshes keep growing across rebuilds: " + string.Join(",", swept));
+            Assert.LessOrEqual(mats[9], mats[1] + 20, "live materials keep growing: " + string.Join(",", mats));
+            Assert.LessOrEqual(texs[9], texs[1] + 20, "live textures keep growing: " + string.Join(",", texs));
+        }
+
+        [UnityTest]
         public IEnumerator WeedsReadAsWeedsAndFollowSeasons()
         {
             yield return BuildTown();

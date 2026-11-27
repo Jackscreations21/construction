@@ -36,6 +36,7 @@ namespace Groundbreak
         }
 
         static Dictionary<Vector2Int, Cell> _cells;
+        static readonly List<Mesh> _owned = new List<Mesh>();
         static Transform _root;
         static MapBuild _b;
         static int _buildings, _trees;
@@ -60,6 +61,9 @@ namespace Groundbreak
         {
             if (Root == null) return;
             Root.SetActive(false);
+            // meshes made from code are not freed with their GameObjects: every rebuild leaked the whole map (crashed long test runs)
+            foreach (var m in _owned) if (m != null) UnityEngine.Object.Destroy(m);
+            _owned.Clear();
             UnityEngine.Object.Destroy(Root);
             Root = null; _cells = null; _dressing.Clear();
         }
@@ -111,6 +115,7 @@ namespace Groundbreak
         {
             if (Root != null || !Town.Exists) return;
             float t0 = Time.realtimeSinceStartup;
+            var before = new HashSet<Mesh>(Resources.FindObjectsOfTypeAll<Mesh>());
             MapLayout.Ensure();
             Root = new GameObject("Map");
             _root = Root.transform;
@@ -158,6 +163,11 @@ namespace Groundbreak
             catch (Exception e) { Debug.LogError("[Map] gap fill failed: " + e); }
 
             Finish();
+            // own every mesh this build made (cells, hills, meadows, map houses), not shared / cached ones that existed before
+            _owned.Clear();
+            var seen = new HashSet<Mesh>();
+            foreach (var mf in Root.GetComponentsInChildren<MeshFilter>(true)) if (mf.sharedMesh != null && !before.Contains(mf.sharedMesh) && seen.Add(mf.sharedMesh)) _owned.Add(mf.sharedMesh);
+            foreach (var mc in Root.GetComponentsInChildren<MeshCollider>(true)) if (mc.sharedMesh != null && !before.Contains(mc.sharedMesh) && seen.Add(mc.sharedMesh)) _owned.Add(mc.sharedMesh);
             RefreshDressing();
             Root.AddComponent<MapStreamer>();
             Last.Seconds = Time.realtimeSinceStartup - t0;
