@@ -23,3 +23,11 @@ None.
   (windowed-only UICapture tests), 0 `error CS`. No photo folders left under persistentDataPath after the run.
 - Windowed `PhotoTests.Capture_PhotoModeUI_AndPortfolioApp` passed; `photo_mode_ui.png` checked: panel fits its column.
 - All screenshots looked at (photo_mode_*, photo_before_after_repair/build, photo_office_desk_frames, photo_portfolio_*).
+
+## Known / follow-ups
+- A translucent red line (a gameplay guide object from another system, not on the view-model layer) showed up in one
+  photo-mode capture; photo mode does not hide world-space gameplay helpers yet. Could add a hook to hide them.
+- Repair "before" photos are taken from the player's eye height, so close-up sink/outlet shots look steeply down.
+- Loading a different save keeps the other career's PNGs on disk (they can be deleted from the app).
+- Test runs: a `[SetUpFixture]` in PhotoTests.cs redirects every automatic job photo taken during the whole run into
+  `persistentDataPath/Photos-testrun` and deletes it at the end.
