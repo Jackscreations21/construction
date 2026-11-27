@@ -41,6 +41,7 @@ namespace Groundbreak
         {
             var l = new List<string> { Crew.SiteJobId };
             foreach (var j in Company.ActiveJobs) l.Add(j.Id);
+            foreach (var p in Projects.All) if (p.JobId == null && !p.Complete) l.Add(p.Id);   // spec houses have no Job
             l.Add(null);
             return l;
         }

@@ -49,7 +49,7 @@ namespace Groundbreak
                 if (ContractorJobs.IsContractorJob(j)) _checks[j.Id] = ContractorJobs.Verify(j);
         }
 
-        static void Draw()
+        public static void Draw()
         {
             var t = Tablet.I; if (t == null) return;
             var label = t.LabelStyle; var header = t.HeaderStyle; var button = t.ButtonStyle;

@@ -11,12 +11,8 @@ namespace Groundbreak
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Init()
         {
-            TownHook.JobLotProvider = i =>
-            {
-                List<TownLot> lots = Town.Addresses.ToList();
-                var l = lots[i % lots.Count];
-                return (l.Center, l.Address);
-            };
+            // contractor jobs (decks, sheds, garages, slabs...) go on empty lots, one job per lot (Integration/LotBroker)
+            TownHook.JobLotProvider = LotBroker.ContractorLot;
             foreach (var app in new[] { "Jobs", "Van", "Hardware Store" }) Tablet.SetAppGroup(app, "Business");
         }
     }

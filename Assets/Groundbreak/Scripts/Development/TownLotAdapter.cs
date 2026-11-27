@@ -1,70 +1,49 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 namespace Groundbreak
 {
-    /// <summary>Thin adapter onto the Town feature (Scripts/Town, separate branch). Found by reflection so this folder compiles
-    /// with or without it. Town free house lots become client-build lots; Town tracts (≥ 0.7 ac) plus the fallback tracts east of
-    /// town are the land for sale. Claims go through Town.Claim(lot, LotUse.BuildSite, owner), which the Town saves itself.</summary>
+    /// <summary>Development's lots on the real Town (direct calls; the reflection version predates the Town merge).
+    /// Empty town house lots become client-build lots; town tracts (≥ 0.7 ac) plus the fallback tracts east of town are the land
+    /// for sale. Lots another job already names (LotBroker.Reserved) are skipped. Claims go through
+    /// Town.Claim(lot, LotUse.BuildSite, owner), which the Town saves itself. When every town lot is used, the fallback
+    /// Ridge Rd lots take over so Builder offers never dry up.</summary>
     public class TownLotAdapter : ILotProvider
     {
-        readonly Type _town, _lotUse;
         readonly FallbackLotProvider _fallback = new FallbackLotProvider();
         readonly Dictionary<string, DevLot> _cache = new Dictionary<string, DevLot>();
-        readonly Dictionary<string, object> _raw = new Dictionary<string, object>();
 
-        TownLotAdapter(Type town, Type lotUse) { _town = town; _lotUse = lotUse; }
+        /// <summary>Always available now that the Town is part of the game.</summary>
+        public static TownLotAdapter TryCreate() => new TownLotAdapter();
 
-        /// <summary>The adapter if the Town feature is compiled in, else null.</summary>
-        public static TownLotAdapter TryCreate()
+        DevLot Wrap(TownLot tl)
         {
-            try
+            if (!_cache.TryGetValue(tl.Id, out var d))
             {
-                var asm = typeof(Company).Assembly;
-                var town = asm.GetType("Groundbreak.Town"); var use = asm.GetType("Groundbreak.LotUse");
-                if (town == null || use == null || town.GetProperty("FreeLots", BindingFlags.Public | BindingFlags.Static) == null) return null;
-                return new TownLotAdapter(town, use);
+                d = new DevLot { Id = tl.Id, Address = tl.Address, Rect = tl.Rect, Front = tl.Front, IsTract = LotBroker.IsTract(tl) };
+                _cache[tl.Id] = d;
             }
-            catch (Exception e) { Debug.LogWarning("[Development] Town adapter unavailable: " + e.Message); return null; }
-        }
-
-        static object Get(object o, string name)
-        {
-            var t = o.GetType();
-            var p = t.GetProperty(name); if (p != null) return p.GetValue(o);
-            var f = t.GetField(name); return f?.GetValue(o);
-        }
-
-        DevLot Wrap(object tl)
-        {
-            string id = (string)Get(tl, "Id");
-            _raw[id] = tl;
-            if (!_cache.TryGetValue(id, out var d))
-            {
-                var area = Get(tl, "AreaSqFt");
-                d = new DevLot { Id = id, Address = (string)Get(tl, "Address"), Rect = (Rect)Get(tl, "Rect"), Front = (Vector3)Get(tl, "Front") };
-                d.IsTract = area != null && Convert.ToSingle(area) > 30000f;
-                _cache[id] = d;
-            }
-            d.Claimed = Get(tl, "Use")?.ToString() != "Free";
+            d.Claimed = !tl.IsFree;
+            d.Owner = tl.Owner;
             return d;
         }
 
-        IEnumerable<DevLot> TownFree()
+        IEnumerable<DevLot> TownOpen(bool tracts)
         {
-            IEnumerable src = null;
-            try { src = _town.GetProperty("FreeLots", BindingFlags.Public | BindingFlags.Static).GetValue(null) as IEnumerable; } catch { }
-            if (src == null) yield break;
-            foreach (var tl in src) { var d = Wrap(tl); if (!d.Claimed) yield return d; }
+            foreach (var tl in Town.FreeLots)
+                if (LotBroker.IsTract(tl) == tracts && !LotBroker.Reserved(tl)) yield return Wrap(tl);
         }
 
-        public IEnumerable<DevLot> FreeLots() { foreach (var d in TownFree()) if (!d.IsTract) yield return d; }
+        public IEnumerable<DevLot> FreeLots()
+        {
+            bool any = false;
+            foreach (var d in TownOpen(false)) { any = true; yield return d; }
+            if (!any) foreach (var d in _fallback.FreeLots()) yield return d;
+        }
+
         public IEnumerable<DevLot> LandForSale()
         {
-            foreach (var d in TownFree()) if (d.IsTract) yield return d;
+            foreach (var d in TownOpen(true)) yield return d;
             foreach (var d in _fallback.LandForSale()) yield return d;
         }
 
@@ -72,37 +51,29 @@ namespace Groundbreak
         {
             if (string.IsNullOrEmpty(id)) return null;
             var f = _fallback.Find(id); if (f != null) return f;
-            try
-            {
-                var tl = _town.GetMethod("Find", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string) }, null)?.Invoke(null, new object[] { id });
-                return tl != null ? Wrap(tl) : null;
-            }
-            catch { return null; }
+            var tl = Town.Find(id);
+            return tl != null ? Wrap(tl) : null;
         }
 
         public bool Claim(DevLot lot, string owner)
         {
             if (lot == null) return false;
             if (_fallback.Find(lot.Id) != null) return _fallback.Claim(lot, owner);
-            if (!_raw.TryGetValue(lot.Id, out var tl) && Find(lot.Id) != null) _raw.TryGetValue(lot.Id, out tl);
+            var tl = Town.Find(lot.Id);
             if (tl == null) return false;
-            try
-            {
-                var m = _town.GetMethod("Claim", BindingFlags.Public | BindingFlags.Static);
-                bool ok = (bool)m.Invoke(null, new object[] { tl, Enum.Parse(_lotUse, "BuildSite"), owner });
-                lot.Claimed = true; lot.Owner = owner;
-                return ok;
-            }
-            catch (Exception e) { Debug.LogWarning("[Development] Town.Claim failed: " + e.Message); return false; }
+            bool ok = Town.Claim(tl, LotUse.BuildSite, owner);
+            lot.Claimed = true; lot.Owner = tl.Owner ?? owner;   // already ours after a load (the town restores its own claims)
+            return ok;
         }
 
         public void Release(DevLot lot)
         {
             if (lot == null) return;
             if (_fallback.Find(lot.Id) != null) { _fallback.Release(lot); return; }
-            if (!_raw.TryGetValue(lot.Id, out var tl)) return;
-            try { _town.GetMethod("Release", BindingFlags.Public | BindingFlags.Static)?.Invoke(null, new[] { tl }); lot.Claimed = false; lot.Owner = null; }
-            catch (Exception e) { Debug.LogWarning("[Development] Town.Release failed: " + e.Message); }
+            var tl = Town.Find(lot.Id);
+            if (tl == null) return;
+            Town.Release(tl);
+            lot.Claimed = false; lot.Owner = null;
         }
     }
 }

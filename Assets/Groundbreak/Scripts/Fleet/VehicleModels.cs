@@ -12,11 +12,16 @@ namespace Groundbreak
     {
         // ================================================================== public API
 
+        /// <summary>Optional: builds the "van" model instead of the built-in one (Integration uses the drivable WorkVan's model, so
+        /// a van parked at the yard and the one you drive are the same vehicle). Same frame: origin on the ground, front +Z.</summary>
+        public static System.Func<Transform, bool, GameObject> VanOverride;
+
         /// <summary>Builds the model as a child of parent (may be null). Origin = on the ground under the vehicle's center, front faces +Z.
         /// Adds BoxCollider(s) roughly matching body/bed so the player can't walk through. rack = add a ladder/lumber rack (van, pickup).</summary>
         public static GameObject Build(string typeId, Transform parent, bool rack = false)
         {
             string id = Normalize(typeId);
+            if (id == "van" && VanOverride != null) { var o = VanOverride(parent, rack); if (o != null) return o; }
             string key = id + (rack ? "|rack" : "");
             if (!TryCache(key, out Entry e))
             {
