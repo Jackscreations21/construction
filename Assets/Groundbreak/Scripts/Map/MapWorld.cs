@@ -153,6 +153,9 @@ namespace Groundbreak
                 StreetFurniture();
             }
             catch (Exception e) { Debug.LogError("[Map] build failed: " + e); }
+            // open land between everything: meadow patches, weeds, shrubs, trees (MapGapFill)
+            try { MapGapFill.Build(p => CellAt(p).Veg, (p, h, s, d) => Tree(p, h, s, d, true)); }
+            catch (Exception e) { Debug.LogError("[Map] gap fill failed: " + e); }
 
             Finish();
             RefreshDressing();

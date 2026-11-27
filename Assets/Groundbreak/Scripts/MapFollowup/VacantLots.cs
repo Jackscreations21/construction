@@ -77,8 +77,7 @@ namespace Groundbreak
         // ------------------------------------------------------------------ one lot
 
         static readonly Color Flag = new Color(1f, 0.25f, 0.55f), Cap = new Color(1f, 0.45f, 0.05f),
-            Straw = new Color(0.74f, 0.66f, 0.40f), Seed = new Color(0.58f, 0.50f, 0.30f), Green = new Color(0.36f, 0.50f, 0.22f), DarkGreen = new Color(0.26f, 0.38f, 0.16f),
-            OldWood = new Color(0.62f, 0.58f, 0.52f), Rust = new Color(0.42f, 0.27f, 0.17f), DryPatch = new Color(0.66f, 0.60f, 0.38f);
+            OldWood = new Color(0.62f, 0.58f, 0.52f), Rust = new Color(0.42f, 0.27f, 0.17f);
 
         static GameObject Dress(TownLot lot)
         {
@@ -107,9 +106,9 @@ namespace Groundbreak
             {
                 var c = new Vector3(Rr(-W / 2f + 3f, W / 2f - 3f), 0, -Rr(4f, D - 3f));
                 float r = Mathf.Min(Rr(1.5f, 4.5f), Mathf.Min(W, D) * 0.2f);
-                Blob(k, c, r, i % 3 == 0 ? k.M(SurfaceKind.Dirt) : k.M(DryPatch), rng, 0.012f + i * 0.0005f);
+                Blob(k, c, r, i % 3 == 0 ? k.M(SurfaceKind.Dirt) : Weeds.M(k, WeedTone.DryPatch), rng, 0.012f + i * 0.0005f);
             }
-            int clumps = Mathf.Clamp(Mathf.RoundToInt(W * D / 18f), 25, 260);
+            int clumps = Mathf.Clamp(Mathf.RoundToInt(W * D / 12f), 40, 320);
             int centres = Mathf.Clamp(Mathf.RoundToInt(W * D / 300f), 3, 18);
             var hubs = new List<Vector3>();
             for (int i = 0; i < centres; i++) hubs.Add(new Vector3(Rr(-W / 2f + 1.5f, W / 2f - 1.5f), 0, -Rr(3.5f, D - 1.5f)));
@@ -129,7 +128,7 @@ namespace Groundbreak
                     p = h + new Vector3(Rr(-4f, 4f), 0, Rr(-4f, 4f));
                     p.x = Mathf.Clamp(p.x, -W / 2f + 0.3f, W / 2f - 0.3f); p.z = Mathf.Clamp(p.z, -D + 0.3f, -3.2f);
                 }
-                Clump(k, p, rng, R() < 0.55f ? k.M(Straw) : R() < 0.5f ? k.M(Green) : k.M(DarkGreen), k.M(Seed));
+                Weeds.Spot(k, p, rng, i % 3 == 0 ? 1f : 0.55f + R() * 0.4f);
             }
 
             // brush and young volunteer trees along the edges, a few real trees at the back / side
@@ -188,13 +187,17 @@ namespace Groundbreak
             var k = new LandModel();
             var b = new MapBuild { K = k, Rng = rng, Frame = Matrix4x4.identity };
             float Rr(float a, float c) => a + (c - a) * (float)rng.NextDouble();
+            // unmown ground in the margins (matches BuildSiteFill's meadow strips inside them)
+            int rough = k.M(MapGapFill.RoughMeadow);
+            foreach (var q in new[] { Rect.MinMaxRect(r.xMin + 0.3f, r.yMin + 3f, -41f, r.yMax - 0.3f), Rect.MinMaxRect(41f, r.yMin + 3f, r.xMax - 0.3f, r.yMax - 0.3f), Rect.MinMaxRect(-41f, 86f, 41f, r.yMax - 0.3f) })
+                k.B.AddQuad(new Vector3(q.xMin, 0.015f, q.yMin), new Vector3(q.xMin, 0.015f, q.yMax), new Vector3(q.xMax, 0.015f, q.yMax), new Vector3(q.xMax, 0.015f, q.yMin), rough, Vector3.up);
             for (float x = r.xMin + 3f; x < r.xMax - 2f; x += Rr(6f, 11f)) Tree(b, new Vector3(x, 0, r.yMax - Rr(1.5f, 4f)), rng);
             for (int i = 0; i < 160; i++)
             {
                 int e = rng.Next(3);
                 var p = e == 0 ? new Vector3(Rr(r.xMin + 0.5f, r.xMax - 0.5f), 0, r.yMax - Rr(0.5f, 9f))
                       : new Vector3(e == 1 ? r.xMin + Rr(0.5f, 4f) : r.xMax - Rr(0.5f, 4f), 0, Rr(r.center.y, r.yMax - 1f));
-                Clump(k, p, rng, i % 2 == 0 ? k.M(Straw) : k.M(Green), k.M(Seed));
+                Weeds.Spot(k, p, rng, 0.9f);
             }
             for (int i = 0; i < 8; i++) MapTrees.Bush(b, new Vector3(i % 2 == 0 ? r.xMin + Rr(1f, 3f) : r.xMax - Rr(1f, 3f), 0, Rr(r.center.y + 10f, r.yMax - 6f)), Rr(1f, 1.8f), rng.Next());
             foreach (var p in new[] { new Vector3(r.xMin + 0.3f, 0, r.yMax - 0.3f), new Vector3(r.xMax - 0.3f, 0, r.yMax - 0.3f) }) Stake(k, p, rng);
@@ -202,7 +205,7 @@ namespace Groundbreak
             for (int i = 0; i < 220; i++)
             {
                 float side = i % 2 == 0 ? -1f : 1f;
-                Clump(k, new Vector3(side * Rr(41f, r.xMax - 0.5f), 0, Rr(r.yMin + 3f, r.yMax - 2f)), rng, i % 3 == 0 ? k.M(Green) : k.M(Straw), k.M(Seed));
+                Weeds.Spot(k, new Vector3(side * Rr(41f, r.xMax - 0.5f), 0, Rr(r.yMin + 3f, r.yMax - 2f)), rng, 0.85f);
             }
             for (float z = r.yMin + 8f; z < r.yMax - 8f; z += Rr(9f, 15f))
                 foreach (float side in new[] { -1f, 1f }) if (rng.NextDouble() < 0.7) Tree(b, new Vector3(side * Rr(47f, r.xMax - 1.5f), 0, z), rng);
@@ -257,25 +260,6 @@ namespace Groundbreak
             k.B.AddBox(lp + lean * new Vector3(0, 0.53f, 0), new Vector3(0.038f, 1.07f, 0.019f), lean, k.M(SurfaceKind.PineLumber), Vector3.up);
             k.B.AddBox(lp + lean * new Vector3(0.03f, 0.86f, 0), new Vector3(0.022f, 0.36f, 0.002f), lean * Quaternion.Euler(0, 0, 12f), k.M(Flag));
             k.B.AddBox(lp + lean * new Vector3(-0.025f, 0.9f, 0.012f), new Vector3(0.022f, 0.3f, 0.002f), lean * Quaternion.Euler(0, 30f, -8f), k.M(Flag));
-        }
-
-        /// <summary>A clump of tall grass / weeds: thin tapered double-sided blades 1-3.5' tall, some with seed heads.</summary>
-        static void Clump(LandModel k, Vector3 c, System.Random rng, int sub, int seedSub)
-        {
-            int n = 9 + rng.Next(8);
-            float tall = 0.35f + (float)rng.NextDouble() * 0.75f;
-            for (int i = 0; i < n; i++)
-            {
-                float a = (float)rng.NextDouble() * Mathf.PI * 2f, r = (float)rng.NextDouble() * 0.22f;
-                var b0 = c + new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r);
-                float h = tall * (0.6f + (float)rng.NextDouble() * 0.5f), w = 0.012f + (float)rng.NextDouble() * 0.012f;
-                var dir = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
-                var side = Vector3.Cross(Vector3.up, dir).normalized * w;
-                var tip = b0 + Vector3.up * h + dir * h * (0.15f + (float)rng.NextDouble() * 0.35f);
-                k.B.AddTriangle(b0 - side, b0 + side, tip, sub, Vector3.Cross(side, tip - b0));
-                k.B.AddTriangle(b0 + side, b0 - side, tip, sub, -Vector3.Cross(side, tip - b0));
-                if (i % 5 == 0) k.B.AddBox(tip + Vector3.up * 0.04f, new Vector3(0.018f, 0.09f, 0.018f), Quaternion.LookRotation(dir), seedSub);
-            }
         }
 
         /// <summary>Irregular flat patch on the ground (convex blob).</summary>
@@ -348,7 +332,7 @@ namespace Groundbreak
             {
                 float a = (float)rng.NextDouble() * Mathf.PI * 2f, rr = r * (0.4f + (float)rng.NextDouble() * 0.5f);
                 float y = h * (1f - rr / r) * 0.9f;
-                Clump(k, c + new Vector3(Mathf.Cos(a) * rr, y, Mathf.Sin(a) * rr), rng, k.M(Green), k.M(Seed));
+                Weeds.Spot(k, c + new Vector3(Mathf.Cos(a) * rr, y, Mathf.Sin(a) * rr), rng, 0.5f, false);
             }
         }
     }

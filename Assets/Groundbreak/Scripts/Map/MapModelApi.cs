@@ -24,6 +24,9 @@ namespace Groundbreak
         /// <summary>Lot size around the building in the same frame (x -LotWidth/2..+LotWidth/2, z from +FrontYard to -(Depth+BackYard)).
         /// Models that draw site work (parking lots, yards, pumps, fences) may use it; 0 = unknown.</summary>
         public float LotWidth, FrontYard, BackYard;
+        /// <summary>Footprint (m, width x depth) of the blueprint on file for this building, 0 = none. Models whose building is only part of
+        /// the spec (gas station store, lumber yard store, contractor shop) size that building from it (<see cref="MapBodies"/>).</summary>
+        public Vector2 PlanSize;
     }
 
     /// <summary>Drawing context handed to a model builder. Everything is appended to one shared <see cref="LandModel"/>
