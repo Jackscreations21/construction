@@ -60,3 +60,8 @@ parking lane, farms in the farmyard; parked scenery cars never sit on a lot's `P
 object per cell (boxes for buildings/props, capsules for trees); `MapStreamer` hides cells more than 460 m from the camera (the haze is
 opaque there). Models: `Scripts/Map/Models/` (Residential, Commercial, RuralIndustrial, Props, MapTrees, MapText). Materials:
 `MapMaterials` (+ procedural `MapTextures`: brick wall, R-panel steel, stucco, crop fields, water).
+
+Measured (FullMapTests, `MapWorld.Last`): 318 cells, ~1,020 renderers, ~3.2 M triangles in total (crop rows and trees dominate;
+only cells within `ShowDistance` render), ~6,600 colliders, ~260 buildings, ~5,900 trees, ~2-3 s to build.
+Hills (`AreaKind.Hill`) only rise beyond 30 m outside `MapLayout.Bounds`. Power poles: model +Z runs along the road, so the crossarm
+(model X) crosses the line; wires attach at `PropModels.ConductorX/ConductorY/ConductorZ`, `NeutralPos`, `CommPos`.
