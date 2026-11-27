@@ -4,7 +4,9 @@ using UnityEngine;
 
 namespace Groundbreak
 {
-    public enum RepairType { SinkLeak, DeadOutlet, DrywallHole, StickingDoor, DeckBoard, FencePicket, Shingles, Caulk, Gutter, Sidewalk }
+    public enum RepairType { SinkLeak, DeadOutlet, DrywallHole, StickingDoor, DeckBoard, FencePicket, Shingles, Caulk, Gutter, Sidewalk,
+        /// <summary>Data-driven defect from the job catalog (Scripts/JobCatalog); DefectState.def names the definition.</summary>
+        Catalog }
 
     [Serializable] public class UsedMat { public string id; public int n; }
 
@@ -14,6 +16,7 @@ namespace Groundbreak
     {
         public string jobId;
         public int type, spot, cause;
+        public string def;                                // job-catalog definition id (RepairType.Catalog only)
         public bool init, wrongRepair;
         public float quality = 1f, mess, waitUntil;      // waitUntil: absolute game hours when the last wet step is dry
         public string reading = "";                       // result of the last test
@@ -137,6 +140,7 @@ namespace Groundbreak
                 case RepairType.Shingles: return go.AddComponent<ShinglesDefect>();
                 case RepairType.Caulk: return go.AddComponent<CaulkDefect>();
                 case RepairType.Gutter: return go.AddComponent<GutterDefect>();
+                case RepairType.Catalog: return go.AddComponent<CatalogDefect>();
                 default: return go.AddComponent<SidewalkDefect>();
             }
         }
