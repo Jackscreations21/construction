@@ -29,9 +29,13 @@ namespace Groundbreak
         public static int Day => GameClock.I != null ? GameClock.I.Day : 1;
         public static float Hours => GameClock.I != null ? GameClock.I.Hours : 12f;
         public static bool Career => GameSettings.IsCareer;
-        public static bool Simulated => GameSettings.WeatherEnabled && !Weather.ForceRain.HasValue;
+        /// <summary>Headless test runs (batchmode) get calm fair Career weather unless a test opts in with this, so other features'
+        /// tests never meet a cold snap or a storm. Override / GroundOverride also opt in.</summary>
+        public static bool BatchSimulate;
+        static bool BatchCalm => Application.isBatchMode && !BatchSimulate && Career;
+        public static bool Simulated => GameSettings.WeatherEnabled && !Weather.ForceRain.HasValue && !BatchCalm;
         /// <summary>Weather rules block work only in Career, with weather on, and not when a test forces the weather.</summary>
-        public static bool RulesOn => Career && Simulated && !GameSettings.Relaxed;
+        public static bool RulesOn => Career && !GameSettings.Relaxed && (Simulated || Override != null || GroundOverride.HasValue);
 
         public static int Month => Override != null ? Climate.Month(Override.Day) : Career ? Climate.Month(Day) : FreeMonth;
         public static Seasons Season => Climate.SeasonOf(Month);
@@ -44,7 +48,7 @@ namespace Groundbreak
             get
             {
                 if (Override != null) return Override;
-                if (!GameSettings.WeatherEnabled || Weather.ForceRain.HasValue) return Calm(Weather.ForceRain == true);
+                if (!GameSettings.WeatherEnabled || Weather.ForceRain.HasValue || BatchCalm) return Calm(Weather.ForceRain == true);
                 return Career ? Climate.Actual(Day) : FreeDay();
             }
         }
@@ -98,7 +102,7 @@ namespace Groundbreak
             get
             {
                 if (GroundOverride.HasValue) return GroundOverride.Value;
-                if (!GameSettings.WeatherEnabled || Weather.ForceRain.HasValue) return new GroundState { Wetness = Weather.ForceRain == true ? 0.5f : 0f };
+                if (!GameSettings.WeatherEnabled || Weather.ForceRain.HasValue || BatchCalm && Override == null) return new GroundState { Wetness = Weather.ForceRain == true ? 0.5f : 0f };
                 if (!Career && Override == null) return FreeGround();
                 var g = Climate.GroundAt(Override != null ? Override.Day : Day);
                 var t = Today;   // today's precipitation so far
@@ -129,7 +133,7 @@ namespace Groundbreak
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void StaticReset()
         {
-            FreeMonth = 5; FreeSky = Sky.Clear; FreeStorm = StormKind.None; Override = null; GroundOverride = null; _free = null; _freeKey = -1;
+            FreeMonth = 5; FreeSky = Sky.Clear; FreeStorm = StormKind.None; Override = null; BatchSimulate = false; GroundOverride = null; _free = null; _freeKey = -1;
             Climate.Seed = 1; Climate.ClearCache();
         }
 

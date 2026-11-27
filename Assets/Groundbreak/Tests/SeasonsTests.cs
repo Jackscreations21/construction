@@ -23,7 +23,7 @@ namespace Groundbreak.Tests
         [UnityTearDown]
         public IEnumerator TearDown()
         {
-            SeasonWeather.Override = null; SeasonWeather.GroundOverride = null;
+            SeasonWeather.Override = null; SeasonWeather.GroundOverride = null; SeasonWeather.BatchSimulate = false;
             SeasonWeather.FreeMonth = 5; SeasonWeather.FreeSky = Sky.Clear; SeasonWeather.FreeStorm = StormKind.None;
             StormEvents.Force = false; StormEvents.End(); SeasonBusiness.Force = false; SeasonBusiness.RestoreWeights();
             SeasonRules.ResetState();
@@ -98,6 +98,9 @@ namespace Groundbreak.Tests
             SeasonWeather.FreeMonth = 0; SeasonWeather.FreeSky = Sky.Snow;   // picker: winter snow — still no blocking in Free Build
             Assert.AreEqual(Seasons.Winter, SeasonWeather.Season); Assert.IsTrue(SeasonWeather.Snowing); Assert.Greater(SeasonWeather.Ground.SnowIn, 1f);
             Assert.IsNull(SeasonRules.FramingBlock("Shingles", "Shingle course"));
+            // headless career runs are calm by default
+            GameSettings.Mode = GameMode.Career; if (GameClock.I != null) GameClock.I.Day = 300;   // January
+            if (Application.isBatchMode) { Assert.AreEqual(Sky.Clear, SeasonWeather.Today.Sky); Assert.IsFalse(SeasonWeather.Ground.Frozen); Assert.IsNull(SeasonRules.DigBlock()); }
             // tests forcing the old weather get calm, mild days in Career
             GameSettings.Mode = GameMode.Career; Weather.ForceRain = false;
             try { Assert.IsFalse(SeasonWeather.RulesOn); Assert.Greater(SeasonWeather.TempF, 45f); Assert.IsNull(SeasonRules.PourBlock(3f)); }
@@ -226,7 +229,7 @@ namespace Groundbreak.Tests
         [UnityTest]
         public IEnumerator WeatherAppForecastShot()
         {
-            GameSettings.Mode = GameMode.Career;
+            GameSettings.Mode = GameMode.Career; SeasonWeather.BatchSimulate = true;
             if (GameClock.I != null) { GameClock.I.Day = 40; GameClock.I.Hours = 9f; }
             yield return null;
             var rows = WeatherApp.ForecastRows();

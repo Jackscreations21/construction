@@ -207,7 +207,7 @@ namespace Groundbreak
                 for (int y = 0; y < 64; y++)
                 {
                     float v = y / 63f;   // 0 = straight down, 0.5 = horizon, 1 = zenith
-                    float g = v < 0.5f ? 0.55f : Mathf.Lerp(0.80f, 0.62f, (v - 0.5f) * 2f);
+                    float g = v < 0.5f ? 0.5f : Mathf.Lerp(0.74f, 0.56f, (v - 0.5f) * 2f);
                     for (int x = 0; x < 4; x++) tex.SetPixel(x, y, new Color(g, g * 1.01f, g * 1.04f));
                 }
                 tex.Apply();
@@ -442,6 +442,7 @@ namespace Groundbreak
             {
                 if (RenderSettings.skybox != Overcast) { _clearSky = RenderSettings.skybox; RenderSettings.skybox = Overcast; }
                 float lum = Mathf.Lerp(0.06f, 1f, SiteLook.Daylight) * (storm ? 0.62f : rainLook ? 0.8f : 0.92f);
+                lum *= 0.5f;   // Skybox/Panoramic doubles the tint (unity_ColorSpaceDouble)
                 Overcast.SetColor("_Tint", new Color(lum, lum, lum * 1.03f));
                 Overcast.SetFloat("_Exposure", 1f);
             }
