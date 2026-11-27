@@ -195,6 +195,8 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ material registry
 
+        static bool Near(Color a, Color b) => Mathf.Abs(a.r - b.r) < 0.01f && Mathf.Abs(a.g - b.g) < 0.01f && Mathf.Abs(a.b - b.b) < 0.01f;
+
         static bool Classify(Material m, out Kind k)
         {
             k = Kind.Hard; string n = m.name;
@@ -207,6 +209,8 @@ namespace Groundbreak
                 k = c.b / g >= 0.75f && c.r / g <= 0.83f ? Kind.Evergreen : Kind.Foliage;   // spruce / fir / pine tints are blue-green
                 return true;
             }
+            // vacant-lot meadow tufts (MapFollowup/VacantLots: plain MaterialLibrary colours, unnamed)
+            if (n.Length == 0 && (Near(m.color, new Color(0.36f, 0.50f, 0.22f)) || Near(m.color, new Color(0.26f, 0.38f, 0.16f)))) { k = Kind.Grass; return true; }
             string l = n.ToLowerInvariant();
             if (l.Contains("shingle")) { k = Kind.Roof; return true; }
             if (n.StartsWith("GBL_Asphalt") || n.StartsWith("GB_Concrete") || n.StartsWith("GB_Gravel") || n.StartsWith("GB_BroomedConcrete")) { k = Kind.Hard; return true; }

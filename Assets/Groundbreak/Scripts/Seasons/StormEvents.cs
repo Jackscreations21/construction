@@ -169,7 +169,8 @@ namespace Groundbreak
 
         public static void Tick()
         {
-            if ((!GameSettings.IsCareer || !SeasonWeather.Simulated) && !Force) { if (_appliedSeason != Seasons.None) RestoreWeights(); return; }
+            // career days 1..GraceDays (and tests that start there) keep the catalog's base weights and pay
+            if ((!GameSettings.IsCareer || !SeasonWeather.Simulated || SeasonWeather.Day <= Climate.GraceDays) && !Force) { if (_appliedSeason != Seasons.None) RestoreWeights(); return; }
             var season = SeasonWeather.Season;
             if (season != _appliedSeason) ApplyWeights(season);
             // seasonal pay on new offers
