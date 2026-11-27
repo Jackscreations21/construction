@@ -252,8 +252,8 @@ namespace Groundbreak
         /// <summary>The wall line run under p: orientation, coordinate and the rooms on each side whose edge lies on it.</summary>
         public bool FindWallLine(int floor, Vector2 p, out bool horiz, out float c, out float lo, out float hi)
         {
-            horiz = false; c = lo = hi = 0f;
-            float bd = 1.2f; bool found = false;
+            lo = hi = 0f;
+            float bd = 1.2f; bool found = false, hz = false; float cv = 0f;
             foreach (var r in Design.RoomsOn(floor))
             {
                 void Try(bool h, float cc, float a, float b)
@@ -261,10 +261,11 @@ namespace Groundbreak
                     if (Mathf.Abs(cc) < 0.01f || Mathf.Abs(cc - (h ? Design.depth : Design.width)) < 0.01f) return;   // exterior
                     float along = h ? p.x : p.y, d = Mathf.Abs((h ? p.y : p.x) - cc);
                     if (along < a - 0.01f || along > b + 0.01f || d >= bd) return;
-                    bd = d; horiz = h; c = cc; found = true;
+                    bd = d; hz = h; cv = cc; found = true;
                 }
                 Try(true, r.y0, r.x0, r.x1); Try(true, r.y1, r.x0, r.x1); Try(false, r.x0, r.y0, r.y1); Try(false, r.x1, r.y0, r.y1);
             }
+            horiz = hz; c = cv;
             if (!found) return false;
             // contiguous run of collinear edges containing p
             var segs = new List<(float a, float b)>();
