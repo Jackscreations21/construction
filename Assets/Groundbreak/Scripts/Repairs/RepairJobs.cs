@@ -198,7 +198,7 @@ namespace Groundbreak
             int have = 0;
             foreach (var j in Company.Offers) if (j.Kind == JobKind.Repair && !j.Title.StartsWith("Callback")) have++;
             var free = new List<TownLot>();
-            foreach (var l in Town.Addresses) if (!AddressBusy(l)) free.Add(l);
+            foreach (var l in Town.Addresses) if (l.ServiceCalls && !AddressBusy(l)) free.Add(l);   // ServiceCalls: map buildings without a TownHouse are skipped
             for (; have < target && free.Count > 0; have++)
             {
                 int li = UnityEngine.Random.Range(0, free.Count);

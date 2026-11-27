@@ -24,7 +24,7 @@ namespace Groundbreak.Tests
         [Test]
         public void LayoutApi()
         {
-            Assert.AreEqual(17, Town.Addresses.Count());
+            Assert.AreEqual(17, Town.Addresses.Count(l => !l.External));   // + the full map's addresses (Scripts/Map)
             Assert.GreaterOrEqual(Town.FreeLots.Count(), 12);
             var home = Town.Home;
             Assert.NotNull(home); Assert.AreEqual(LotUse.PlayerHome, home.Use); Assert.AreEqual("108 Main St", home.Address);
@@ -55,7 +55,7 @@ namespace Groundbreak.Tests
             var spots = (HouseSpot[])Enum.GetValues(typeof(HouseSpot));
             var fixtures = new[] { HouseSpot.OutletLiving, HouseSpot.OutletKitchen, HouseSpot.BreakerPanel, HouseSpot.InteriorDoor, HouseSpot.FrontDoor,
                 HouseSpot.DeckBoard, HouseSpot.SidewalkSquare, HouseSpot.FencePicket };
-            foreach (var lot in Town.Lots.Where(l => l.Use == LotUse.Customer || l.Use == LotUse.PlayerHome))
+            foreach (var lot in Town.CoreLots.Where(l => l.Use == LotUse.Customer || l.Use == LotUse.PlayerHome))
             {
                 var h = lot.House;
                 Assert.NotNull(h, lot.Id + " has no house");

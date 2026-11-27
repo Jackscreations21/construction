@@ -122,7 +122,7 @@ namespace Groundbreak
                 // smallest free lot that fits (commercial lot next to the store first, then the Main St tract)
                 float best = float.MaxValue;
                 foreach (var l in Town.FreeLots)
-                    if (Fits(l, level) && l.AreaSqFt < best && !Reserved(l)) { best = l.AreaSqFt; lot = l; }
+                    if (Fits(l, level) && (l.External ? 1e9f : 0f) + l.AreaSqFt < best && !Reserved(l)) { best = (l.External ? 1e9f : 0f) + l.AreaSqFt; lot = l; }   // core town lots first (full map adds more)
                 if (lot != null)
                 {
                     if (cur != null) Town.Release(cur);

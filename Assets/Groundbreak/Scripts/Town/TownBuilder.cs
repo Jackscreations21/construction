@@ -32,7 +32,7 @@ namespace Groundbreak
 
             // sidewalk squares that belong to houses (fixtures), snapped to the 5' grid
             var fixtureSquares = new Dictionary<TownLot, Vector3>();
-            foreach (var lot in Town.Lots)
+            foreach (var lot in Town.CoreLots)
             {
                 if (lot.Use != LotUse.Customer && lot.Use != LotUse.PlayerHome) continue;
                 var st = StreetOf(lot); if (st == null) continue;
@@ -43,13 +43,13 @@ namespace Groundbreak
 
             foreach (var st in Town.Streets) Street(st, fixtureSquares);
             Intersections();
-            foreach (var lot in Town.Lots) LotDressing(lot, root);
+            foreach (var lot in Town.CoreLots) LotDressing(lot, root);
 
             var ground = _g.Make(root, "TownStreets");
             ground.AddComponent<MeshCollider>().sharedMesh = ground.GetComponent<MeshFilter>().sharedMesh;
             _d.Make(root, "TownMarkings");
 
-            foreach (var lot in Town.Lots)
+            foreach (var lot in Town.CoreLots)
                 if (lot.Use == LotUse.Customer || lot.Use == LotUse.PlayerHome)
                     HouseBuilder.Build(lot, root, fixtureSquares[lot]);
             Store(Town.Store, root);
@@ -140,7 +140,7 @@ namespace Groundbreak
             {
                 var gaps = new List<Gap>();
                 var fixK = new HashSet<int>();
-                foreach (var lot in Town.Lots)
+                foreach (var lot in Town.CoreLots)
                 {
                     if (lot.Street != s.Name || SideOf(s, lot) != side) continue;
                     if (lot.Use == LotUse.Customer || lot.Use == LotUse.PlayerHome)
@@ -189,6 +189,7 @@ namespace Groundbreak
             // barricades at both dead ends
             foreach (float end in new[] { a0, a1 })
             {
+                if (end == a0 ? s.OpenMin : s.OpenMax) continue;   // the map continues the street here
                 float dir = end == a0 ? -1f : 1f;
                 for (int side = -1; side <= 1; side += 2)
                     SBox(_d, s, side, end + dir * 0.3f - 0.05f, end + dir * 0.3f + 0.05f, 0.5f, Town.RoadHalf - 0.3f, 0.75f, 0.95f, side > 0 ? _white : _d.M(new Color(0.95f, 0.45f, 0.08f)));
