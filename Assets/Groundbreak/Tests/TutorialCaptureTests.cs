@@ -53,7 +53,7 @@ namespace Groundbreak.Tests
             var tex = new Texture2D(W, H, TextureFormat.RGB24, false);
             tex.ReadPixels(new Rect(0, 0, W, H), 0, 0); tex.Apply();
             RenderTexture.active = null;
-            Save(tex, PicDir, name);
+            Save(tex, TutorialCapture.OutputDir, name);   // Resources/Tutorials only when GROUNDBREAK_CAPTURE_TUTORIALS=1
             Object.Destroy(tex); rt.Release(); Object.Destroy(rt);
         }
 
@@ -61,11 +61,11 @@ namespace Groundbreak.Tests
         /// pictures are captured by one run WITHOUT -batchmode (see Docs/TUTORIALS.md); batchmode runs only check the PNG exists.</summary>
         static IEnumerator GuiPic(Camera cam, string name, bool hud, bool tablet, bool toShots = false)
         {
-            string dir = toShots ? ShotDir : PicDir;
+            string dir = toShots ? ShotDir : TutorialCapture.OutputDir;
             if (Application.isBatchMode)
             {
                 Debug.Log("[Tutorials] batchmode: IMGUI picture not recaptured: " + name);
-                if (!toShots) Assert.IsTrue(File.Exists(Path.Combine(dir, name + ".png")), name + ".png missing: run TutorialCaptureTests once without -batchmode");
+                if (!toShots) Assert.IsTrue(TutorialCapture.Committed(name), name + ".png missing: run TutorialCaptureTests once without -batchmode");
                 yield break;
             }
             yield return null;
@@ -85,8 +85,7 @@ namespace Groundbreak.Tests
                 Assert.IsTrue(File.Exists(Path.Combine(PicDir, pic + ".png")), "trade test shot missing: " + shot + " (run the full suite once)");
                 return;
             }
-            Directory.CreateDirectory(PicDir);
-            File.Copy(src, Path.Combine(PicDir, pic + ".png"), true);
+            File.Copy(src, TutorialCapture.OutputPath(pic), true);   // Resources/Tutorials only when GROUNDBREAK_CAPTURE_TUTORIALS=1
         }
 
         static int Slot(string id)
