@@ -104,7 +104,7 @@ namespace Groundbreak
 
         void Update()
         {
-            if (GInput.GetKeyDown(KeyCode.T)) { if (IsOpen) Close(); else Open(); }
+            if (GInput.GetKeyDown(KeyCode.T) && !(IsOpen && GUIUtility.keyboardControl != 0)) { if (IsOpen) Close(); else Open(); }   // T typed into a text field doesn't close
             else if (IsOpen && GInput.GetKeyDown(KeyCode.Escape)) Close();
 
             // Release UIOpen one frame after closing so the closing key/click (Esc, T, mouse) isn't also seen by gameplay.
