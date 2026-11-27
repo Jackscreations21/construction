@@ -104,7 +104,7 @@ namespace Groundbreak
             bool career = GameSettings.IsCareer || Crew.IgnoreWorkHours;
             foreach (var n in CrewNpc.All.ToArray())
             {
-                if (n == null || n.State == CrewNpc.Phase.Leaving) continue;
+                if (n == null || n.External || n.State == CrewNpc.Phase.Leaving) continue;
                 var w = n.W;
                 bool keep = career && w != null && Company.Workers.Contains(w) && w.AssignedJobId == Crew.HereJobId && Crew.Available(w) && Crew.OnTheClock(w);
                 if (!keep)

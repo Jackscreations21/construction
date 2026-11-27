@@ -16,6 +16,8 @@ namespace Groundbreak
         static Vector3 Flat(Vector3 p) => new Vector3(p.x, 0f, p.z);
 
         public Worker W;
+        /// <summary>Not one of your workers (a subcontractor's hand, see Scripts/Subs): CrewManager leaves it alone.</summary>
+        public bool External;
         public CrewTask Task;
         public WorkUnit Unit;
         public enum Phase { Idle, ToPickup, ToWork, Working, Leaving }
