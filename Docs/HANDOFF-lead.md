@@ -29,30 +29,23 @@ Known merge noise: (1) every test run rewrites ~80 `Assets/Groundbreak/Resources
 before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` / `Business/Company.cs.meta` add/add conflicts — keep main's.
 (3) untracked Unity files blocking a merge (`ProjectSettings/PackageManagerSettings.asset`, .meta) — delete them and retry.
 
-## State of main (updated 2026-11-26 ~20:55 UTC by lead local_98a2032f-a420-4a0a-9364-69a1031cb23c)
-- **Pushed, origin/main fda9dc3, 100 tests pass + 1 skipped (UICapture, by design):** everything before, plus crew-workers, mep-site-details,
-  the smart-placement test fix, development, town-repairs, structure-extras. Nothing is local-only.
-- The earlier helper sessions (town-repairs, development, structure-extras, smart-placement, crew-workers, mep-site-details, yard-fleet, ui-capture)
-  are all DONE and merged; their notes are `Docs/HANDOFF-<name>.md`.
+## State of main (updated 2026-11-27 ~01:50 UTC by lead local_98a2032f-a420-4a0a-9364-69a1031cb23c)
+- **Pushed, origin/main a267cfc, 121 tests: 120 pass + 1 skipped (UICapture, by design).** Everything before, plus integration (9369180),
+  job-catalog (492330a, 153 jobs), full-map (6ea95a7, ~260 buildings), blueprints (a267cfc, 46 plans). Nothing is local-only.
+- All helper sessions so far are DONE and merged; notes in `Docs/HANDOFF-<name>.md`, plus `Docs/JOBS.md`, `Docs/MAP.md`, `Docs/BLUEPRINTS.md`.
 
-## Sessions running (all Opus, own worktrees, started 20:51 UTC, report to the lead)
-| name | id | branch | task |
-|---|---|---|---|
-| integration | local_05a7f175-4270-437c-a3a8-481b750b3c2a | claude/integration-* | wire Town lots/Crew/Development/Fleet, one van, tablet groups, Career playthrough test |
-| blueprints | local_ff81f833-9625-43f6-9ed4-b74d82863730 | claude/blueprints-* | 40+ plans in `Scripts/Blueprints/` on the `HousePlan` format, `Docs/BLUEPRINTS.md` |
-| job-catalog | local_ce07e7ff-f4d7-4356-98bc-59e1d71fee58 | claude/job-catalog-* | 60+ repairs, 25+ contractor jobs, build jobs, `Scripts/JobCatalog/`, `Docs/JOBS.md` |
-| full-map | local_7e060d9b-6544-43be-a0c9-6c3deb424650 | claude/full-map-ee35f7 | user request: full map, nothing empty, many buildings with blueprints/jobs, `Scripts/Map/`, `Docs/MAP.md` |
-
-Each reports "<name> DONE @ <commit>" or "<name> HANDOFF READY". Expect overlaps when merging: integration and full-map both touch `Scripts/Town/`;
-job-catalog and full-map both lean on blueprint plan ids (looked up at runtime, missing ids tolerated).
+## Sessions
+None running. Two are PROPOSED as cards in the lead chat (the user must click them or say "start"; then `start_session` with the proposal_id only):
+- map-followup, task_cf34d273: dress empty lots, plan ids on map buildings, catalog jobs across the whole map, workers out of the road,
+  SiteHud "Job Board" text, retire old Career Job Board, for-sale signs on claimed lots. Folder `Scripts/MapFollowup/`.
+- tutorials, task_38148f7b: business tutorials with pictures, and stop normal test runs rewriting `Resources/Tutorials/*.png`. Folder `Scripts/BusinessTutorials/`.
+Usage watch: session cron every 10 min (pause helpers at 85%). It dies with the lead session; re-create it.
 
 ## Left to do, in order
-1. Merge integration, blueprints, job-catalog, full-map as they report (test, look at `career_*`, `bp_*`, `jobcat_*`, `map_*` shots, push, tell the others to merge main).
-2. A short follow-up pass once all four are in: map buildings use the new plans and jobs; playthrough test still passes on the big map.
-3. Business tutorials with pictures (Tutorials app; windowed capture for tablet shots).
-4. Balance pass (prices, wages, pay, growth pace) and small fixes: stop the Tutorials test rewriting Resources PNGs on normal runs; stored stock hard to see on
-   warehouse racking; held tool visible beside the open tablet; crew drywall/paint/dig/sod tasks lack tests; optional delivery fee (`Fleet.DeliveryFee`);
-   cross-gable wing has no UI button; van model polish.
+1. Merge map-followup and tutorials when they report (look at `followup_*`, `tut_business_*` shots).
+2. Balance pass (prices, wages, pay, growth pace) and small fixes, after those two: stored stock hard to see on warehouse racking; held tool visible
+   beside the open tablet; crew drywall/paint/dig/sod tasks lack tests; optional delivery fee (`Fleet.DeliveryFee`); cross-gable wing has no UI button;
+   van model polish; boxy toilet model (`jobcat_toilet_*`); blueprint overlay room labels overlap fixture markers; map edge shows a dark void from the air.
 - The user wants the checklist of everything left written in every reply (the pinned list disappears) and the tracker artifact kept current.
 
 ## First things for the new lead
