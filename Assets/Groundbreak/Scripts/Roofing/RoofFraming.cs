@@ -486,7 +486,7 @@ namespace Groundbreak
                             Board(root, lk.id, MemberRole.Lookout, Connector.Nailed, new Vector3(xa, yTop - I(1.75f), z), new Vector3(xb, yTop - I(1.75f), z), Vector3.forward, I(3.5f), I(1.5f), "Lookout");
                         }
                         Rafter(root, "2x4", MemberRole.SubFascia, Connector.Nailed, new Vector3(flyX, 0, O.z), h, g.Yw, g.r, I(3.5f) / g.cos, qT, qE, false, 0f, "Fly rafter (barge)");
-                    }, Ghost(root, gc, new Vector3(I(1.5f), I(3.5f), g.s / g.cos), Quaternion.LookRotation(new Vector3(0, g.r, sd == 0 ? 1 : -1)))).Use(lk.id, nLook).Use(fly.id).Nails = nLook * 4 + 6;
+                    }, Ghost(root, gc, new Vector3(I(1.5f), I(3.5f), g.s / g.cos), Quaternion.LookRotation(new Vector3(0, g.r, sd == 0 ? 1 : -1)))).Use(lk.id, nLook).Use(fly.id, fly.count).Nails = nLook * 4 + 6;
                 }
         }
 

@@ -21,6 +21,8 @@ namespace Groundbreak
             public bool Rush;
             public float ArriveTime;           // Time.time when the truck reaches the drop point (approx.)
             public bool TruckOnSite;
+            internal Coroutine Routine;        // the RunDelivery coroutine (cancelled on load / new game)
+            internal GameObject Truck;
             public float ETA => Mathf.Max(0f, ArriveTime - Time.time);
             public string Summary
             {
@@ -103,12 +105,63 @@ namespace Groundbreak
             foreach (var kv in cart) if (kv.Value > 0) items[kv.Key] = kv.Value;
             if (items.Count == 0) return;
 
-            float delay = rush ? RushDelay : StandardDelay;
-            var d = new PendingDelivery { Items = items, Rush = rush, ArriveTime = Time.time + delay };
-            Pending.Add(d);
-            StartCoroutine(RunDelivery(d, delay));
+            Schedule(items, rush, rush ? RushDelay : StandardDelay);
             Game.Toast(rush ? "Rush order placed: ~20 s" : "Order placed: ~90 s");
         }
+
+        void Schedule(Dictionary<string, int> items, bool rush, float delay)
+        {
+            var d = new PendingDelivery { Items = items, Rush = rush, ArriveTime = Time.time + delay };
+            Pending.Add(d);
+            d.Routine = StartCoroutine(RunDelivery(d, delay));
+        }
+
+        /// <summary>Drops every delivery still on its way (load / new game: the saved game brings its own).</summary>
+        void CancelPending()
+        {
+            foreach (var d in Pending)
+            {
+                if (d.Routine != null) StopCoroutine(d.Routine);
+                if (d.Truck != null) Destroy(d.Truck);
+            }
+            Pending.Clear();
+        }
+
+        // ---------------- Save: orders are paid when placed, so deliveries still on the way must survive save/load ----------------
+
+        [System.Serializable] class SavedDelivery { public List<string> ids = new List<string>(); public List<int> qty = new List<int>(); public bool rush; public float eta; }
+        [System.Serializable] class SaveData { public List<SavedDelivery> pending = new List<SavedDelivery>(); }
+
+        static string SaveState()
+        {
+            if (I == null) return null;
+            var data = new SaveData();
+            foreach (var d in I.Pending)
+            {
+                var sd = new SavedDelivery { rush = d.Rush, eta = d.ETA };
+                foreach (var kv in d.Items) { sd.ids.Add(kv.Key); sd.qty.Add(kv.Value); }
+                data.pending.Add(sd);
+            }
+            return JsonUtility.ToJson(data);
+        }
+
+        static void LoadState(string json)
+        {
+            if (I == null) return;
+            I.CancelPending();
+            if (string.IsNullOrEmpty(json)) return;
+            var data = JsonUtility.FromJson<SaveData>(json);
+            if (data == null || data.pending == null) return;
+            foreach (var sd in data.pending)
+            {
+                var items = new Dictionary<string, int>();
+                for (int i = 0; i < sd.ids.Count && i < sd.qty.Count; i++) if (sd.qty[i] > 0) items[sd.ids[i]] = sd.qty[i];
+                if (items.Count > 0) I.Schedule(items, sd.rush, Mathf.Max(0f, sd.eta));
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void RegisterSave() => SaveSystem.RegisterExtension("deliveries", SaveState, LoadState);
 
         IEnumerator RunDelivery(PendingDelivery d, float delay)
         {
@@ -124,6 +177,7 @@ namespace Groundbreak
 
             var truck = BuildTruck();
             truck.transform.position = start;
+            d.Truck = truck;
             d.TruckOnSite = true;
             yield return Drive(truck, stop);
 

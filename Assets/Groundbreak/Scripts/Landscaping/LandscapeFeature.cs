@@ -248,7 +248,7 @@ namespace Groundbreak
                     if (f == null) Grade.Ensure(Center);
                     float t0 = i / (float)st.Steps, t1 = (i + 1) / (float)st.Steps;
                     Vector3 a = Vector3.Lerp(A, B, t0), b = Vector3.Lerp(A, B, t1);
-                    Grade.Field?.PaintRect((a + b) / 2, new Vector2(Width / 2 + 0.15f, Vector3.Distance(a, b) / 2 + 0.05f), RunYaw, LandCover.Dirt);
+                    if (Grade.Field != null) Grade.Field.PaintRect((a + b) / 2, new Vector2(Width / 2 + 0.15f, Vector3.Distance(a, b) / 2 + 0.05f), RunYaw, LandCover.Dirt);
                     break;
                 }
             }
@@ -264,7 +264,7 @@ namespace Groundbreak
                 case LandscapeKind.GravelDrive when stage == 3:
 
                     LowerRun(A, B, Width / 2, 0f, false);
-                    Grade.Field?.PaintRect(Center, new Vector2(Width / 2, Length / 2), RunYaw, LandCover.Gravel);
+                    if (Grade.Field != null) Grade.Field.PaintRect(Center, new Vector2(Width / 2, Length / 2), RunYaw, LandCover.Gravel);
                     break;
                 case LandscapeKind.Fence when stage == 2:
                 case LandscapeKind.Gate when stage == 2:
@@ -272,7 +272,7 @@ namespace Groundbreak
                     break;
                 case LandscapeKind.Plant when stage == 3:
                     WateredDay = Day;
-                    if (Plant.Tree) { Grade.Ensure(A); Grade.Field?.Paint(A, 0.75f, LandCover.Mulch); }
+                    if (Plant.Tree) { Grade.Ensure(A); if (Grade.Field != null) Grade.Field.Paint(A, 0.75f, LandCover.Mulch); }
                     break;
                 case LandscapeKind.Sod when stage == 0:
                     WateredDay = Day;

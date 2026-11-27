@@ -76,7 +76,7 @@ namespace Groundbreak
         public static void KnitSod(LandscapeFeature f)
         {
             Grade.Ensure(f.A);
-            Grade.Field?.PaintRect(f.A, new Vector2(Landscape.SodW / 2, Landscape.SodL / 2), f.Yaw, LandCover.Lawn);
+            if (Grade.Field != null) Grade.Field.PaintRect(f.A, new Vector2(Landscape.SodW / 2, Landscape.SodL / 2), f.Yaw, LandCover.Lawn);
             Destroy(f.gameObject);
         }
 
@@ -238,10 +238,10 @@ namespace Groundbreak
         {
             if (total <= 0 || DeliveryService.I == null) return;
             int cost = total + (rush ? DeliveryService.RushFee : 0);
-            if (!Game.Wallet.TrySpend(cost, "Garden Center order")) { Tablet.I?.ShowMessage($"Need ${cost:N0}"); return; }
+            if (!Game.Wallet.TrySpend(cost, "Garden Center order")) { if (Tablet.I != null) Tablet.I.ShowMessage($"Need ${cost:N0}"); return; }
             DeliveryService.I.Order(new Dictionary<string, int>(_cart), rush);
             _cart.Clear();
-            Tablet.I?.ShowMessage("Garden Center order placed.");
+            if (Tablet.I != null) Tablet.I.ShowMessage("Garden Center order placed.");
         }
     }
 }

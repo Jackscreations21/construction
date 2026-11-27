@@ -172,7 +172,9 @@ namespace Groundbreak
             var v = mesh.vertices; var uv = new Vector2[v.Length];
             for (int i = 0; i < v.Length; i++) { uv[i] = new Vector2(v[i].x / groundSize, v[i].z / groundSize); v[i] /= scale; }
             mesh.vertices = v; mesh.uv = uv; mesh.RecalculateBounds(); mesh.RecalculateTangents();
+            var prev = mf.sharedMesh;
             mf.sharedMesh = mesh;
+            if (prev != null && prev != _origGround && prev.name == "GroundWithHole") UnityEngine.Object.Destroy(prev); // our previous cut
             var mc = g.GetComponent<MeshCollider>();
             if (mc != null) mc.sharedMesh = mesh;
         }
@@ -182,9 +184,12 @@ namespace Groundbreak
             if (_origGround == null) return;
             var g = GameObject.Find("Ground");
             if (g == null) return;
-            g.GetComponent<MeshFilter>().sharedMesh = _origGround;
+            var mf = g.GetComponent<MeshFilter>();
+            var prev = mf.sharedMesh;
+            mf.sharedMesh = _origGround;
             var mc = g.GetComponent<MeshCollider>();
             if (mc != null) mc.sharedMesh = _origGround;
+            if (prev != null && prev != _origGround && prev.name == "GroundWithHole") UnityEngine.Object.Destroy(prev);
         }
 
         // ------------------------------------------------------------------ dirt accounting

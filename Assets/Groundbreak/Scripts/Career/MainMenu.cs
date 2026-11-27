@@ -9,6 +9,7 @@ namespace Groundbreak
         public static bool Showing => I != null && I._show;
         bool _show; int _page; // 0 main, 1 load, 2 settings
         Vector2 _scroll;
+        System.Collections.Generic.List<(string slot, System.DateTime time, string label)> _slots; float _slotsRefreshAt;
 
         void Awake()
         {
@@ -69,7 +70,7 @@ namespace Groundbreak
                 if (GUILayout.Button("Free Build", GUILayout.Height(bh))) { NewGame(GameMode.FreeBuild); Hide(); }
                 if (GUILayout.Button("Continue (close menu)", GUILayout.Height(bh))) Hide();
                 if (GUILayout.Button("Save (quick slot)", GUILayout.Height(bh))) { SaveSystem.Save(SaveSystem.QuickSlot); Game.Toast(SaveSystem.LastMessage); }
-                if (GUILayout.Button("Load…", GUILayout.Height(bh))) _page = 1;
+                if (GUILayout.Button("Load…", GUILayout.Height(bh))) { _page = 1; _slotsRefreshAt = 0f; }
                 if (GUILayout.Button("Settings…", GUILayout.Height(bh))) _page = 2;
                 GUILayout.FlexibleSpace();
                 GUILayout.Label("F5 quick save · F9 quick load · F10 menu · T tablet", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter });
@@ -77,7 +78,14 @@ namespace Groundbreak
             else if (_page == 1)
             {
                 _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(h * 0.55f));
-                var slots = SaveSystem.ListSlots();
+                // ListSlots reads and parses every save file: refresh at most once a second, and only on a Layout event so
+                // Layout and the events after it in the same frame see the same rows.
+                if (_slots == null || (Event.current.type == EventType.Layout && Time.unscaledTime >= _slotsRefreshAt))
+                {
+                    _slots = SaveSystem.ListSlots();
+                    _slotsRefreshAt = Time.unscaledTime + 1f;
+                }
+                var slots = _slots;
                 if (slots.Count == 0) GUILayout.Label("No saves yet.");
                 foreach (var (slot, time, label) in slots)
                 {
@@ -89,7 +97,7 @@ namespace Groundbreak
                 GUILayout.EndScrollView();
                 GUILayout.BeginHorizontal();
                 for (int i = 1; i <= 3; i++)
-                    if (GUILayout.Button($"Save to slot {i}")) { SaveSystem.Save("slot" + i); Game.Toast(SaveSystem.LastMessage); }
+                    if (GUILayout.Button($"Save to slot {i}")) { SaveSystem.Save("slot" + i); Game.Toast(SaveSystem.LastMessage); _slotsRefreshAt = 0f; }
                 GUILayout.EndHorizontal();
                 if (GUILayout.Button("Back", GUILayout.Height(bh))) _page = 0;
             }

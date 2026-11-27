@@ -26,10 +26,15 @@ namespace Groundbreak
 
         void OnEnable() { if (!NetGraph.Nodes.Contains(this)) NetGraph.Nodes.Add(this); }
         void OnDisable() { NetGraph.Nodes.Remove(this); }
+        bool _dying;
         void OnDestroy()
         {
+            // Detach() calls RefreshJoints on this node; while it is being destroyed that would parent a new "Joints" object
+            // to a dying transform (Unity error + orphaned object left at the scene root).
+            _dying = true;
             NetGraph.Nodes.Remove(this);
             foreach (var p in Ports) foreach (var r in new List<NetRun>(p.Runs)) if (r != null) r.Detach(p);
+            if (_jointVis != null) { var mf = _jointVis.GetComponent<MeshFilter>(); if (mf != null && mf.sharedMesh != null) Destroy(mf.sharedMesh); }
         }
 
         public string Label => string.IsNullOrEmpty(DisplayName) ? (Piece != null && Piece.Def != null ? Piece.Def.Name : Type) : DisplayName;
@@ -37,7 +42,8 @@ namespace Groundbreak
         /// <summary>Rebuilds joint decorations (crimp rings, purple primer, solder fillets, foil tape bands).</summary>
         public void RefreshJoints()
         {
-            if (_jointVis != null) Destroy(_jointVis);
+            if (_dying) return;
+            if (_jointVis != null) MepMesh.DestroyVisual(_jointVis);
             var mm = new MepMesh { Origin = transform.position };
             var mats = new List<Material>();
             int Mat(Material m) { int i = mats.IndexOf(m); if (i < 0) { mats.Add(m); i = mats.Count - 1; } return i; }

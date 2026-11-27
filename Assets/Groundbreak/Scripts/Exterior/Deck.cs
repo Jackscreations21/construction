@@ -132,7 +132,9 @@ namespace Groundbreak
         {
             var go = new GameObject(name);
             go.transform.SetParent(d.transform, false);
-            go.AddComponent<MeshFilter>().sharedMesh = Build(b, name, mats.Length);
+            var mesh = Build(b, name, mats.Length);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            ExtOwnedMesh.Attach(go, mesh);
             go.AddComponent<MeshRenderer>().sharedMaterials = mats;
             var fl = go.AddComponent<FinishLayer>(); fl.Kind = "deck-hardware"; fl.Owner = d;
             return go;

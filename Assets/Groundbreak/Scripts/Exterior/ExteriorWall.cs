@@ -14,6 +14,15 @@ namespace Groundbreak
         public static float FrostDepth = Units.In(36f);
     }
 
+    /// <summary>Destroys a procedurally built mesh with the object that shows it (rebuilt parts would otherwise leak a Mesh
+    /// every rebuild — Destroy(gameObject) does not free a sharedMesh).</summary>
+    public class ExtOwnedMesh : MonoBehaviour
+    {
+        public Mesh Mesh;
+        public static void Attach(GameObject go, Mesh m) { if (go != null && m != null) go.AddComponent<ExtOwnedMesh>().Mesh = m; }
+        void OnDestroy() { if (Mesh != null) Destroy(Mesh); }
+    }
+
     /// <summary>Tag on every exterior part (course, post, tie row...) so tools know what they aim at.</summary>
     public class ExtPart : MonoBehaviour
     {
@@ -211,6 +220,7 @@ namespace Groundbreak
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             go.AddComponent<MeshRenderer>().sharedMaterials = mats;
             if (collider && mesh.vertexCount > 0) go.AddComponent<MeshCollider>().sharedMesh = mesh;
+            ExtOwnedMesh.Attach(go, mesh);
             var fl = go.AddComponent<FinishLayer>(); fl.Kind = type; fl.Owner = this;
             var p = go.AddComponent<ExtPart>(); p.Wall = this; p.Type = type; p.Index = index;
             return go;

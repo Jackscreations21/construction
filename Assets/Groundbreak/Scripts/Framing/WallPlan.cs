@@ -60,18 +60,23 @@ namespace Groundbreak
         {
             // Crew raise: a slow heave to get fingers under the top plate, walk it up hand over hand,
             // then ease the last few degrees to plumb; it lands on the bottom plate with a small rock.
+            // runs on FramingJobRunner, not on this wall: stop if the wall is destroyed mid-raise (new game, test cleanup)
             for (float t = 0; t < seconds; t += Time.deltaTime)
             {
+                if (this == null) yield break;
                 SetTilt(90f - RaiseAngle(t / seconds));
                 yield return null;
             }
+            if (this == null) yield break;
             SetTilt(0f);
             Sfx.Play("thud", transform.position + Vector3.up * 1.2f, 0.9f);
             for (float t = 0; t < 0.45f; t += Time.deltaTime)
             {
+                if (this == null) yield break;
                 SetTilt(Mathf.Max(0f, 0.9f * Mathf.Sin(t * 28f) * Mathf.Exp(-t * 9f)));
                 yield return null;
             }
+            if (this == null) yield break;
             SetTilt(0f);
         }
 
@@ -293,7 +298,7 @@ namespace Groundbreak
         {
             foreach (var m in w.GetComponentsInChildren<StructuralMember>())
             {
-                if (m.Role != MemberRole.BottomPlate) continue;
+                if (m.Role != MemberRole.BottomPlate || !m.enabled) continue;   // a plate already cut this frame (Destroy is deferred)
                 var p = m.Piece;
                 float a = Units.In(o.CenterIn - o.RoughWidthIn / 2), b = Units.In(o.CenterIn + o.RoughWidthIn / 2);
                 Vector3 lp = m.transform.localPosition;
@@ -349,7 +354,7 @@ namespace Groundbreak
                 var c = new Vector3((x0 + x1) / 2, s.PlateHeightIn + 0.75f, s.DepthIn / 2) * Units.Inch;
                 job.Add("Cap plate on " + s.Name + (endWall ? " (laps the corners)" : ""), ToolSets.Fasten,
                     () => Framer.Make(stock, I(len), ww.transform, c, X, Y, MemberRole.CapPlate, Connector.Nailed, s.Name),
-                    () => (ww.transform.TransformPoint(c), new Vector3(I(len), I(1.5f), I(s.DepthIn)), ww.transform.rotation * Quaternion.LookRotation(X, Y))).Use(stock).Nails = Mathf.CeilToInt(len / 16f) * 2;
+                    () => (ww.transform.TransformPoint(c), new Vector3(I(len), I(1.5f), I(s.DepthIn)), ww.transform.rotation)).Use(stock).Nails = Mathf.CeilToInt(len / 16f) * 2;
             }
             return job;
         }

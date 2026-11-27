@@ -26,8 +26,10 @@ namespace Groundbreak
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"Gauge: {g.Psi:0} psi · {g.Status}", L);
-                if (GUILayout.Button("Pump 100 psi water", B, GUILayout.Width(180))) PressureTest.Pump(g, false);
-                if (GUILayout.Button("Pump 60 psi air", B, GUILayout.Width(150))) PressureTest.Pump(g, true);
+                // tests change the leak/issue lists drawn below: apply after the app has drawn (IMGUI layout must match)
+                var gauge = g;
+                if (GUILayout.Button("Pump 100 psi water", B, GUILayout.Width(180))) MepTablet.Defer(() => PressureTest.Pump(gauge, false));
+                if (GUILayout.Button("Pump 60 psi air", B, GUILayout.Width(150))) MepTablet.Defer(() => PressureTest.Pump(gauge, true));
                 GUILayout.EndHorizontal();
                 foreach (var l in g.Leaks) GUILayout.Label("   • " + l.Note, L);
             }
@@ -36,8 +38,8 @@ namespace Groundbreak
             GUILayout.Label("DWV water test", H);
             GUILayout.BeginHorizontal();
             GUILayout.Label(DrainTest.Status, L);
-            if (GUILayout.Button("Plug + fill to vent", B, GUILayout.Width(180))) DrainTest.Fill();
-            if (GUILayout.Button("Drain", B, GUILayout.Width(90))) DrainTest.Drain();
+            if (GUILayout.Button("Plug + fill to vent", B, GUILayout.Width(180))) MepTablet.Defer(() => DrainTest.Fill());
+            if (GUILayout.Button("Drain", B, GUILayout.Width(90))) MepTablet.Defer(DrainTest.Drain);
             GUILayout.EndHorizontal();
             foreach (var l in DrainTest.Issues) GUILayout.Label("   • " + l.Note, L);
             // ---- slopes

@@ -32,7 +32,7 @@ namespace Groundbreak
             node.DisplayName = $"{Fittings.Fraction(main.NominalIn)}\" x {Fittings.Fraction(main.NominalIn)}\" x {Fittings.Fraction(br.NominalIn)}\" " +
                                (node.Type == "santee" ? "sanitary tee" : node.Type);
             var old = node.transform.Find("Visual");
-            if (old != null) Object.Destroy(old.gameObject);
+            if (old != null) MepMesh.DestroyVisual(old.gameObject); // the fitting's own MepMesh body
             Vector3 c = node.transform.position;
             float leg = Fittings.Leg(main);
             var mm = new MepMesh { Origin = c };

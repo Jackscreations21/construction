@@ -44,7 +44,7 @@ namespace Groundbreak
                     int have = FinishStock.Unlimited ? 9999 : Game.Stock.Count(id);
                     take.TryGetValue(id, out int used);
                     if (have > used) { ft = f; break; }
-                    if (ft < 0) ft = -f; // remember the first fitting size in case nothing is on site
+                    if (ft == -1) ft = -f; // remember the first fitting size in case nothing is on site
                 }
                 if (ft < 0)
                 {

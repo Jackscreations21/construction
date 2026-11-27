@@ -44,7 +44,7 @@ namespace Groundbreak
         public bool IsReceptacle => Device == ElDevice.Receptacle15 || Device == ElDevice.Receptacle20 || Device == ElDevice.Gfci;
         public bool MadeUp => Stripped && Grounds && Neutrals && Hots;
 
-        public float VolumeCuIn => Kind == ElBoxKind.TwoGang ? 32f : 20.3f;
+        public float VolumeCuIn => Kind == ElBoxKind.TwoGang ? 32f : Kind == ElBoxKind.Round ? 20f : 20.3f; // as stamped / sold (catalog names)
         public float FrontDist => Units.In(Kind == ElBoxKind.Round ? HRound * 0.5f : D1g * 0.5f);
         public Vector3 R => Vector3.right;
         public Vector3 U => Kind == ElBoxKind.Round ? Vector3.forward : Vector3.up;
@@ -407,6 +407,7 @@ namespace Groundbreak
 
         void OnEnable() { if (!All.Contains(this)) All.Add(this); }
         void OnDisable() { All.Remove(this); }
+        void OnDestroy() { foreach (var m in _lens) if (m != null) Destroy(m); _lens.Clear(); } // per-fixture lens copies
 
         public static void Attach(Piece p, float watts, bool light)
         {

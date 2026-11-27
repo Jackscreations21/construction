@@ -244,6 +244,17 @@ namespace Groundbreak
 
         public int SubmeshCount => subs.Count;
 
+        /// <summary>Destroys a rebuilt MEP visual together with the procedural meshes it owns. Only for objects whose meshes were
+        /// built for that one object (MepMesh / MeshBuilder spawns, label quads) - never for cached/shared meshes (HvacModels).
+        /// Destroying the GameObject alone leaves its Mesh alive, which leaked one mesh per rebuild (boxes, panels, runs...).</summary>
+        public static void DestroyVisual(GameObject go)
+        {
+            if (go == null) return;
+            foreach (var mf in go.GetComponentsInChildren<MeshFilter>(true))
+                if (mf.sharedMesh != null) Object.Destroy(mf.sharedMesh);
+            Object.Destroy(go);
+        }
+
         /// <summary>Creates a child GameObject with this mesh under parent at Origin.</summary>
         public GameObject Spawn(Transform parent, string name, Material[] mats)
         {

@@ -349,7 +349,7 @@ namespace Groundbreak
             var old = n.transform.Find("Primer");
             bool any = false;
             foreach (var p in n.Ports) if (p.Join == JoinMethod.Solvent && p.Joined && p.Run != null) { any = true; break; }
-            if (old != null) { old.name = "Primer (old)"; Object.Destroy(old.gameObject); }
+            if (old != null) { old.name = "Primer (old)"; MepMesh.DestroyVisual(old.gameObject); } // rebuilt on every graph change: free the mesh
             if (!any) return;
             bool hub = n.Piece == null || n.Type == "ptrap" || n.Type == "cleanout";
             var mm = new MepMesh { Origin = n.transform.position };
