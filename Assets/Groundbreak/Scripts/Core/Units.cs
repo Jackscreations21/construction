@@ -16,6 +16,7 @@ namespace Groundbreak
         {
             float inches = Mathf.Abs(ToInches(meters));
             int sixteenths = Mathf.RoundToInt(inches * 16f);
+            bool negative = meters < 0 && sixteenths > 0; // a tiny negative that rounds to 0 is 0", not -0"
             int feet = sixteenths / (12 * 16);
             sixteenths -= feet * 12 * 16;
             int whole = sixteenths / 16;
@@ -27,7 +28,7 @@ namespace Groundbreak
                 while (num % 2 == 0) { num /= 2; den /= 2; }
                 f = " " + num + "/" + den;
             }
-            string sign = meters < 0 ? "-" : "";
+            string sign = negative ? "-" : "";
             return feet > 0 ? $"{sign}{feet}' {whole}{f}\"" : $"{sign}{whole}{f}\"";
         }
     }

@@ -85,7 +85,7 @@ namespace Groundbreak
 
             // header: back · title · step n of m
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("◀ All tutorials", btn, GUILayout.Width(label.fontSize * 9))) { Open = null; return; }
+            if (GUILayout.Button("◀ All tutorials", btn, GUILayout.Width(label.fontSize * 9))) { Open = null; GUILayout.EndHorizontal(); return; } // close the group before leaving
             GUILayout.Label(tut.Phase + "  ›  " + tut.Title, head);
             GUILayout.FlexibleSpace();
             GUILayout.Label($"Step {StepIndex + 1} of {tut.Steps.Count}", head);
@@ -243,7 +243,12 @@ namespace Groundbreak
             if (Time.time > _until || reached) Destroy(gameObject);
         }
 
-        void OnDestroy() { if (Current == this) Current = null; }
+        void OnDestroy()
+        {
+            if (Current == this) Current = null;
+            var mf = GetComponent<MeshFilter>(); // the beacon mesh is built per Mark(): free it with the beacon
+            if (mf != null && mf.sharedMesh != null) Destroy(mf.sharedMesh);
+        }
 
         void OnGUI()
         {

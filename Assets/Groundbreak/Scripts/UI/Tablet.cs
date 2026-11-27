@@ -260,6 +260,9 @@ namespace Groundbreak
             var names = AppNames();
             if (_app >= names.Length) _app = -1;
             string appName = _app >= 0 ? names[_app] : "Home";
+            // The sidebar below can change _app during a click event; the content must still draw the app this event's
+            // Layout pass measured, or IMGUI's control count changes between Layout and the click (layout errors).
+            int shownApp = _app;
 
             // header
             float pad = 12f, headH = Mathf.Round(_header.fontSize * 2.1f);
@@ -304,7 +307,7 @@ namespace Groundbreak
             GUILayout.BeginArea(new Rect(contentRect.x, contentRect.y, contentRect.width, contentRect.height - msgH));
             _scroll = GUILayout.BeginScrollView(_scroll, false, false, GUIStyle.none, GUI.skin.verticalScrollbar);
             GUILayout.BeginVertical(GUILayout.Width(ContentWidth));
-            if (_app < 0) Home(names);
+            if (shownApp < 0) Home(names);
             else
             {
                 int ext = _extApps.FindIndex(a => a.name == appName);

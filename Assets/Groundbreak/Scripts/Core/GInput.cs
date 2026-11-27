@@ -44,6 +44,7 @@ namespace Groundbreak
             var kb = Keyboard.current; if (kb == null) return null;
             if (k >= KeyCode.A && k <= KeyCode.Z) return kb[(Key)((int)Key.A + (k - KeyCode.A))];
             if (k >= KeyCode.Alpha1 && k <= KeyCode.Alpha9) return kb[(Key)((int)Key.Digit1 + (k - KeyCode.Alpha1))];
+            if (k >= KeyCode.F1 && k <= KeyCode.F12) return kb[(Key)((int)Key.F1 + (k - KeyCode.F1))]; // F5/F9 save-load, F10 menu
             switch (k)
             {
                 case KeyCode.Alpha0: return kb.digit0Key;
