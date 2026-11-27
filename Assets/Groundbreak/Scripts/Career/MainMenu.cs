@@ -41,7 +41,7 @@ namespace Groundbreak
             SaveSystem.ResetExtensions();
             Game.Wallet = new Wallet(mode == GameMode.Career ? 25000 : 50000);
             if (GameClock.I != null) { GameClock.I.Day = 1; GameClock.I.Hours = 7f; }
-            Game.Toast(mode == GameMode.Career ? "New career: open the tablet (T) → Job Board" : "Free Build: unlimited open site. Sandbox toggles in Settings (F10)");
+            Game.Toast(mode == GameMode.Career ? "New career: open the tablet (T) → Jobs" : "Free Build: unlimited open site. Sandbox toggles in Settings (F10)");
             NewGameStarted?.Invoke(mode);
         }
 
@@ -132,7 +132,7 @@ namespace Groundbreak
             if (GameSettings.IsCareer)
             {
                 var c = Career.Active;
-                rows.Add(("star", c != null ? $"{c.Title}  ·  {Career.DaysLeft} days left" : $"No job - Job Board (T)  ·  Rep {Career.Reputation}"));
+                rows.Add(("star", c != null ? $"{c.Title}  ·  {Career.DaysLeft} days left" : $"{Company.Stage} · {Company.ActiveJobs.Count} active jobs - Jobs app (T)  ·  Rep {Company.Reputation}"));
             }
             else rows.Add(("dot", "Free Build" + (GameSettings.Relaxed ? " · relaxed" : "")));
             float w = fs * 24;
