@@ -28,10 +28,13 @@ namespace Groundbreak
         static void Hook()
         {
             MapWorld.Built -= Build; MapWorld.Built += Build;
-            Town.Destroyed -= Clear; Town.Destroyed += Clear;
+            Town.Destroyed -= Hide; Town.Destroyed += Hide;
         }
 
-        static void Clear()
+        static void Hide() { if (Root != null) Root.SetActive(false); }
+
+        /// <summary>Destroys the ring and its meshes (rebuilt on the next map build).</summary>
+        public static void Clear()
         {
             if (Root == null) return;
             foreach (var mf in Root.GetComponentsInChildren<MeshFilter>(true)) if (mf.sharedMesh != null) Object.Destroy(mf.sharedMesh);
@@ -65,11 +68,13 @@ namespace Groundbreak
 
         public static void Build()
         {
-            Clear();
             if (!MapWorld.Exists) return;
+            // the countryside never changes: built once, hidden with the town and shown again on the next build (no rebuild, nothing to leak)
+            if (Root != null) { Root.SetActive(true); return; }
             float t0 = Time.realtimeSinceStartup;
             Fields = 0; TreeBlobs = 0; Vertices = 0;
             Root = new GameObject("FarRing");
+            Object.DontDestroyOnLoad(Root);
             var bd = MapLayout.Bounds;
             var hills = new List<Rect>();
             foreach (var a in MapLayout.Areas) if (a.Kind == AreaKind.Hill) hills.Add(a.R);
@@ -263,7 +268,7 @@ namespace Groundbreak
 
         static void Pre(Camera c)
         {
-            if (c == null || c.orthographic || FarRing.Root == null || c.transform.position.y < Altitude || c.farClipPlane >= Far) return;
+            if (c == null || c.orthographic || FarRing.Root == null || !FarRing.Root.activeInHierarchy || c.transform.position.y < Altitude || c.farClipPlane >= Far) return;
             _saved[c] = (c.nearClipPlane, c.farClipPlane);
             c.farClipPlane = Far;
             c.nearClipPlane = Mathf.Max(c.nearClipPlane, Mathf.Clamp(c.transform.position.y * 0.01f, 0.3f, 5f));
