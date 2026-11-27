@@ -100,10 +100,10 @@ namespace Groundbreak
             foreach (var id in DamagedLots)
             {
                 var l = Town.Find(id);
-                if (l != null && l.ServiceCalls && !Company.Offers.Concat(Company.ActiveJobs).Any(j => j.Address == l.Address)) { lot = l; break; }
+                if (l != null && l.ServiceCalls && !OwnFlip(l) && !Company.Offers.Concat(Company.ActiveJobs).Any(j => j.Address == l.Address)) { lot = l; break; }
             }
             lot ??= JobCatalog.FreeAddressFor(d);
-            if (lot == null) return null;
+            if (lot == null || OwnFlip(lot)) return null;
             var job = JobCatalog.CreateService(lot, false, null, d);
             if (job == null) return null;
             job.Payout = Mathf.RoundToInt(job.Payout * Premium);
@@ -134,7 +134,18 @@ namespace Groundbreak
         static void StaticReset() { Kind = StormKind.None; StartDay = -1; DamagedLots.Clear(); JobIds.Clear(); Force = false; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Init() { SeasonWeather.SaveStorms = Save; SeasonWeather.LoadStorms = Load; }
+        static void Init() { SeasonWeather.SaveStorms = Save; SeasonWeather.LoadStorms = Load; Company.JobCompleted += OnJobCompleted; }
+
+        /// <summary>A finished storm job fixed the house: clear its damage. (Tick can't see it: Complete removes the job from ActiveJobs.)</summary>
+        static void OnJobCompleted(Job j)
+        {
+            if (j == null || !JobIds.Remove(j.Id)) return;
+            var lot = Town.Find(j.Address);
+            if (lot != null) { StormDamage.Clear(lot.Id); DamagedLots.Remove(lot.Id); }
+        }
+
+        /// <summary>A house the company owns as a flip is not a customer's: no storm calls there.</summary>
+        static bool OwnFlip(TownLot l) { var f = l != null ? Flips.At(l.Address) : null; return f != null && f.Status != FlipStatus.Listed; }
     }
 
     /// <summary>Seasonal business: busy summer, slow winter with more indoor/repair work (catalog weights), seasonal pay on new offers,

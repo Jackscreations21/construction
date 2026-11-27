@@ -111,7 +111,8 @@ namespace Groundbreak
         {
             var l = L(k);
             var info = k.TradeInfo; var co = k.Company;
-            if (!l.TasksMade) MakeTasks(k, l, SubScopes.Tasks(k.Trade, k.Center, k.Radius));
+            // after a load the live task list is empty: a warranty callback must get its fix tasks back, not the original scope
+            if (!l.TasksMade) MakeTasks(k, l, k.State == SubState.Callback ? SubScopes.FixTasks(k.Trade, k.Center, k.Radius) : SubScopes.Tasks(k.Trade, k.Center, k.Radius));
             Vector3 park = k.Arrival;
             Vector3 toSite = k.Center - park; toSite.y = 0f;
             float yaw = toSite.sqrMagnitude > 1f ? Mathf.Atan2(toSite.x, toSite.z) * Mathf.Rad2Deg + 90f : 0f;

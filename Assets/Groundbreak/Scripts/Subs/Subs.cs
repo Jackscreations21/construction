@@ -117,6 +117,8 @@ namespace Groundbreak
         {
             if (q == null) { msg = "No quote"; return null; }
             if (q.Blocker != null) { msg = q.Blocker; return null; }
+            // the quote may be older than another booking (the app keeps the other companies' quotes): re-check
+            if (ActiveFor(q.Trade.Id, q.JobId) != null) { msg = "A " + q.Trade.Label.ToLowerInvariant() + " sub is already booked here"; return null; }
             var c = q.Company;
             bool onTime = ForceOnTime ?? (UnityEngine.Random.value < c.Reliability);
             int late = onTime ? 0 : 1 + UnityEngine.Random.Range(0, c.Quality <= 2 ? 3 : 2);
