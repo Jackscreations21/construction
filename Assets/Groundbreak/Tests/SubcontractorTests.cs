@@ -171,6 +171,9 @@ namespace Groundbreak.Tests
             Assert.AreEqual(_money - k.Price, Game.Wallet.Money, "invoice paid from the wallet on completion");
             Assert.IsTrue(Game.Wallet.Log.Exists(l => l.Contains("Sub invoice")));
             Assert.IsNull(SubCrews.TruckOf(k), "truck left");
+            Assert.Greater(SubCrews.Departures, 0, "the crew walks back to their truck before it drives off");
+            for (float t = 0; t < SubCrews.WalkBackTimeout + 5f && SubCrews.Departures > 0; t += Time.deltaTime) yield return null;
+            Assert.AreEqual(0, SubCrews.Departures, "truck gone once the crew is aboard");
             yield return Frames(10);
             Shot(Cam(at + new Vector3(5.2f, 2.1f, -4.4f), at + new Vector3(1.5f, 1.1f, 0)), "subs_finished_wall");
 

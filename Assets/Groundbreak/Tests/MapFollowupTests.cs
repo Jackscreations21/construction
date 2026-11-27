@@ -114,6 +114,9 @@ namespace Groundbreak.Tests
             // service calls: the address picker reaches outer-map houses
             var svc = JobCatalog.All.First(d => d.Mode == JobMode.Service && d.Where != null && d.Where.Name == "toilet");
             var districts = new HashSet<string>(); int outer = 0;
+            // Westside has a single enterable house (~2% of the travel-weighted picks): an unseeded run misses it about 1 time in 80.
+            // Seed the picks so the spread check is deterministic (the RNG state is restored afterwards).
+            var rngState = Random.state; Random.InitState(20261127);
             for (int i = 0; i < 200; i++)
             {
                 var l = JobCatalog.FreeAddressFor(svc);
@@ -121,6 +124,7 @@ namespace Groundbreak.Tests
                 districts.Add(l.External ? l.District : "oldtown");
                 if (l.External) outer++;
             }
+            Random.state = rngState;
             Assert.GreaterOrEqual(districts.Count, 3, "service calls across districts: " + string.Join(",", districts));
             Assert.Greater(outer, 20, "service calls at map houses");
             // contractor jobs: any empty house lot in town

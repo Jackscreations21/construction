@@ -73,21 +73,29 @@ Models `flip-trash` and `flip-beds` (`CatalogProps.Register`).
 | `FlipDefs.cs` | problem/upgrade library, contractor estimate, book hours, the two new catalog tasks + models |
 | `Flips.cs` | state (`FlipHouse`, `FlipItem`), market, buying + loan, defects in the world, crew days, listing/offers/sale, daily costs, save key `"flips"`; `FlipsRuntime` polls the defects once a second |
 | `FlipVisuals.cs` | street dressing per house (merged mesh; the dumpster has a box collider) |
+| `FlipInterior.cs` | kitchen + bath finishes on owned / for-sale flips, from the `kitchen` / `bath` done flags: dated = orange-stained raised-panel oak fronts, brass hardware, almond laminate counter; almond 4-1/4" tile with a dusty-rose row on the tub walls. Renovated = white shaker fronts, satin-nickel bar pulls, quartz counter; white 3x6 subway in running bond. Overlays a few mm in front of the house's cabinets / counter / tub surround, no colliders |
 | `FlipApp.cs` | the tablet app |
 
 API for other features/tests: `Flips.All/Listings/Owned/Get/At`, `RefreshMarket(day)`, `AddListing(lot, seed)`, `Buy`, `BuyBlocker`,
 `CashToClose`, `Arv/Value/Condition/RehabEstimate`, `AssignNext/Release/CrewDay`, `List/Unlist/AcceptOffer/DeclineOffer`,
-`Step(day)` (the day step without the clock), `ResetState()`, `LiveDefect(f, state)`.
+`Step(day)` (the day step without the clock), `ResetState()`, `LiveDefect(f, state)`, `PartsUsed(item)`.
+
+Costs: parts used on a flip's defects (the `used` list each step records) are added to `costSpent` by `Sync`, once per use
+(`FlipItem.matsCounted` remembers what is already counted, saved). Crew-finished items bill their book materials less any parts the
+player already put in, and the solver's parts are marked counted so nothing is billed twice. RepairUI shows "Flip punch list item
+done — see the Flips app" on flip defects and ignores B (flips are never invoiced).
 
 Owned houses keep `LotUse.Customer` (so the town still builds the house); service calls/contractor offers at a flip address are
 removed on every `Company.Changed` while the company owns it. `lot.Resident` shows "Vacant (your flip)", then the buyers.
 
 ## Tests
 `Tests/FlipTests.cs` (Birch St map ranch, the westernmost one): market numbers, buying with the loan + daily costs + offer pruning,
-crew + player renovation to ARV then listing, offer, sale and profit, unfixed houses sell for less and slower, save round trip.
-Shots `Logs/shots/flip_01..06_*.png`. `CaptureFlipsApp` (category UICapture, windowed only) → `flip_app_market.png`, `flip_app_my_flip.png`.
+crew + player renovation to ARV then listing, offer, sale and profit, unfixed houses sell for less and slower, parts used count in
+the flip's costs once (player and crew), save round trip. Shots `Logs/shots/flip_01..06_*.png` (incl. `flip_03b_dated_bath`,
+`flip_05b_renovated_bath`). `CaptureFlipsApp` (category UICapture, windowed only) → `flip_app_market.png`, `flip_app_my_flip.png`.
 
 ## Not done / ideas
 - Crew work is simulated a day at a time (no worker NPCs walking the flip house).
-- Material spend at the hardware store for your own repairs isn't attributed to the flip (only crew materials are).
+- Store purchases themselves aren't attributed: parts count when they are used on a flip step (leftovers stay company stock).
+- Only the kitchen fronts/counter and the tub walls change look; the vanity, toilet and faucet keep their catalog models.
 - Showings/open houses, appraisal gaps, buyer financing falling through, and a seller counter-offer are not modelled.

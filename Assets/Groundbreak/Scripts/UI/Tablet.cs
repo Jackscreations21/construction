@@ -419,9 +419,11 @@ namespace Groundbreak
             GUILayout.Space(8);
             int total = CartTotal();
             GUILayout.Label($"Cart total: ${total:N0}   (Shift+click = 10 at a time)", _header);
+            int fee = Fleet.SupplierDeliveryFee;
+            if (fee > 0) GUILayout.Label($"Delivery ${fee}  ·  order total ${Fleet.StoreOrderTotal(total, false):N0}  (your own truck hauls it free: Fleet app)", _label);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Order — standard (free, ~90s)", _button)) Checkout(false);
-            if (GUILayout.Button($"Rush (+${DeliveryService.RushFee}, ~20s)", _button)) Checkout(true);
+            if (GUILayout.Button(fee > 0 ? $"Order — standard (+${fee} delivery, ~90s)" : "Order — standard (free, ~90s)", _button)) Checkout(false);
+            if (GUILayout.Button($"Rush (+${DeliveryService.RushFee + fee}, ~20s)", _button)) Checkout(true);
             if (GUILayout.Button("Clear cart", _button)) _cart.Clear();
             GUILayout.EndHorizontal();
         }
@@ -431,7 +433,7 @@ namespace Groundbreak
             int total = CartTotal();
             if (total <= 0) { _message = "Cart is empty."; return; }
             if (DeliveryService.I == null) { _message = "Delivery service unavailable."; return; }
-            int cost = total + (rush ? DeliveryService.RushFee : 0);
+            int cost = Fleet.StoreOrderTotal(total, rush);   // materials + supplier delivery fee (Career) + rush
             if (!Game.Wallet.TrySpend(cost, rush ? "Supply order (rush)" : "Supply order"))
             {
                 _message = $"Not enough money: need ${cost:N0}, have ${Game.Wallet.Money:N0}.";

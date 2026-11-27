@@ -309,6 +309,9 @@ namespace Groundbreak.Tests
             yield return new WaitForSeconds(1.0f);
             bl.Auto = null;
             Assert.Greater(bl.BoomDeg, 3f, "boom raises from the controls");
+            bl.Joints = new[] { 0f, 0f, BoomLift.MaxExtend };
+            Assert.LessOrEqual(bl.Reach, BoomLift.MaxReach + 0.02f, "horizontal reach held to the 10.5 m envelope");
+            Assert.Less(bl.ExtendM, BoomLift.MaxExtend, "telescope cut out when booming out level");
             bl.Joints = new[] { 30f, 62f, 5.0f };
             yield return Frames(3);
             Assert.Greater(bl.PlatformHeight, 9.0f, "platform up near 40'");
@@ -403,6 +406,8 @@ namespace Groundbreak.Tests
             crane.PoseHookAt(g2.center + (crane.HookPos - crane.HangingTruss.position));
             yield return Frames(2);
             Assert.IsTrue(crane.TrySetTruss(out msg), msg);
+            Assert.Less(crane.BundleLayers, TruckCrane.BundleFull, "the bed bundle gets lower as trusses are set");
+            Assert.Greater(crane.BundleLayers, 0, "trusses still left on the bed");
             yield return Frames(3);
             Shot(o + new Vector3(fp.Length + 6f, 5.5f, -8f), o + new Vector3(fp.Length * 0.5f, 2.6f, 1.5f), "equip_10_crane_trusses_set");
         }

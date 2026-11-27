@@ -31,6 +31,8 @@ namespace Groundbreak
         /// <summary>Plays the current tool's use animation (tests, scripted demos). t01 = 0 starts it; other values freeze it there.</summary>
         public void SetUse(float t01) => _useT = Mathf.Clamp01(t01);
         public void SkipEquip() => _equipT = 1f;
+        /// <summary>False while the held-tool model is put away (e.g. the tablet is open).</summary>
+        public bool ModelShown => _pivot != null && _pivot.gameObject.activeInHierarchy;
 
         void Awake() { _rig = GetComponent<PlayerRig>(); _feel = GetComponent<PlayerFeel>(); }
 
@@ -73,6 +75,9 @@ namespace Groundbreak
         public void Step(float dt)
         {
             if (_pivot == null) return;
+            // the tablet is held in both hands: put the tool away while it's open
+            bool hide = Tablet.I != null && Tablet.I.IsOpen;
+            if (_pivot.gameObject.activeSelf == hide) _pivot.gameObject.SetActive(!hide);
             var tool = Game.Belt != null ? Game.Belt.Active : null;
             if (tool != _shown) { _shown = tool; Rebuild(tool); _equipT = 0f; _useT = 1f; if (tool != null && _kind != Kind.None) Sfx.Play("equip", transform.position + Vector3.up, 0.5f); }
 

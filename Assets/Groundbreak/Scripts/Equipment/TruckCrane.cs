@@ -36,6 +36,12 @@ namespace Groundbreak
 
         Transform _truss; float _trussLb, _trussH, _trussSpan; FramingJob _trussJob;
 
+        /// <summary>Truss layers drawn in the bed bundle when full; the bundle gets lower as the job's trusses are set.</summary>
+        public const int BundleFull = 10;
+        int _bundleLayers = BundleFull;
+        Transform _bundle;
+        public int BundleLayers => _bundleLayers;
+
         public bool OutriggersDown => _out >= 0.999f;
         public Vector3 HookPos => _hook != null ? _hook.position : transform.position;
         public float RadiusM { get { Vector3 d = HookPos - _turret.position; d.y = 0f; return d.magnitude; } }
@@ -99,7 +105,7 @@ namespace Groundbreak
             EngineBasePitch = 0.7f;
 
             Part(transform, "Truck", Vector3.zero, Quaternion.identity, AuthorTruck);
-            Part(transform, "TrussBundle", Vector3.zero, Quaternion.identity, AuthorBundle);
+            _bundle = Part(transform, "TrussBundle", Vector3.zero, Quaternion.identity, AuthorBundle);
             BuildOutriggers();
 
             _turret = Part(transform, "Turret", TurretLocal, Quaternion.identity, AuthorTurret);
@@ -256,7 +262,7 @@ namespace Groundbreak
             int wood = m.K(SurfaceKind.PineLumber), plate = m.K(SurfaceKind.Galvanized), band = m.K(SurfaceKind.MatteBlack);
             foreach (float z in new[] { -0.2f, -1.9f, -3.6f, -5.3f })
                 b.AddBox(new Vector3(0f, BedTop + 0.045f, z), new Vector3(2.0f, 0.09f, 0.09f), wood);           // 4x4 dunnage
-            const int layers = 10; float t = Units.In(1.5f);
+            int layers = _bundleLayers; float t = Units.In(1.5f);
             for (int i = 0; i < layers; i++)
             {
                 float y = BedTop + 0.09f + t * 0.5f + i * t;
@@ -265,7 +271,7 @@ namespace Groundbreak
             }
             b.ResetTransform();
             float top = BedTop + 0.09f + layers * t;
-            foreach (float z in new[] { -1.2f, -4.8f })
+            if (layers > 0) foreach (float z in new[] { -1.2f, -4.8f })
             {
                 b.AddBox(new Vector3(0f, top + 0.003f, z), new Vector3(1.7f, 0.006f, 0.035f), band);
                 foreach (int s in new[] { -1, 1 }) b.AddBox(new Vector3(s * 0.85f, (top + BedTop) * 0.5f + 0.05f, z), new Vector3(0.006f, top - BedTop - 0.1f, 0.035f), band);
@@ -734,8 +740,27 @@ namespace Groundbreak
                 return false;
             }
             bool ok = job.TryAdvance(null, out msg);
-            if (ok) DropTruss();
+            if (ok) { DropTruss(); ShrinkBundle(job); }
             return ok;
+        }
+
+        /// <summary>Redraws the bed bundle with as many layers as the job has trusses left (share of the full bundle).</summary>
+        void ShrinkBundle(FramingJob job)
+        {
+            if (job == null || _bundle == null) return;
+            int total = 0, left = 0;
+            for (int i = 0; i < job.Steps.Count; i++)
+                if (IsTrussStep(job.Steps[i].Label)) { total++; if (i >= job.Next) left++; }
+            if (total == 0) return;
+            int layers = Mathf.Clamp(Mathf.CeilToInt(BundleFull * left / (float)total), 0, BundleFull);
+            if (layers >= _bundleLayers) return;
+            _bundleLayers = layers;
+            var mf = _bundle.GetComponent<MeshFilter>();
+            if (mf != null && mf.sharedMesh != null) Destroy(mf.sharedMesh);
+            _bundle.gameObject.SetActive(false);
+            Destroy(_bundle.gameObject);
+            _bundle = Part(transform, "TrussBundle", Vector3.zero, Quaternion.identity, AuthorBundle);
+            SetLayerRecursive(_bundle.gameObject, 2);
         }
 
         void DropTruss()

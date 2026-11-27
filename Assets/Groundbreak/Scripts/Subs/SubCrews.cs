@@ -25,6 +25,16 @@ namespace Groundbreak
         static readonly Dictionary<string, Live> _live = new Dictionary<string, Live>();
         float _next;
 
+        /// <summary>A crew walking back to its truck; the truck drives off once they are all aboard (or after a timeout).</summary>
+        class Departure { public readonly List<CrewNpc> Npcs = new List<CrewNpc>(); public GameObject Truck; public float GiveUpAt; }
+        static readonly List<Departure> _departing = new List<Departure>();
+        public const float WalkBackTimeout = 45f;
+
+        /// <summary>Sub hands still walking back to a truck (any contract).</summary>
+        /// <summary>Crews/trucks still on their way out (a truck waits here until its crew has walked back).</summary>
+        public static int Departures => _departing.Count;
+        public static int DepartingCount { get { int n = 0; foreach (var d in _departing) foreach (var c in d.Npcs) if (c != null) n++; return n; } }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
@@ -39,6 +49,7 @@ namespace Groundbreak
 
         void Update()
         {
+            TickDepartures();
             if (Time.time < _next) return;
             _next = Time.time + 0.5f;
             if (!GameSettings.IsCareer && !Subs.IgnoreWorkHours) return;
@@ -178,10 +189,38 @@ namespace Groundbreak
         {
             var l = L(k, false);
             if (l == null) return;
-            foreach (var n in l.Npcs) if (n != null) { n.gameObject.SetActive(false); Destroy(n.gameObject); }
+            var dep = new Departure { Truck = l.Truck, GiveUpAt = Time.time + WalkBackTimeout };
+            Vector3 door = l.Truck != null ? l.Truck.transform.position + l.Truck.transform.right * 1.3f : k.Arrival;
+            foreach (var n in l.Npcs)
+            {
+                if (n == null) continue;
+                n.SendHome(door);          // CrewNpc walks there and removes itself
+                dep.Npcs.Add(n);
+            }
             l.Npcs.Clear();
-            if (l.Truck != null) Destroy(l.Truck);
             l.Truck = null;
+            if (dep.Npcs.Count > 0 || dep.Truck != null) _departing.Add(dep);
+        }
+
+        /// <summary>Trucks leave once their crew has walked back (CrewNpc destroys itself at the exit point).</summary>
+        static void TickDepartures()
+        {
+            for (int i = _departing.Count - 1; i >= 0; i--)
+            {
+                var d = _departing[i];
+                d.Npcs.RemoveAll(n => n == null);
+                if (d.Npcs.Count > 0 && Time.time < d.GiveUpAt) continue;
+                DestroyDeparture(d);
+                _departing.RemoveAt(i);
+            }
+        }
+
+        static void DestroyDeparture(Departure d)
+        {
+            foreach (var n in d.Npcs) if (n != null) { n.gameObject.SetActive(false); Destroy(n.gameObject); }
+            d.Npcs.Clear();
+            if (d.Truck != null) Destroy(d.Truck);
+            d.Truck = null;
         }
 
         /// <summary>Warranty callback: fresh fix-up tasks for the trade (re-nail loose pieces, re-screw, re-dig, re-sod...).</summary>
@@ -215,9 +254,11 @@ namespace Groundbreak
                 foreach (var t in l.Tasks) Crew.Tasks.Remove(t);
             }
             _live.Clear();
+            foreach (var d in _departing) DestroyDeparture(d);
+            _departing.Clear();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void StaticReset() => _live.Clear();
+        static void StaticReset() { _live.Clear(); _departing.Clear(); }
     }
 }

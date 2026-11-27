@@ -312,15 +312,18 @@ namespace Groundbreak
         {
             var list = new List<FramePlane>();
             Vector3 eye = inside + Vector3.up * 1.2f;
-            void Try(Vector3 dir, float r)
+            void Try(Vector3 dir, float r, Vector3 from = default)
             {
                 FramePlane fp = null;
-                try { fp = Insulation.FaceFrom(eye, dir, r); } catch (Exception e) { Debug.LogException(e); }
+                try { fp = Insulation.FaceFrom(from == default ? eye : from, dir, r); } catch (Exception e) { Debug.LogException(e); }
                 if (fp == null || !(fp.IsWall || fp.IsCeiling)) return;
                 foreach (var o in list) if (o.SameFace(fp)) return;
                 if (fp.IsCeiling) list.Insert(0, fp); else list.Add(fp);
             }
-            Try(Vector3.up, 5f);
+            // straight up can slip between joists (16" O.C.); a ray 8" over either way lands on one
+            float step = 0.2032f;   // 8"
+            foreach (var off in new[] { Vector3.zero, new Vector3(step, 0, 0), new Vector3(0, 0, step), new Vector3(step, 0, step) })
+            { Try(Vector3.up, 5f, eye + off); if (list.Count > 0 && list[0].IsCeiling) break; }
             for (int i = 0; i < 16; i++) { float a = i * Mathf.PI / 8f; Try(new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)), range); }
             return list;
         }

@@ -57,6 +57,27 @@ namespace Groundbreak
         public FramingJob StartDryIn() => DryIn ?? (DryIn = Track(DryInHook?.Invoke(this)));
         public FramingJob StartShingles() => Shingles ?? (Shingles = Track(ShinglesHook?.Invoke(this)));
 
+        /// <summary>Optional garage wing off the front eave wall (cross gable, California valleys). Real order: after the
+        /// main roof sheathing, before the main dry-in; the wing is roofed after the main shingles.</summary>
+        public CrossGable Wing;
+        public FramingJob WingRoofing;
+        RoofInfo MainRoofInfo => Roof != null ? Roof.GetComponent<RoofInfo>() : null;
+        public bool CanAddWing => Wing == null && !Hip && RoofSheathing != null && RoofSheathing.Done && DryIn == null && MainRoofInfo != null;
+        public bool CanRoofWing => Wing != null && Wing.Framed && WingRoofing == null && Shingles != null && Shingles.Done;
+        /// <summary>Wing width (ft): narrower than the main roof's depth so its ridge stays below the main ridge.</summary>
+        public float WingWidthFt => Mathf.Max(8f, Mathf.Floor(Mathf.Min(14f, Fp.Width / Units.Foot - 2f, Fp.Length / Units.Foot - 4f) / 2f) * 2f);
+        public float WingProjectionFt => Mathf.Min(20f, WingWidthFt + 6f);
+
+        public CrossGable StartWing()
+        {
+            if (!CanAddWing) return Wing;
+            Wing = CrossGable.Frame(MainRoofInfo, Fp.Length / 2f, WingWidthFt, WingProjectionFt);
+            Track(Wing.FramingJob);
+            return Wing;
+        }
+
+        public FramingJob StartWingRoofing() => CanRoofWing ? (WingRoofing = Track(CrossGable.Roof(Wing))) : WingRoofing;
+
         public List<FramingJob> FlashOpenings()
         {
             var l = new List<FramingJob>();
@@ -164,8 +185,10 @@ namespace Groundbreak
             if (p.WallsDone && RoughOpening.All.Exists(r => !r.Flashed) && GUILayout.Button("Flash rough openings", btn)) p.FlashOpenings();
             if (p.Caps != null && p.Caps.Done && p.Roof == null && ShellProject.RoofFramingHook != null && GUILayout.Button(p.StickFrame ? "Stick-frame the roof" : "Order trusses (boom truck sets them)", btn)) p.StartRoof();
             if (p.Roof != null && p.Roof.Done && p.RoofSheathing == null && ShellProject.RoofSheathingHook != null && GUILayout.Button("Roof sheathing + H-clips", btn)) p.StartRoofSheathing();
-            if (p.RoofSheathing != null && p.RoofSheathing.Done && p.DryIn == null && ShellProject.DryInHook != null && GUILayout.Button("Dry-in: drip edge, ice & water, underlayment", btn)) p.StartDryIn();
+            if (p.CanAddWing && GUILayout.Button($"Add garage wing ({p.WingWidthFt:0}' x {p.WingProjectionFt:0}' cross gable, valleys) - before dry-in", btn)) { p.StartWing(); t?.ShowMessage("Garage wing: walls, valley boards, ridge, commons, valley jacks, deck"); }
+            if (p.RoofSheathing != null && p.RoofSheathing.Done && p.DryIn == null && (p.Wing == null || p.Wing.Framed) && ShellProject.DryInHook != null && GUILayout.Button("Dry-in: drip edge, ice & water, underlayment", btn)) p.StartDryIn();
             if (p.DryIn != null && p.DryIn.Done && p.Shingles == null && ShellProject.ShinglesHook != null && GUILayout.Button("Shingles: starter, courses, ridge vent + cap", btn)) p.StartShingles();
+            if (p.CanRoofWing && GUILayout.Button("Roof the garage wing: valley ice & water, woven + closed-cut valleys", btn)) p.StartWingRoofing();
             if (GUILayout.Button("Request framing inspection", btn)) { FramingInspection.Run(); Object.FindAnyObjectByType<InspectionMarkers>()?.Refresh(); }
             if (FramingInspection.HasRun) GUILayout.Label(FramingInspection.Report(), label);
         }

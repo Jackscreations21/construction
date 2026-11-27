@@ -155,6 +155,9 @@ namespace Groundbreak
                 sgo.transform.SetPositionAndRotation(p, rot);
             }
 
+            // ---- kitchen + bath finishes (dated until the upgrade is done)
+            FlipInterior.Build(f, house, go.transform);
+
             if (k.B.VertexCount > 0) k.Make(go.transform, "Overgrowth");
         }
 
