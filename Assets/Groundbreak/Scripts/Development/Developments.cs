@@ -226,7 +226,8 @@ namespace Groundbreak
         public static int DailyCarry(HouseProject p)
         {
             if (p.Kind != ProjectKind.Spec || p.Sold) return 0;
-            return Mathf.RoundToInt((LandShare(Of(p)) + p.CostSpent) * PropertyTaxRate / 365f) + BuildersRiskPerHouseDay;
+            // CostSpent already includes the land share (StartSpecHouse), so don't add it a second time
+            return Mathf.RoundToInt(p.CostSpent * PropertyTaxRate / 365f) + BuildersRiskPerHouseDay;
         }
 
         static void DayStep(int day)

@@ -151,6 +151,7 @@ namespace Groundbreak
             if (r.StartsWith(LoanLabel) || r.StartsWith("Loan payoff")) return "Loan payments";
             if (r.StartsWith("Supply") || r.StartsWith("Materials") || r.StartsWith("Bulk order") || r.Contains("Ready-mix") || r.Contains("concrete")) return "Materials";
             if (r.StartsWith("Vehicle:") || r.StartsWith("Down payment") || r.StartsWith("Rack")) return "Vehicles (purchase)";
+            if (r.StartsWith("Tool") || r.StartsWith("Shop equipment") || r.StartsWith("Equipment")) return "Tools & equipment";   // before Fuel/rent: "Fuel tank", "Equipment rental"
             if (r.Contains("Fuel") || r.Contains("fuel")) return "Fuel";
             if (r.Contains("maintenance") || r.Contains("Service")) return "Vehicle maintenance";
             if (r.Contains("insurance") || r.Contains("Insurance")) return "Insurance";
@@ -292,6 +293,7 @@ namespace Groundbreak
                 if (Company.Blocker(new Job { MinStage = j.MinStage, RequiredVehicleType = j.RequiredVehicleType, RequiredTrade = j.RequiredTrade }) is string why && !why.StartsWith("Finish"))
                 {
                     Company.ActiveJobs.Remove(j); Company.Reputation -= 2;
+                    foreach (var w in Company.Workers) if (w.AssignedJobId == j.Id) w.AssignedJobId = null;
                     report.Add($"Lost job: {j.Title} ({why})");
                 }
 

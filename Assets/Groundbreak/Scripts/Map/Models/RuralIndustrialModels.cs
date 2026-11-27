@@ -94,7 +94,7 @@ namespace Groundbreak
             float ry = eave + rise;
             foreach (float z in new[] { z0, z1 })
                 b.B.AddTriangle(new Vector3(-hw, eave, z), new Vector3(hw, eave, z), new Vector3(0f, ry, z), wall, new Vector3(0f, 0f, z == z1 ? 1f : -1f));
-            float slope = rise / hw, ex = hw + oh, ey = eave - oh * slope;
+            float slope = rise / Mathf.Max(0.05f, hw), ex = hw + oh, ey = eave - oh * slope;
             Vector3 r0 = new Vector3(0f, ry, z0 - ohEnd), r1 = new Vector3(0f, ry, z1 + ohEnd);
             for (int s = -1; s <= 1; s += 2)
             {
@@ -419,6 +419,7 @@ namespace Groundbreak
             void Shed(float x0, float x1, float zb, float depth)
             {
                 float hBack = 6.1f, hFront = 5.0f, zf = zb + depth;
+                if (x1 - x0 < 0.5f) return;   // a lot this narrow made the post step 0 or negative: endless loop
                 for (float x = x0; x <= x1 + 0.01f; x += (x1 - x0) / Mathf.Max(1, Mathf.RoundToInt((x1 - x0) / 6f)))
                 {
                     Bx(b, x - 0.1f, 0f, zb, x + 0.1f, hBack, zb + 0.2f, post);
@@ -430,7 +431,7 @@ namespace Groundbreak
                 b.B.AddQuad(a, c, e, d, roof, Vector3.up, Vector3.right);
                 b.B.AddQuad(a, c, e, d, roof, Vector3.down, Vector3.right);
                 // cantilever racks with bundles, 3 levels
-                for (float x = x0 + 1.5f; x < x1 - 1f; x += 5.2f)
+                for (float x = x0 + 1.5f; x + 4.9f < x1; x += 5.2f)   // the whole 16' bundle (x-0.04 .. x+4.84) stays under the roof
                     for (int lvl = 0; lvl < 3; lvl++)
                     {
                         if (b.R() < 0.15f) continue;

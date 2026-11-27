@@ -9,6 +9,7 @@ namespace Groundbreak
     {
         public const string AppName = "Flips";
         static int _tab;
+        static float _nextRefresh;
         static readonly string[] Tabs = { "For sale", "My flips", "Sold" };
         static readonly Dictionary<string, bool> _financed = new Dictionary<string, bool>();
         static readonly Dictionary<string, string> _priceText = new Dictionary<string, string>();
@@ -51,7 +52,10 @@ namespace Groundbreak
             if (!Flips.Unlocked) { GUILayout.Label($"Unlocks at company stage {Flips.UnlockStage} (warehouse + a truck). Banks won't lend a handyman on a flip.", label); return; }
             Flips.SyncAll();
             int day = Flips.Today;
-            if (!Flips.Listings.GetEnumerator().MoveNext()) Flips.RefreshMarket(day);
+            // every couple of seconds at most (not every GUI event when the market has run dry), and only in the Layout pass so
+            // the listings don't change between Layout and Repaint
+            if ((Event.current == null || Event.current.type == EventType.Layout) && (Time.unscaledTime >= _nextRefresh || Time.unscaledTime < _nextRefresh - 5f)
+                && !Flips.Listings.GetEnumerator().MoveNext()) { _nextRefresh = Time.unscaledTime + 2f; Flips.RefreshMarket(day); }
             GUILayout.Label($"Cash ${Game.Wallet.Money:N0} · flips owned {Flips.OwnedCount}/{Flips.MaxOwned} · reputation {Company.Reputation} · market {(Developments.MarketCycle(day) - 1f) * 100f:+0.0;-0.0}%", label);
             _tab = GUILayout.Toolbar(_tab, Tabs, btn);
             if (_msg.Length > 0) GUILayout.Label("<color=#ffe08a>" + _msg + "</color>", label);

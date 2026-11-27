@@ -86,7 +86,7 @@ namespace Groundbreak
             {
                 GUILayout.BeginHorizontal(GUI.skin.box);
                 GUILayout.Label($"{c.Name} — {CrewTrades.Get(c.Trade).Label}, {CrewTrades.SkillLabel(c.Skill)} [{CrewTrades.Stars(c.Skill)}] · asks ${c.Wage}/day", label);
-                if (GUILayout.Button("Hire", btn, GUILayout.Width(90))) { Crew.HireCandidate(c, out var m); Tablet.I?.ShowMessage(m); }
+                if (GUILayout.Button("Hire", btn, GUILayout.Width(90))) { Crew.HireCandidate(c, out var m); Tablet.I?.ShowMessage(m); GUIUtility.ExitGUI(); }   // the lists change: end this GUI event
                 GUILayout.EndHorizontal();
             }
             if (Crew.Market.Count == 0) GUILayout.Label("Everyone's been hired. Check back tomorrow.", label);
@@ -103,11 +103,11 @@ namespace Groundbreak
 
             GUILayout.Label("Add work (or point at it on site and press K):", label);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Fasten all loose pieces", btn)) Crew.AddTask(new FastenTask { JobId = _taskJob });
+            if (GUILayout.Button("Fasten all loose pieces", btn)) { Crew.AddTask(new FastenTask { JobId = _taskJob }); GUIUtility.ExitGUI(); }
             foreach (var j in FramingJob.All)
                 if (j != null && !j.Done && !Crew.Tasks.Exists(x => x is FramingJobTask f && f.Job == j && !x.Done))
                 {
-                    if (GUILayout.Button("Build: " + j.Title, btn)) { var ft = FramingJobTask.For(j); ft.JobId = _taskJob; Crew.AddTask(ft); }
+                    if (GUILayout.Button("Build: " + j.Title, btn)) { var ft = FramingJobTask.For(j); ft.JobId = _taskJob; Crew.AddTask(ft); GUIUtility.ExitGUI(); }
                     break;
                 }
             GUILayout.EndHorizontal();

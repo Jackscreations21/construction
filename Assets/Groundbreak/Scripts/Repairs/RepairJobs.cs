@@ -48,6 +48,13 @@ namespace Groundbreak
 
         public static IReadOnlyList<RepairInvoice> Invoices => _invoices;
         public static int PendingCallbacks => _callbacks.Count;
+        /// <summary>True when a no-charge callback is waiting to come due at this lot (id or address).</summary>
+        public static bool HasPendingCallback(string lotIdOrAddress)
+        {
+            var lot = Town.Find(lotIdOrAddress); if (lot == null) return false;
+            foreach (var c in _callbacks) if (c.payload != null && c.payload.lotId == lot.Id) return true;
+            return false;
+        }
         public static Vector3? Waypoint;
         public static string WaypointLabel = "";
 

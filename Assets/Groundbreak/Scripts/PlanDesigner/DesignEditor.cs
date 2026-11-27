@@ -353,12 +353,13 @@ namespace Groundbreak
                 pieces.Sort((p, q) => ((q.x1 - q.x0) * (q.y1 - q.y0)).CompareTo((p.x1 - p.x0) * (p.y1 - p.y0)));
                 // a closed room (bedroom, bath...) can't be L-shaped: the smaller leftover parts become their own rooms to name
                 bool open = Blueprint.IsOpen(Blueprint.KindOf(x.name));
-                for (int k = 1; k < pieces.Count; k++)
+                // each piece is added before the next is named, so NameFor/NextName see it and don't hand out the same name twice
+                for (int k = 0; k < pieces.Count; k++)
                 {
                     var pc = pieces[k]; float mn = Mathf.Min(pc.x1 - pc.x0, pc.y1 - pc.y0);
-                    if (!open) pc.name = mn < 4f ? NameFor("Closet", floor, null) : NextName("Room", floor);
+                    if (k > 0 && !open) pc.name = mn < 4f ? NameFor("Closet", floor, null) : NextName("Room", floor);
+                    Design.rooms.Add(pc); made.Add(pc);
                 }
-                foreach (var pc in pieces) { Design.rooms.Add(pc); made.Add(pc); }
             }
             // re-join leftovers that line up into one rectangle
             bool merged = true;
@@ -496,7 +497,9 @@ namespace Groundbreak
             Design.rooms.RemoveAll(r => r.floor == top);
             Design.openings.RemoveAll(o => o.floor == top); Design.suppressed.RemoveAll(s => s.floor == top);
             Design.floors--;
-            foreach (var r in Design.rooms) if (r.floor == top - 1 && IsStair(r)) r.name = "Hall";
+            // only the stair that led up to the removed floor: keep the top of a stair arriving from the floor below
+            foreach (var r in Design.rooms)
+                if (r.floor == top - 1 && IsStair(r) && !Design.rooms.Exists(s => s.floor == top - 2 && IsStair(s) && s.Ft == r.Ft)) r.name = "Hall";
             return Ok($"Floor {top + 1} removed.");
         }
 

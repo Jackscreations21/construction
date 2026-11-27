@@ -38,6 +38,14 @@ namespace Groundbreak
             {
                 var d = JsonUtility.FromJson<Data>(json);
                 Projects.All.AddRange(d.projects); Developments.All.AddRange(d.devs); Projects.Seq = d.seq;
+                // JsonUtility writes null strings as "": restore the nulls the rest of the code tests for (spec houses have no JobId,
+                // client houses no DevId, WarrantyJobId is null until the callback is issued)
+                foreach (var p in Projects.All)
+                {
+                    if (p.JobId == "") p.JobId = null;
+                    if (p.DevId == "") p.DevId = null;
+                    if (p.WarrantyJobId == "") p.WarrantyJobId = null;
+                }
                 foreach (var id in d.claimed) prov.Claim(prov.Find(id), Company.Name);
                 var on = Projects.Get(d.onSite);
                 if (on != null)

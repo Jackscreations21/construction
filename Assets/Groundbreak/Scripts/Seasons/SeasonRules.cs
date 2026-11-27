@@ -65,7 +65,11 @@ namespace Groundbreak
                 return $"Too cold to pour: it gets down to {F(low)}°F (concrete needs 40°F+ while it sets). Buy {BlanketsFor(yards)} curing blankets " +
                        "or a propane heater (Garden Center: Outdoor) to protect the pour, or wait for warmer days.";
             if (SeasonWeather.Ground.Frozen && !Thawed)
-                return "The ground is frozen - never pour on frozen subgrade (it settles when it thaws). Thaw it first with ground thaw blankets.";
+            {
+                // thaw blankets were only ever laid by digging: lay them (or report their progress) from a pour too
+                if (Thawing || (Game.Stock != null && Game.Stock.Count(ThawBlanket) >= ThawBlanketsNeeded)) { var d = DigBlock(); if (d != null) return d; }
+                else return "The ground is frozen - never pour on frozen subgrade (it settles when it thaws). Thaw it first with ground thaw blankets.";
+            }
             return null;
         }
 

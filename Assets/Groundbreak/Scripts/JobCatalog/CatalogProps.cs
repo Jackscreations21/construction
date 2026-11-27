@@ -82,7 +82,7 @@ namespace Groundbreak
                     m.Cyl(new Vector3(-0.07f, 0.56f, tz), 0.013f, 0.24f, seat);                                       // overflow tube
                 }
                 if (c.CauseId == "stop" && c.Bad || c.CauseId == "wax" && c.Bad) Puddle(m, new Vector3(c.CauseId == "stop" ? sx : 0.05f, 0, c.CauseId == "stop" ? 0.2f : 0.55f), 0.2f);
-                if (c.CauseId == "clog" && c.Bad) ToiletModel.Water(m.L.B, Vector3.zero, Quaternion.identity, ToiletModel.WaterY + 0.045f, m.Mat(new Color(0.5f, 0.45f, 0.35f)));
+                if ((c.CauseId == "paper" || c.CauseId == "object") && c.Bad) ToiletModel.Water(m.L.B, Vector3.zero, Quaternion.identity, ToiletModel.WaterY + 0.045f, m.Mat(new Color(0.5f, 0.45f, 0.35f)));
                 else ToiletModel.Water(m.L.B, Vector3.zero, Quaternion.identity, ToiletModel.WaterY, m.Mat(Water));
             });
 
@@ -114,9 +114,9 @@ namespace Groundbreak
                 m.Cyl(new Vector3(0, 0, 0.04f), Qx, 0.014f, 0.07f, brass);
                 m.Tube(new Vector3(0, 0, 0.07f), new Vector3(0, -0.06f, 0.09f), 0.012f, brass);
                 m.Cyl(new Vector3(0, 0.045f, 0.06f), 0.02f, 0.012f, m.Mat(new Color(0.7f, 0.15f, 0.1f)), 10);
-                if (c.Has("stem-out")) m.Tube(new Vector3(0.1f, -0.4f, 0.2f), new Vector3(0.1f, -0.4f, 0.5f), 0.008f, brass);
+                if (c.Did("stem-out") && !c.Did("washer")) m.Tube(new Vector3(0.1f, -0.4f, 0.2f), new Vector3(0.1f, -0.4f, 0.5f), 0.008f, brass);
                 if (c.Bad) { Puddle(m, new Vector3(0, -0.45f, 0.15f), 0.2f); m.Box(new Vector3(0, -0.2f, 0.012f), new Vector3(0.05f, 0.3f, 0.004f), m.Mat(Stain)); }
-                if (c.Has("wall-open")) m.Tube(new Vector3(0, 0, -0.02f), new Vector3(0, 0, -0.3f), 0.011f, cu);
+                if (c.Did("open-wall")) m.Tube(new Vector3(0, 0, -0.02f), new Vector3(0, 0, -0.3f), 0.011f, cu);
             });
 
             Register("sinkbase", (m, c) =>
@@ -152,7 +152,7 @@ namespace Groundbreak
                 m.Tube(new Vector3(0, top + 0.24f, -0.5f), new Vector3(0, top + 0.26f, -0.32f), 0.014f, chrome);
                 m.Box(new Vector3(0.06f, top + 0.2f, -0.5f), new Vector3(0.1f, 0.015f, 0.02f), chrome);
                 if (c.Def.Id.Contains("faucet") && c.Bad) m.Cyl(new Vector3(0, top + 0.2f, -0.32f), 0.004f, 0.03f, m.Mat(Water), 6);
-                if (c.Has("cartridge-out")) m.Cyl(new Vector3(0.3f, 0.86f, -0.1f), 0.015f, 0.08f, m.Mat(SurfaceKind.Brass), 8);
+                if (c.Has("handle-off")) m.Cyl(new Vector3(0.3f, 0.86f, -0.1f), 0.015f, 0.08f, m.Mat(SurfaceKind.Brass), 8);
                 if (c.Bad && !disposal) Puddle(m, new Vector3(0, 0.115f, -0.25f), 0.12f);
             });
 
@@ -580,7 +580,7 @@ namespace Groundbreak
                 float w = c.Size.x;
                 int pt = m.Mat(SurfaceKind.TreatedLumber), galv = m.Mat(SurfaceKind.Galvanized);
                 m.Box(new Vector3(0, -0.09f, 0.02f), new Vector3(w, 0.14f, 0.038f), c.Bad && c.CauseId == "rot" ? m.Mat(SurfaceKind.TreatedLumber, new Color(0.55f, 0.5f, 0.42f)) : pt);
-                if (c.Did("flash") || !(c.CauseId == "rot" || c.CauseId == "flash")) m.Box(new Vector3(0, -0.02f, 0.03f), new Vector3(w, 0.01f, 0.06f), galv);
+                if (c.Did("flash") || !(c.CauseId == "rot" || c.CauseId == "flash" || c.CauseId == "scope")) m.Box(new Vector3(0, -0.02f, 0.03f), new Vector3(w, 0.01f, 0.06f), galv);
                 for (int i = 0; i < 5; i++)
                 {
                     float x = -w / 2 + 0.2f + i * (w - 0.4f) / 4f;

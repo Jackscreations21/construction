@@ -183,24 +183,25 @@ namespace Groundbreak
             if (Floor >= d.floors) Floor = d.floors - 1;
             // row 1: file + floors
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("◂ Plans", B, GUILayout.Width(Fs * 5))) { _start = true; return; }
+            // ExitGUI ends the event cleanly (a plain return here skipped EndHorizontal and unbalanced the layout)
+            if (GUILayout.Button("◂ Plans", B, GUILayout.Width(Fs * 5))) { _start = true; GUIUtility.ExitGUI(); }
             GUILayout.Label("Name", L, GUILayout.Width(Fs * 3));
             string nn = GUILayout.TextField(d.name, 40, _field, GUILayout.Width(Fs * 13));
             if (nn != d.name) { d.name = nn; ed.Changed(); }
-            if (GUILayout.Button(string.IsNullOrEmpty(d.id) || PlanDesigner.GetDesign(d.id) == null ? "Save" : "Save changes", B)) { GUIUtility.keyboardControl = 0; PlanDesigner.Save(ed, false, out var m); Msg(m); }
-            if (!string.IsNullOrEmpty(d.id) && PlanDesigner.GetDesign(d.id) != null && GUILayout.Button("Save as new", B)) { GUIUtility.keyboardControl = 0; PlanDesigner.Save(ed, true, out var m); Msg(m); }
+            if (GUILayout.Button(string.IsNullOrEmpty(d.id) || PlanDesigner.GetDesign(d.id) == null ? "Save" : "Save changes", B)) { GUIUtility.keyboardControl = 0; PlanDesigner.Save(ed, false, out var m); Msg(m); GUIUtility.ExitGUI(); }
+            if (!string.IsNullOrEmpty(d.id) && PlanDesigner.GetDesign(d.id) != null && GUILayout.Button("Save as new", B)) { GUIUtility.keyboardControl = 0; PlanDesigner.Save(ed, true, out var m); Msg(m); GUIUtility.ExitGUI(); }
             GUI.enabled = ed.CanUndo; if (GUILayout.Button("Undo", B, GUILayout.Width(Fs * 4))) { ed.Undo(); _selected = null; } GUI.enabled = ed.CanRedo;
             if (GUILayout.Button("Redo", B, GUILayout.Width(Fs * 4))) { ed.Redo(); _selected = null; } GUI.enabled = true;
             GUILayout.EndHorizontal();
             // row 2: tools
             int t = GUILayout.SelectionGrid((int)Tool, ToolLabels, 5, B);
-            if (t != (int)Tool) { Tool = (DTool)t; _dragging = false; }
+            if (t != (int)Tool) { Tool = (DTool)t; _dragging = false; GUIUtility.ExitGUI(); }   // the side panel changes with the tool
             GUILayout.BeginHorizontal();
             GUILayout.Label(ToolHelp[(int)Tool], _note, GUILayout.Width(Tablet.I.ContentWidth - Fs * 4.7f * (d.floors + 2) - 16f));
             GUILayout.Space(8);
             for (int f = 0; f < d.floors; f++) if (GUILayout.Toggle(Floor == f, $"Floor {f + 1}", B, GUILayout.Width(Fs * 4.5f)) && Floor != f) { Floor = f; _selected = null; }
-            if (d.floors < 3 && GUILayout.Button("+ Floor", B, GUILayout.Width(Fs * 4.5f))) { ed.AddFloor(); Floor = d.floors - 1; Msg(ed.Message); }
-            if (d.floors > 1 && GUILayout.Button("− Floor", B, GUILayout.Width(Fs * 4.5f))) { ed.RemoveTopFloor(); Msg(ed.Message); }
+            if (d.floors < 3 && GUILayout.Button("+ Floor", B, GUILayout.Width(Fs * 4.5f))) { ed.AddFloor(); Floor = d.floors - 1; Msg(ed.Message); GUIUtility.ExitGUI(); }
+            if (d.floors > 1 && GUILayout.Button("− Floor", B, GUILayout.Width(Fs * 4.5f))) { ed.RemoveTopFloor(); Msg(ed.Message); GUIUtility.ExitGUI(); }
             GUILayout.EndHorizontal();
 
             float cw = Mathf.Round(Tablet.I.ContentWidth * 0.63f), ch = Mathf.Round(Mathf.Min(cw * 0.78f, Screen.height * 0.5f));
@@ -376,6 +377,9 @@ namespace Groundbreak
                     case DTool.Erase: ed.EraseAt(Floor, p); Msg(ed.Message); _selected = null; break;
                 }
                 e.Use();
+                // the edit changes the issue list / side panel drawn later in this event: end the event here so the
+                // controls stay the same as in the Layout pass (else "Getting control N's position" errors)
+                GUIUtility.ExitGUI();
             }
             else if (e.type == EventType.MouseDrag && _dragging)
             {
@@ -406,6 +410,7 @@ namespace Groundbreak
                         Msg(ed.Message); break;
                 }
                 e.Use();
+                GUIUtility.ExitGUI();
             }
         }
 

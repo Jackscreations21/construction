@@ -774,7 +774,7 @@ namespace Groundbreak
         public static void RefreshDressing()
         {
             if (Root == null) return;
-            HashSet<string> devFree = null;
+            HashSet<string> devFree = null; bool devFailed = false;
             foreach (var (a, go) in _dressing)
             {
                 if (go == null) continue;
@@ -786,9 +786,11 @@ namespace Groundbreak
                     if (devFree == null)
                     {
                         devFree = new HashSet<string>();
-                        try { foreach (var d in DevLots.Provider.LandForSale()) devFree.Add(d.Id); } catch { }
+                        try { foreach (var d in DevLots.Provider.LandForSale()) devFree.Add(d.Id); } catch { devFailed = true; }
                     }
-                    show = devFree.Contains(a.LotId) || devFree.Count == 0;
+                    // show everything only when the provider failed: an empty list just means every tract is bought
+                    // (the old "Count == 0" check put the for-sale signs back on the player's developments)
+                    show = devFree.Contains(a.LotId) || devFailed;
                 }
                 if (go.activeSelf != show) go.SetActive(show);
             }

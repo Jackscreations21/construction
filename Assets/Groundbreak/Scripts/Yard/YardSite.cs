@@ -439,7 +439,12 @@ namespace Groundbreak
             _parked.Clear();
             PlaceStock();
             PlaceVehicles();
-            PlaceEquipment();
+            // equipment colliders live under the contents so each refresh replaces them instead of stacking more on the shell
+            var shell = _colliders;
+            _colliders = new GameObject("EquipColliders");
+            _colliders.transform.SetParent(_contents, false);
+            try { PlaceEquipment(); }
+            finally { _colliders = shell; }
         }
 
         void PlaceVehicles()

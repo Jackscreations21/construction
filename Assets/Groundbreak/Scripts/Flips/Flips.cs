@@ -252,6 +252,7 @@ namespace Groundbreak
             if (f == null || f.Status != FlipStatus.Listed) return "Not for sale any more.";
             if (!Unlocked) return $"Flipping opens at company stage {UnlockStage}.";
             if (OwnedCount >= MaxOwned) return $"You can carry {MaxOwned} flip(s) at your company size. Sell one first.";
+            if (Company.ActiveJobs.Exists(j => j.Address == f.address)) return "You have an open customer job at this house - finish it first.";
             int cash = CashToClose(f, financed);
             if (!GameSettings.UnlimitedMoney && Game.Wallet.Money < cash) return $"Needs ${cash:N0} cash to close (you have ${Game.Wallet.Money:N0}).";
             return null;
@@ -426,7 +427,11 @@ namespace Groundbreak
                         float need = FlipDefs.BookHours(it.Def) - it.crewHours;
                         float give = Mathf.Min(hours * rate, need);
                         it.crewHours += give; hours -= give / Mathf.Max(0.05f, rate);
-                        if (it.crewHours >= FlipDefs.BookHours(it.Def) - 0.01f) FinishByCrew(f, it, Crew.Quality(w, trade), w);
+                        if (it.crewHours >= FlipDefs.BookHours(it.Def) - 0.01f)
+                        {
+                            FinishByCrew(f, it, Crew.Quality(w, trade), w);
+                            if (!it.done) break;                 // blocked (weather): NextFor would hand out the same item again
+                        }
                     }
                 }
             }
@@ -438,13 +443,17 @@ namespace Groundbreak
             int mats = 0;
             CountParts(f, it);                                   // parts the player already put in are in the costs...
             int playerParts = Mathf.Max(0, it.matsCounted);
+            bool allFixed = true;
             foreach (var s in it.defects)
             {
                 var jd = JobCatalog.Get(s.def);
                 if (jd != null && s.cause < jd.Causes.Count) mats += Mathf.RoundToInt(jd.MaterialCostFor(jd.Causes[s.cause]));
                 var d = LiveDefect(f, s);
-                if (d != null) { JobCatalog.Solve(d); s.quality = Mathf.Min(s.quality, quality); }
+                if (d != null) { JobCatalog.Solve(d); s.quality = Mathf.Min(s.quality, quality); if (!d.IsFixed) allFixed = false; }
             }
+            // a step the weather blocks (outdoor paint/caulk in the cold, roof work in rain) leaves the item unfinished:
+            // don't bill or call it done, or every crew day would bill its materials again
+            if (!allFixed) { Game.Toast($"{it.Def?.Label} at {f.address}: waiting on the weather"); return; }
             mats = Mathf.Max(0, mats - playerParts);             // ...so the crew only buys the rest
             it.matsCounted = PartsUsed(it);                      // the solver's parts are billed here, not again by Sync
             it.done = true; it.quality = Mathf.Clamp01(quality);

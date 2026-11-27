@@ -41,6 +41,7 @@ namespace Groundbreak
         {
             BuildCatalog();
             SaveSystem.RegisterExtension("equipment", Save, Load);
+            SaveSystem.BeforeLoad -= LeaveMachinesBeforeLoad; SaveSystem.BeforeLoad += LeaveMachinesBeforeLoad;
             Tablet.RegisterApp("Equipment", DrawApp);
             Tablet.AddHelp("Equipment app (tablet) - rent or buy a mini excavator, skid steer, boom lift or crane truck; delivered on a trailer. Walk up and press E to climb in.");
             Tablet.AddHelp("Machines: W/S/A/D travel, arrows swing + boom, I/K stick/telescope, J/L bucket curl/dump, Y/H hoist, F action, B blade/attachment/outriggers, V camera, E climb out");
@@ -163,7 +164,7 @@ namespace Groundbreak
         public static Machine Deliver(string id, Vector3? at, float yaw)
         {
             var t = Get(id);
-            if (t == null || !Available(id)) return null;
+            if (t == null || (!_fromSave && !Available(id))) return null;   // a save is the authority for what was on site
             var existing = OnSite(id);
             if (existing != null) return existing;
             Vector3 pos; float y;
@@ -293,7 +294,7 @@ namespace Groundbreak
             foreach (var m in Machine.All)
                 if (m != null && m.Aimed(ray, 3.5f, out float d) && d < bd && d < world + 0.1f) { best = m; bd = d; }
             if (best == null) return null;
-            if (GInput.GetKeyDown(KeyCode.E)) best.Enter();
+            if (GInput.GetKeyDown(KeyCode.E) && Time.frameCount != Machine.TransitionFrame) best.Enter();
             return "E: climb into the " + best.DisplayName.ToLowerInvariant() + (best.Rented ? " (rental)" : "");
         }
 
@@ -343,7 +344,7 @@ namespace Groundbreak
                 {
                     if (GUILayout.Button("Bring to site", button, GUILayout.Width(fs * 9))) { if (Deliver(e.Id) != null) _msg = e.Name + " delivered beside you"; }
                 }
-                if (career && !IsOwned(e.Id) && !IsRented(e.Id) && GUILayout.Button($"Rent ${e.RentPerDay}/day", button, GUILayout.Width(fs * 9))) Rent(e.Id, out _msg);
+                if (career && !IsOwned(e.Id) && !IsRented(e.Id) && GUILayout.Button($"Rent ${e.RentPerDay}/day", button, GUILayout.Width(fs * 9))) { Rent(e.Id, out _msg); GUIUtility.ExitGUI(); }   // a "Return rental" button appears: end this GUI event
                 if (career && e.PriceNew > 0 && !IsOwned(e.Id))
                 {
                     if (GUILayout.Button($"Buy new ${e.PriceNew:N0}", button, GUILayout.Width(fs * 10))) Buy(e.Id, false, out _msg);
@@ -409,11 +410,26 @@ namespace Groundbreak
             var d = JsonUtility.FromJson<Data>(json); if (d == null) return;
             foreach (var o in d.owned) Owned.Add(o);
             foreach (var r in d.rentals) Rentals[r.id] = r.days;
-            foreach (var s in d.site)
+            // the "company" extension (fleet-owned skid steer / crane truck) may load after us, so don't re-check ownership here
+            _fromSave = true;
+            try
             {
-                var m = Deliver(s.id, s.pos, s.yaw);
-                if (m != null && s.joints != null && s.joints.Length > 0) m.Joints = s.joints;
+                foreach (var s in d.site)
+                {
+                    var m = Deliver(s.id, s.pos, s.yaw);
+                    if (m != null && s.joints != null && s.joints.Length > 0) m.Joints = s.joints;
+                }
             }
+            finally { _fromSave = false; }
+        }
+
+        static bool _fromSave;
+
+        /// <summary>Before a load moves the player: climb out of any machine first, so leaving it later doesn't put the
+        /// player beside the old machine instead of at the saved position.</summary>
+        static void LeaveMachinesBeforeLoad()
+        {
+            foreach (var m in new List<Machine>(Machine.All)) if (m != null && m.Operating) m.ForceLeave();
         }
 
         /// <summary>Removes every machine (and the haul truck) from the world. Rentals/ownership are untouched.</summary>

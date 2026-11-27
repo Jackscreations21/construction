@@ -446,6 +446,7 @@ namespace Groundbreak
             if (lot == null || plan == null) return;
             DevLots.Provider.Claim(lot, Company.Name);
             var p = Projects.Create(ProjectKind.Client, lot, plan);
+            j.DueDay = Today + 10 + plan.TotalDays;   // the schedule starts at signing (as Builder does), not when the offer was posted
             p.JobId = j.Id; p.Client = j.Client; p.ContractPrice = j.Payout; p.DueDay = j.DueDay;
             pl.project = p.Id; j.Payload = JsonUtility.ToJson(pl);
             int deposit = Mathf.RoundToInt(p.ContractPrice * Builder.DepositPct);

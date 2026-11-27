@@ -38,6 +38,7 @@ namespace Groundbreak
             if (parent != null) go.transform.SetParent(parent, false);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             go.AddComponent<MeshRenderer>().sharedMaterials = _mats.ToArray();
+            OwnedMesh.Attach(go, mesh);   // the mesh is built for this object only: free it with the object
             if (boxCollider)
             {
                 var bc = go.AddComponent<BoxCollider>();

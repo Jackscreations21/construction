@@ -155,6 +155,7 @@ namespace Groundbreak
         {
             foreach (var j in Company.Offers) if (j.Address == address) return true;
             foreach (var j in Company.ActiveJobs) if (j.Address == address) return true;
+            if (RepairJobs.HasPendingCallback(address)) return true;   // the callback job will land at this house
             return false;
         }
 

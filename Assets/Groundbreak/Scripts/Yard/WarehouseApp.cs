@@ -52,7 +52,7 @@ namespace Groundbreak
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{info.Name}: {info.Description} Rent ${info.RentPerDay:N0}/day + insurance ${info.InsurancePerDay}/day.", label, GUILayout.Width(fs * 34));
                 GUI.enabled = lv != Company.WarehouseLevel;
-                if (GUILayout.Button(lv == Company.WarehouseLevel ? "Current" : $"Lease (${info.MoveIn:N0} move-in)", button, GUILayout.Width(fs * 11))) Yard.Lease(lv, out _msg);
+                if (GUILayout.Button(lv == Company.WarehouseLevel ? "Current" : $"Lease (${info.MoveIn:N0} move-in)", button, GUILayout.Width(fs * 11))) { Yard.Lease(lv, out _msg); GUIUtility.ExitGUI(); }   // the warehouse sections appear: end this GUI event
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
             }

@@ -117,7 +117,7 @@ namespace Groundbreak
                 GUILayout.EndVertical();
                 string block = Company.Blocker(j);
                 GUI.enabled = block == null;
-                if (GUILayout.Button(block == null ? "Sign" : "Locked", B, GUILayout.Width(Fs * 6))) { Company.Accept(j, out var m); Msg(m); }
+                if (GUILayout.Button(block == null ? "Sign" : "Locked", B, GUILayout.Width(Fs * 6))) { Company.Accept(j, out var m); Msg(m); GUIUtility.ExitGUI(); }   // the project list changes: end this GUI event
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
                 if (block != null) GUILayout.Label("   " + block, L);
@@ -171,7 +171,7 @@ namespace Groundbreak
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{t.Address}: {t.Acres:0.0} acres ({t.FrontageFt:0}' x {t.DepthFt:0}') at ${Developments.PricePerAcre(t):N0}/ac = ${Developments.LandPrice(t):N0}", L);
-                if (GUILayout.Button("Buy", B, GUILayout.Width(Fs * 5))) { Developments.BuyLand(t, out _, out var m); Msg(m); }
+                if (GUILayout.Button("Buy", B, GUILayout.Width(Fs * 5))) { Developments.BuyLand(t, out _, out var m); Msg(m); GUIUtility.ExitGUI(); }
                 GUILayout.EndHorizontal();
             }
             if (Developments.All.Count == 0) return;

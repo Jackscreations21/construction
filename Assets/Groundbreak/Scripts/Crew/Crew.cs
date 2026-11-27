@@ -229,6 +229,8 @@ namespace Groundbreak
 
         static void OnDayStarted(int day)
         {
+            // 0. drop progress records of jobs that ended some other way (finished by the player, lost in a bankruptcy)
+            Sims.RemoveAll(s => !Company.ActiveJobs.Exists(j => j.Id == s.JobId));
             // 1. the day that just ended: off-site jobs move ahead by what their crew can do in a day
             foreach (var j in Company.ActiveJobs.ToArray())
             {

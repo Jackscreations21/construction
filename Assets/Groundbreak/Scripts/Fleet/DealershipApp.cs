@@ -51,8 +51,8 @@ namespace Groundbreak
                     float apr = used ? Finance.VehicleAprUsed : Finance.VehicleAprNew;
                     int pay = Finance.PaymentFor(price - down, apr, term);
                     string kind = used ? "Used" : "New";
-                    if (GUILayout.Button($"{kind} ${price:N0} cash", button, GUILayout.Width(fs * 11))) { Fleet.Buy(v.Id, used, 0, out _msg); }
-                    if (GUILayout.Button($"{kind}: ${down:N0} down + ${pay:N0}/day", button, GUILayout.Width(fs * 15))) { Fleet.Buy(v.Id, used, term, out _msg); }
+                    if (GUILayout.Button($"{kind} ${price:N0} cash", button, GUILayout.Width(fs * 11))) { Fleet.Buy(v.Id, used, 0, out _msg); GUIUtility.ExitGUI(); }   // the fleet list grows: end this GUI event
+                    if (GUILayout.Button($"{kind}: ${down:N0} down + ${pay:N0}/day", button, GUILayout.Width(fs * 15))) { Fleet.Buy(v.Id, used, term, out _msg); GUIUtility.ExitGUI(); }
                 }
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();

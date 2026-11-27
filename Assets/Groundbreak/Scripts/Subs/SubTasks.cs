@@ -273,9 +273,13 @@ namespace Groundbreak
                     {
                         var ps = o.Pour ?? PourSystem.Begin(o);
                         if (ps == null) return "Form isn't ready to pour";
+                        // same weather rules as a pour the player orders (rain, cold, frozen subgrade)
+                        var wx = SeasonRules.PourBlock(ps.CapacityM3 * FormSystem.YardsPerM3); if (wx != null) return wx;
                         _pts = _pts ?? ps.WorkPoints(0.9f);
                         if (_pts.Count == 0) _pts.Add(c);
                         float each = ps.CapacityM3 * 0.27f / _pts.Count, placed = 0f;     // about a quarter of the slab per lift
+                        int est = Mathf.RoundToInt(Mathf.Min(each * _pts.Count, ps.CapacityM3) * FormSystem.YardsPerM3 * ReadyMixPerYard);
+                        if (!GameSettings.UnlimitedMoney && est > 0 && Game.Wallet.Money < est) return "No money for the ready-mix";
                         for (int i = 0; i < _pts.Count && !ps.Full; i++) { ps.AddConcrete(_pts[i], each, null); placed += each; }
                         int cost = Mathf.RoundToInt(placed * FormSystem.YardsPerM3 * ReadyMixPerYard);
                         if (!GameSettings.UnlimitedMoney && cost > 0) Game.Wallet.TrySpend(cost, "Ready-mix (ordered by your concrete sub)");
