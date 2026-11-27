@@ -52,7 +52,7 @@ namespace Groundbreak
                 Tablet.SetAppVisible(a, () => GameSettings.IsCareer);
             }
             // the original Career contract board: career only (in Free Build it was a placeholder screen)
-            Tablet.SetAppVisible("Job Board", () => GameSettings.IsCareer);
+            Tablet.SetAppVisible("Job Board", () => GameSettings.IsCareer && Career.Active != null);   // retired: only while an old contract is still running
         }
 
         void Update()

@@ -26,7 +26,7 @@ The HUD/tablet tutorial pictures (gs_01..07, gs_09, c_10, f_00, r_00, s_01, biz_
 ```bash
 ... -testFilter "Groundbreak.Tests.UICaptureTests;Groundbreak.Tests.TutorialCaptureTests" ...
 ```
-Commit the changed PNGs under `Assets/Groundbreak/Resources/Tutorials/`.
+Set `GROUNDBREAK_CAPTURE_TUTORIALS=1` for that run (otherwise tutorial pictures go to `Logs/shots/tut_pics/`), then commit the changed PNGs under `Assets/Groundbreak/Resources/Tutorials/`.
 
 ## Notes
 - One Unity per project folder: close any editor open on the worktree first.

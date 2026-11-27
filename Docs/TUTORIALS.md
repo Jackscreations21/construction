@@ -12,6 +12,27 @@ capture test: `Assets/Groundbreak/Tests/TutorialCaptureTests.cs`.
   text, keys line, progress bar, Prev/Next, "Open <app>" and "Show me where") and `TutorialBeacon` (orange marker + on-screen pointer).
 - Shared-file edit (small, additive): `Tablet.ShowApp(name)` and `Tablet.CurrentApp`.
 
+## Regenerating the pictures (explicit only)
+Normal test runs **do not touch** `Assets/Groundbreak/Resources/Tutorials/`: the capture tests write their pictures to
+`Logs/shots/tut_pics/` (git-ignored) and only check that the committed PNG exists. To regenerate the committed pictures,
+set the environment variable `GROUNDBREAK_CAPTURE_TUTORIALS=1` for the run (helper: `TutorialCapture` in
+`Scripts/BusinessTutorials/TutorialCapture.cs`). Tablet/HUD pictures also need a windowed editor (no `-batchmode`):
+```bash
+GROUNDBREAK_CAPTURE_TUTORIALS=1 "C:/Program Files/Unity/Hub/Editor/6000.6.8f1/Editor/Unity.exe" -projectPath <worktree> -runTests -testPlatform PlayMode -testFilter "Groundbreak.Tests.TutorialCaptureTests;Groundbreak.Tests.BusinessTutorialTests" -testResults <worktree>/Logs/tut.xml -logFile <worktree>/Logs/tut.log
+```
+PowerShell: `$env:GROUNDBREAK_CAPTURE_TUTORIALS = "1"` first, then the same command. Look at the new PNGs, then commit them.
+(The trade pictures copied with `CopyShot` need the trade tests' shots, so for those include the trade tests or run the full suite with the variable set.)
+
+## Business tutorials ("Running the business")
+Code: `Assets/Groundbreak/Scripts/BusinessTutorials/` (`BusinessTutorials.cs` registers the phase right after "Getting started",
+`BusinessTutorialContent.cs` holds the text). 11 tutorials / 45 steps: first service call, van & fast travel, hardware store,
+warehouse & truck, contractor job, crew, money (Company app, daily costs, loans), Plans app, client house, developing a
+neighborhood, reputation & stages. Pictures `bt_*.png`, all captured by `BusinessTutorialTests.B_CaptureBusinessCareer`,
+which plays one career from the van to a sold-out neighborhood (world shots are camera renders, tablet shots are real
+IMGUI screen captures from the windowed run). App screenshots: `Logs/shots/tut_business_*.png` (windowed run).
+`C_EveryBusinessTutorialHasStepsAndPictures` checks every step has text and a unique picture that loads, and that each
+"Open <app>" button names a real Career tablet app. Numbers in the text come from the game code; update the text if prices change.
+
 ## Capturing pictures
 - 3D pictures (`Pic(...)`, `CopyShot(...)`) are rendered by a test camera and work in the normal batchmode test run.
 - Pictures that show the real HUD / tablet (`GuiPic(...)`: gs_01..07, gs_09, c_10, f_00, r_00, s_01, and the app screenshots
@@ -20,7 +41,8 @@ capture test: `Assets/Groundbreak/Tests/TutorialCaptureTests.cs`.
   ```bash
   "C:/Program Files/Unity/Hub/Editor/6000.6.8f1/Editor/Unity.exe" -projectPath <worktree> -runTests -testPlatform PlayMode -testFilter Groundbreak.Tests.TutorialCaptureTests -testResults <worktree>/Logs/tut.xml -logFile <worktree>/Logs/tut.log
   ```
-  In batchmode those steps are skipped and the test only asserts the PNG exists.
+  In batchmode those steps are skipped and the test only asserts the PNG exists. Remember `GROUNDBREAK_CAPTURE_TUTORIALS=1`
+  (above), otherwise the run writes to `Logs/shots/tut_pics/` and leaves the committed pictures alone.
 - The MEP pictures are copies of the plumbing / electrical / HVAC tests' own shots (`E_Mep` reruns those tests).
 - In the editor, `TutorialPictures.Get` reads the PNG from disk first, so new captures show before Unity re-imports them.
 
