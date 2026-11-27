@@ -111,6 +111,7 @@ namespace Groundbreak
 
         public static int TabOf(Job j)
         {
+            if (RepairJobs.IsService(j)) return 0;   // job-catalog remodel scopes ("jcr-") are drawn by the service-call screen
             switch (j.Kind)
             {
                 case JobKind.Repair: return 0;

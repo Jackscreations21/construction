@@ -259,7 +259,7 @@ namespace Groundbreak
             foreach (var l in Town.Addresses)
             {
                 if (AddressBusy(l.Address)) continue;
-                if (l.House != null && !Fits(l.House, d)) continue;
+                if (l.House == null || !Fits(l.House, d)) continue;   // every catalog place is anchored on an enterable TownHouse (map lots without one get no service calls)
                 free.Add(l);
             }
             return free.Count == 0 ? null : free[UnityEngine.Random.Range(0, free.Count)];

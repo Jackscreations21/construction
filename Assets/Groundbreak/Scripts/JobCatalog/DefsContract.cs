@@ -372,21 +372,26 @@ namespace Groundbreak
         {
             const CompanyStage B = CompanyStage.Builder, D = CompanyStage.Developer;
             // houses: plan ids from Development (always present) first, blueprint ids as alternates
-            Build("bld.starter", "Starter ranch for a young couple", B, "house", 165, 60, "First home on a budget: two bedrooms, one bath, nothing fancy.", "starter-900", "bp-starter-ranch");
-            Build("bld.cottage", "Cottage for retirees", B, "house", 175, 62, "A one-level cottage on a crawlspace with a big front porch.", "cottage-1200", "bp-cottage");
-            Build("bld.ranch", "Family ranch", B, "house", 170, 65, "Three-bedroom ranch with a hip roof and 9' ceilings.", "ranch-1600", "bp-ranch");
-            Build("bld.craftsman", "Craftsman bungalow", B, "house", 185, 70, "Four-bedroom craftsman with tapered porch columns.", "craftsman-1920", "bp-craftsman");
-            Build("bld.colonial", "Two-story colonial", B, "house", 180, 72, "Two-story colonial on a full basement.", "twostory-2400", "bp-colonial");
-            Build("bld.estate", "Custom estate home", D, "house", 225, 85, "Custom five-bedroom estate, high-end finishes.", "estate-3500", "bp-estate");
-            Build("bld.farmhouse", "Modern farmhouse", B, "house", 190, 75, "Board-and-batten modern farmhouse.", "bp-farmhouse", "farmhouse-2200", "craftsman-1920");
-            Build("bld.duplex", "Duplex rental", D, "duplex", 160, 80, "Side-by-side duplex for an investor.", "bp-duplex", "duplex-2400", "twostory-2400");
+            Build("bld.starter", "Starter ranch for a young couple", B, "house", 165, 60, "First home on a budget: two bedrooms, one bath, nothing fancy.", "starter-900", "starter-1008");
+            Build("bld.cottage", "Cottage for retirees", B, "house", 175, 62, "A one-level cottage on a crawlspace with a big front porch.", "cottage-1200");
+            Build("bld.ranch", "Family ranch", B, "house", 170, 65, "Three-bedroom ranch with a hip roof and 9' ceilings.", "ranch-1600", "ranch-1650-2car", "ranch-1500");
+            Build("bld.craftsman", "Craftsman bungalow", B, "house", 185, 70, "Four-bedroom craftsman with tapered porch columns.", "craftsman-1920");
+            Build("bld.colonial", "Two-story colonial", B, "house", 180, 72, "Two-story colonial on a full basement.", "twostory-2400", "twostory-2240");
+            Build("bld.estate", "Custom estate home", D, "house", 225, 85, "Custom five-bedroom estate, high-end finishes.", "estate-3500");
+            Build("bld.farmhouse", "Modern farmhouse", B, "house", 190, 75, "Board-and-batten modern farmhouse.", "ranch-1770-3car", "craftsman-1920");
+            Build("bld.duplex", "Duplex rental", D, "duplex", 160, 80, "Side-by-side duplex for an investor.", "duplex-1664", "twostory-2400");
             // outbuildings and commercial (blueprint plans; skipped when the blueprint isn't installed)
-            var g = Build("bld.garage-apt", "Detached garage", B, "garage", 75, 60, "Detached 24' x 24' garage on a slab.", "bp-garage-24x24", "garage-24x24", "garage-2car"); g.FallbackFleet = "garage"; g.W = 24; g.L = 24;
-            var barn = Build("bld.pole-barn", "Pole barn", B, "barn", 45, 62, "30' x 40' post-frame barn for equipment.", "bp-pole-barn-30x40", "pole-barn-30x40", "barn-30x40");
-            var shop = Build("bld.workshop", "Workshop building", B, "shop", 85, 65, "Insulated 30' x 40' workshop with an overhead door.", "bp-shop-30x40", "shop-30x40", "workshop-30x40");
-            Build("bld.office", "Small office building", D, "office", 210, 82, "Single-story professional office for a local firm.", "bp-office-small", "office-2400", "office-small");
-            Build("bld.warehouse", "Warehouse", D, "warehouse", 95, 85, "Pre-engineered warehouse with dock doors.", "bp-warehouse", "warehouse-6000", "warehouse-10000");
-            Build("bld.retail", "Retail strip building", D, "retail", 190, 88, "Three-unit retail strip on the main road.", "bp-retail-strip", "retail-strip", "strip-mall-3");
+            var g = Build("bld.garage-apt", "Detached garage", B, "garage", 75, 60, "Detached 24' x 24' garage on a slab.", "garage-2car", "garage-2car-shop"); g.FallbackFleet = "garage"; g.W = 24; g.L = 24;
+            var barn = Build("bld.pole-barn", "Pole barn", B, "barn", 45, 62, "30' x 40' post-frame barn for equipment.", "polebarn-30x40", "barn-36x48");
+            var shop = Build("bld.workshop", "Workshop building", B, "shop", 85, 65, "Insulated 30' x 40' workshop with an overhead door.", "workshop-30x40");
+            Build("bld.office", "Small office building", D, "office", 210, 82, "Single-story professional office for a local firm.", "office-3000");
+            Build("bld.warehouse", "Warehouse", D, "warehouse", 95, 85, "Pre-engineered warehouse with dock doors.", "warehouse-6000", "flex-6000", "warehouse-12000");
+            Build("bld.retail", "Retail strip building", D, "retail", 190, 88, "Three-unit retail strip on the main road.", "stripmall-6000", "retail-5000");
+            Build("bld.splitlevel", "Split-level home", B, "house", 175, 70, "Split-level on a sloped lot: garage under the bedrooms, half-flights between floors.", "splitlevel-2280", "twostory-2400");
+            Build("bld.adu", "Backyard ADU", B, "adu", 210, 60, "Detached accessory dwelling for a parent: kitchenette, bath, one bedroom.", "adu-480", "adu-carriage-672");
+            Build("bld.townhomes", "Townhome row", D, "townhome", 165, 84, "Four-unit townhome row with 2-hour fire-rated party walls.", "townhome-row4", "townhome-row6", "duplex-1664");
+            Build("bld.diner", "Diner", D, "restaurant", 260, 84, "Free-standing diner with a grease interceptor and a hood exhaust.", "diner-3000", "retail-2400");
+            Build("bld.gas-station", "Gas station and store", D, "gas-station", 280, 90, "Convenience store with a fuel canopy; tanks set by the fuel company's contractor.", "gasstation-3200", "retail-2400");
             barn.W = 30; barn.L = 40; shop.W = 30; shop.L = 40;
         }
 

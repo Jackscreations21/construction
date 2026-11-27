@@ -53,7 +53,7 @@ Add one with `CatalogProps.Register("id", (m, ctx) => ...)`.
 
 **Contractor jobs on Fleet types**: `Fleet(id, name, type, widthFt, lengthFt, $/unit, days, rep, vehicle, say)`, unit = sq ft,
 linear ft (fence) or squares (reroof). **Builds**: `Build(id, name, stage, buildingType, $/sq ft, rep, say, planIds...)`: the first
-plan id that `HousePlans.Get` finds is used; missing blueprint ids are skipped, and a build with no plan is not offered (or uses
+plan id that `HousePlans.Get` finds is used (ids from the blueprints library: `garage-2car`, `polebarn-30x40`, `workshop-30x40`, `office-3000`, `warehouse-6000`, `stripmall-6000`, `diner-3000`, `gasstation-3200`, `townhome-row4`, `adu-480` …; the six Development plans come first where they fit); missing blueprint ids are skipped, and a build with no plan is not offered (or uses
 `FallbackFleet`).
 
 ## The generator (`JobCatalog.Generate`, replaces `RepairJobs.GenerateOffers`)
@@ -211,7 +211,7 @@ or one already on the board. At reputation 60+ a Handyman call may be a two-item
 | `reroof.wide` | re-roof (wide ranch) |
 | `reroof.steep` | re-roof, steep 8/12 |
 
-### Build (14)
+### Build (19)
 
 | id | name |
 |---|---|
@@ -229,6 +229,11 @@ or one already on the board. At reputation 60+ a Handyman call may be a two-item
 | `bld.office` | Small office building |
 | `bld.warehouse` | Warehouse |
 | `bld.retail` | Retail strip building |
+| `bld.splitlevel` | Split-level home |
+| `bld.adu` | Backyard ADU |
+| `bld.townhomes` | Townhome row |
+| `bld.diner` | Diner |
+| `bld.gas-station` | Gas station and store |
 
 ### Legacy (14)
 
