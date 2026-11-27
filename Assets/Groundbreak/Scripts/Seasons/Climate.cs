@@ -225,6 +225,7 @@ namespace Groundbreak
             var r = Rng(day * 31 + today, 4);
             float err = lead == 0 ? 1f : 1.5f + lead * 1.1f;
             f.HighF = act.HighF + Gauss(r) * err; f.LowF = act.LowF + Gauss(r) * err;
+            if (f.LowF > f.HighF - 6f) f.LowF = f.HighF - 6f;
             f.WindMph = Mathf.Max(0, act.WindMph + Gauss(r) * lead * 1.2f);
             float miss = lead == 0 ? 0f : 0.07f + lead * 0.035f;   // chance the sky call is wrong
             bool wrong = r.NextDouble() < miss;

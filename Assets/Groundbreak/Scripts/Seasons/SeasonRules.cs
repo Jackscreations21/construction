@@ -93,11 +93,11 @@ namespace Groundbreak
                                 : $"Crew covered the slab with {need} curing blankets - they come off when it's strong enough.");
         }
 
-        /// <summary>Cure speed relative to 70°F (Nurse-Saul maturity, datum 14°F). Cement heat adds ~10°F, blankets ~+20°F, a heater keeps 60°F+.</summary>
+        /// <summary>Cure speed relative to 70°F (Nurse-Saul maturity, datum 14°F). Cement heat adds ~10°F, blankets ~+20°F, a heater keeps the enclosure ~60°F.</summary>
         public static float CureRate(float airF, bool blankets, bool heater)
         {
             float t = airF + 10f + (blankets ? 20f : 0f);
-            if (heater) t = Mathf.Max(t, 65f);
+            if (heater) t = Mathf.Max(t, 70f);   // enclosure air held ~60°F + hydration heat
             return Mathf.Clamp((t - 14f) / (70f + 10f - 14f), 0.04f, 1.25f);
         }
 

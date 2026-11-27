@@ -195,6 +195,29 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ material registry
 
+        static Material _overcast, _clearSky;
+        static void RestoreSky() { if (_clearSky != null && RenderSettings.skybox == _overcast) RenderSettings.skybox = _clearSky; }
+        /// <summary>Flat overcast sky: a lat-long gradient (darker grey overhead, lighter at the horizon).</summary>
+        static Material Overcast
+        {
+            get
+            {
+                if (_overcast != null) return _overcast;
+                var tex = new Texture2D(4, 64, TextureFormat.RGB24, false) { wrapMode = TextureWrapMode.Clamp, name = "OvercastSky" };
+                for (int y = 0; y < 64; y++)
+                {
+                    float v = y / 63f;   // 0 = straight down, 0.5 = horizon, 1 = zenith
+                    float g = v < 0.5f ? 0.55f : Mathf.Lerp(0.80f, 0.62f, (v - 0.5f) * 2f);
+                    for (int x = 0; x < 4; x++) tex.SetPixel(x, y, new Color(g, g * 1.01f, g * 1.04f));
+                }
+                tex.Apply();
+                var sh = Shader.Find("Skybox/Panoramic");
+                _overcast = new Material(sh) { name = "GB_OvercastSky", mainTexture = tex };
+                if (_overcast.HasProperty("_Mapping")) _overcast.SetFloat("_Mapping", 1f);
+                _overcast.EnableKeyword("_MAPPING_LATITUDE_LONGITUDE_LAYOUT");
+                return _overcast;
+            }
+        }
         static bool Near(Color a, Color b) => Mathf.Abs(a.r - b.r) < 0.01f && Mathf.Abs(a.g - b.g) < 0.01f && Mathf.Abs(a.b - b.b) < 0.01f;
 
         static bool Classify(Material m, out Kind k)
@@ -250,7 +273,7 @@ namespace Groundbreak
         /// <summary>Tests: pick up newly created materials and re-apply the current look now.</summary>
         public static void Refresh() { if (I == null) return; I.Scan(); I._applied = null; I.LateUpdate(); }
 
-        void RestoreAll() { foreach (var o in _mats) Restore(o); _applied = null; LookKey = ""; }
+        void RestoreAll() { RestoreSky(); foreach (var o in _mats) Restore(o); _applied = null; LookKey = ""; }
 
         // ------------------------------------------------------------------ per-frame
 
@@ -294,7 +317,7 @@ namespace Groundbreak
                     case Kind.Crop:
                     {
                         Color t = Color.white;
-                        if (o.K == Kind.Grass) t = season == Seasons.Spring ? new Color(1.0f, 1.12f, 0.80f) : season == Seasons.Fall ? new Color(1.10f, 0.96f, 0.72f) : season == Seasons.Winter ? new Color(1.18f, 0.92f, 0.62f) : Color.white;
+                        if (o.K == Kind.Grass) t = season == Seasons.Spring ? new Color(1.06f, 1.20f, 0.70f) : season == Seasons.Fall ? new Color(1.10f, 0.96f, 0.72f) : season == Seasons.Winter ? new Color(1.18f, 0.92f, 0.62f) : Color.white;
                         if (o.K == Kind.Crop) t = season == Seasons.Spring ? new Color(0.85f, 0.80f, 0.70f) : season == Seasons.Fall ? new Color(1.25f, 0.95f, 0.55f) : season == Seasons.Winter ? new Color(1.05f, 0.85f, 0.60f) : Color.white;
                         var c = Mul(o.Color, t) * wetDark; c.a = o.Color.a;
                         if (snow > 0)
@@ -320,7 +343,7 @@ namespace Groundbreak
                         if (season == Seasons.Winter) m.color = o.Color * 0.88f;
                         break;
                     case Kind.Foliage:
-                        if (season == Seasons.Spring) { var c = Mul(o.Color, new Color(1.12f, 1.16f, 0.72f)); c.a = 1f; m.color = c; }
+                        if (season == Seasons.Spring) { var c = Mul(o.Color, new Color(1.28f, 1.32f, 0.60f)); c.a = 1f; m.color = c; }
                         else if (season == Seasons.Fall)
                         {
                             float lum = Mathf.Clamp(o.Color.g, 0.4f, 1.1f);
@@ -412,19 +435,21 @@ namespace Groundbreak
             else if (!rainLook && cloud > 0.01f) RenderSettings.fogColor = Color.Lerp(RenderSettings.fogColor, new Color(0.62f, 0.65f, 0.69f) * Mathf.Max(0.12f, SiteLook.Daylight), cloud * 0.7f);
             if (storm) RenderSettings.fogColor *= 0.75f;
 
-            var sky = RenderSettings.skybox;
-            if (sky != null && sky.HasProperty("_AtmosphereThickness") && (rainLook || extra > 0.01f))
+            // Overcast: Unity's procedural sky can't do a flat grey deck (thin atmosphere = navy, thick = orange), so swap in a
+            // grey gradient sky while it's overcast and put the original back when it clears.
+            float k = rainLook ? 1f : extra;
+            if (k >= 0.7f || storm)
             {
-                // overcast: no warm sunset band at the horizon, flat grey sky
-                float k = rainLook ? 1f : extra;
-                sky.SetFloat("_AtmosphereThickness", Mathf.Lerp(sky.GetFloat("_AtmosphereThickness"), 0.55f, k));
-                sky.SetColor("_SkyTint", Color.Lerp(sky.GetColor("_SkyTint"), new Color(0.40f, 0.42f, 0.45f), k));
-                sky.SetColor("_GroundColor", Color.Lerp(sky.GetColor("_GroundColor"), new Color(0.42f, 0.44f, 0.46f), k));
+                if (RenderSettings.skybox != Overcast) { _clearSky = RenderSettings.skybox; RenderSettings.skybox = Overcast; }
+                float lum = Mathf.Lerp(0.06f, 1f, SiteLook.Daylight) * (storm ? 0.62f : rainLook ? 0.8f : 0.92f);
+                Overcast.SetColor("_Tint", new Color(lum, lum, lum * 1.03f));
+                Overcast.SetFloat("_Exposure", 1f);
             }
-            if (sky != null && sky.HasProperty("_Exposure") && (extra > 0.01f || storm))
+            else
             {
-                float e = sky.GetFloat("_Exposure");
-                sky.SetFloat("_Exposure", e * Mathf.Lerp(1f, 0.62f, extra) * (storm ? 0.55f : 1f));
+                RestoreSky();
+                var sky = RenderSettings.skybox;
+                if (sky != null && sky.HasProperty("_Exposure") && extra > 0.01f) sky.SetFloat("_Exposure", sky.GetFloat("_Exposure") * Mathf.Lerp(1f, 0.85f, extra));
             }
             WeatherFx.ApplyFlash();
         }

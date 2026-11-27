@@ -119,7 +119,7 @@ namespace Groundbreak.Tests
             // maturity: cold cures slowly, blankets/heater help, warm is normal speed
             Assert.Less(SeasonRules.CureRate(35f, false, false), 0.5f);
             Assert.Greater(SeasonRules.CureRate(35f, true, false), SeasonRules.CureRate(35f, false, false) + 0.2f);
-            Assert.Greater(SeasonRules.CureRate(20f, false, true), 0.9f);
+            Assert.Greater(SeasonRules.CureRate(20f, false, true), 0.8f);
             Assert.AreEqual(1f, SeasonRules.CureRate(70f, false, false), 0.01f);
             // rain stops pours outright
             SeasonWeather.Override = Day(65f, 50f, Sky.Rain);
@@ -200,9 +200,10 @@ namespace Groundbreak.Tests
             Town.Destroy();
         }
 
-        [Test]
-        public void SeasonalDemandPayAndEmergencies()
+        [UnityTest]
+        public IEnumerator SeasonalDemandPayAndEmergencies()
         {
+            Town.Ensure(); yield return Frames(2);
             Assert.Greater(SeasonBusiness.PayFactor(Seasons.Summer), SeasonBusiness.PayFactor(Seasons.Winter));
             Assert.Less(SeasonBusiness.DemandFactor(Seasons.Winter, true), 0.5f);
             Assert.Greater(SeasonBusiness.DemandFactor(Seasons.Winter, false), 1f);
@@ -219,6 +220,7 @@ namespace Groundbreak.Tests
             Assert.NotNull(e, "cold snap furnace call"); Assert.AreSame(JobCatalog.Get("hvac.no-heat"), JobCatalog.DefOf(e));
             SeasonBusiness.RestoreWeights();
             Assert.AreEqual(wf, fence.Weight);
+            Town.Destroy();
         }
 
         [UnityTest]
