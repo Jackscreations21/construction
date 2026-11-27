@@ -40,34 +40,31 @@ before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` 
   job-catalog (492330a, 153 jobs), full-map (6ea95a7, ~260 buildings), blueprints (a267cfc, 46 plans). Nothing is local-only.
 - All helper sessions so far are DONE and merged; notes in `Docs/HANDOFF-<name>.md`, plus `Docs/JOBS.md`, `Docs/MAP.md`, `Docs/BLUEPRINTS.md`.
 
-## AUTONOMOUS DAY (user away all of 2026-11-27; "you will be on your own to finish the game")
-**main = be9f58f, pushed: EVERY feature merged** (map-followup, flips, photo mode, heavy equipment, seasons, subcontractors, plan designer,
-business tutorials). 171 tests / 166 pass / 0 fail / 5 skipped by design (windowed-only captures). Normal runs no longer rewrite tutorial PNGs.
-Unity needs the Unity Hub app running for its license (exit 198 otherwise); reopen it from the Start menu (it is a Store app).
-`start_session` is refused in non-user turns, so finishing work was handed to existing sessions / a subagent (started ~17:20 UTC):
-- balance pass: background subagent of the lead (own worktree; reports branch + commit) -> `Tests/BalanceTests.cs`, `Docs/BALANCE.md`.
-- map visual fixes: map-followup session local_0a9e536b-d192-479a-b75d-c815596ca74b (branch claude/eloquent-tharp-51b6ca) -> "map-fixes DONE".
-- small fixes: flip-houses session local_12b6916a-583d-46fb-80c5-ad106fd21131 (branch claude/nifty-swanson-4ed79b) -> "small-fixes DONE", `Docs/HANDOFF-small-fixes.md`.
-After those merge: full code check in two halves (building trades+Core / business+town+map+new features), then final full run, push, summary.
-A SendMessage assigning new work to the tutorials session was denied by the permission classifier; don't retry that route for it.
-Usage cron every 30 min (pause at 80%, auto-resume after 5-hour reset, never on weekly).
+## STATE: EVERYTHING ON THE LIST IS DONE (2026-11-27 ~19:40 UTC, lead local_98a2032f-a420-4a0a-9364-69a1031cb23c)
+main is pushed and contains: all features (map + follow-up, 46 plans + Plan Designer, 153-job catalog, crews, fleet, subcontractors,
+flip houses, seasons/weather/storms, heavy equipment, photo mode, business tutorials), the balance pass (`Docs/BALANCE.md`), the small-fixes
+list (`Docs/HANDOFF-small-fixes.md`), map visual fixes + the map mesh-leak fix, and the full code check in two halves
+(`Docs/CODECHECK-A.md` 192 files / 47 defects, `Docs/CODECHECK-B.md` 147 files / 26 defects).
+**Final full PlayMode run on the combined main: 237 total, 232 passed, 0 failed, 5 skipped by design (windowed-only captures), 0 error CS, no crash.**
+No sessions or background tasks are running. No usage cron is running.
 
-## Sessions
-All earlier helper sessions are DONE and merged; ids are in `list_sessions {linked:true}`.
+Operating notes that still apply:
+- ONE Unity at a time (16 GB PC): always `unity-run.sh` (section above). Unity needs the Unity Hub app running for its license (exit 198 otherwise).
+- `start_session` only works in a user-typed turn; otherwise use Agent subagents with `isolation: worktree` (that is how balance, map fixes and
+  both code-check halves were done) or resume an existing session by SendMessage.
+- Normal test runs no longer rewrite tutorial PNGs (`GROUNDBREAK_CAPTURE_TUTORIALS=1` regenerates them). Unity sometimes touches
+  `ProjectSettings/*.asset` during runs: do not commit those.
 
-## Left to do, in order
-1. Merge map-followup and tutorials when they report (look at `followup_*`, `tut_business_*` shots).
-2. Balance pass (prices, wages, pay, growth pace) and small fixes, after those two: stored stock hard to see on warehouse racking; held tool visible
-   beside the open tablet; crew drywall/paint/dig/sod tasks lack tests; optional delivery fee (`Fleet.DeliveryFee`); cross-gable wing has no UI button;
-   van model polish; boxy toilet model (`jobcat_toilet_*`); blueprint overlay room labels overlap fixture markers; map edge shows a dark void from the air.
-3. User request (2026-11-26): after everything above is finished, have one or two sessions go through every bit of code checking for errors
-   (split by folder, e.g. Core+building trades / Business+Town+Map+Integration; fix real bugs, add tests, report). Tracker row `n-codecheck`.
-4. New features the user picked (2026-11-26), to build after the code check, each in its own folder/session (tracker rows `f-*`):
-   flip houses (buy run-down map house, renovate, sell); subcontractors (hire out a trade at a premium); seasons + weather effects + storm events
-   (frozen ground, rain delays, hail/wind repair surges; one session); heavy equipment you operate (excavator, skid steer, boom lift, truss crane);
-   design-your-own blueprint on the tablet (code check + pricing, on the `HousePlan` format); photo mode + before/after job gallery.
-   Not picked: walkthroughs/callbacks, bidding, permits, safety/accidents, co-op.
-- The user wants the checklist of everything left written in every reply (the pinned list disappears) and the tracker artifact kept current.
+## Left to do (nothing is in progress; these are candidates for the user to choose from)
+1. "Needs a decision" lists in `Docs/CODECHECK-A.md` and `Docs/CODECHECK-B.md`. Biggest: SAVE GAPS - exterior work (wrap, siding, brick, eaves,
+   deck) and MEP networks (pipes, wiring, ducts, panels, test state) are not saved; New Game does not reset stock/scrap/tool belt; curing blankets
+   and heaters lost on load. Also: forklift/saw station have no effect; a vehicle a job needs can be sold; every career has the same weather seed;
+   stairs allow 24 in width and no handrail; attic minimum R-38 vs R-49; MapJobs never finds a lot for commercial/industrial builds.
+2. Skipped small items: seasons-weather follow-ups, "Edit in designer" button, larger equipment/subs follow-ups (their HANDOFF docs).
+3. Narrow downtown storefronts, the bank and the grocery carry no blueprint (no plan that narrow exists).
+4. Features the user did NOT pick earlier: walkthroughs/callbacks, bidding, permits, safety/accidents, co-op.
+5. Pacing check by a human: the balance model reaches Developer around day 85 with perfect play; HQ cost is the lever if that is too fast.
+- The user wants the checklist of everything left written in every reply and the tracker artifact kept current.
 
 ## First things for the new lead
 1. `get_session` "self" for your own id, then SendMessage every WORKING session (and smart-placement): "New lead session is `<your id>` — send DONE /
