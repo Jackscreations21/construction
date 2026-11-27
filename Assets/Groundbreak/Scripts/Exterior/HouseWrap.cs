@@ -209,6 +209,7 @@ namespace Groundbreak
         /// <summary>Sill flashing: tape across the sill, 6" up each jamb, lapped over the wrap below.</summary>
         public static bool FlashSill(ExteriorWall w, int i)
         {
+            if (i < 0 || i >= w.Openings.Count) return false;
             var op = w.Wrap.Op(i);
             if (!op.Cut) { Game.Toast("Cut the wrap at the opening first (modified I-cut)"); return false; }
             if (op.Sill) { Game.Toast("Sill is already flashed"); return false; }
@@ -222,6 +223,7 @@ namespace Groundbreak
         /// <summary>Jamb flashing: over the window flange, from below the sill tape to above the head.</summary>
         public static bool FlashJambs(ExteriorWall w, int i)
         {
+            if (i < 0 || i >= w.Openings.Count) return false;
             var op = w.Wrap.Op(i);
             if (!op.Sill) { Game.Toast("Flash the sill first — shingle order is sill, jambs, head"); return false; }
             if (op.Jambs) { Game.Toast("Jambs are already flashed"); return false; }
@@ -235,6 +237,7 @@ namespace Groundbreak
         /// <summary>Head flashing over the jamb tape, then the head flap folded down over it and the diagonal cuts taped.</summary>
         public static bool FlashHead(ExteriorWall w, int i)
         {
+            if (i < 0 || i >= w.Openings.Count) return false;
             var op = w.Wrap.Op(i);
             if (!op.Jambs) { Game.Toast("Flash the jambs before the head"); return false; }
             if (op.Head) { Game.Toast("Head is already flashed"); return false; }
@@ -249,6 +252,7 @@ namespace Groundbreak
         /// <summary>Cut + sill + jambs + head for one opening (skips steps already done).</summary>
         public static bool FlashOpening(ExteriorWall w, int i)
         {
+            if (i < 0 || i >= w.Openings.Count) return false;
             var op = w.Wrap.Op(i);
             if (!op.Cut && !CutOpening(w, i)) return false;
             if (!op.Sill && !FlashSill(w, i)) return false;

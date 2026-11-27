@@ -315,6 +315,7 @@ namespace Groundbreak
                 FinishMaterials.Get(ExteriorLooks.Alum), FinishMaterials.Get(ExteriorLooks.Soffit), Materials.Get(SurfaceKind.Concrete), Materials.Get(SurfaceKind.MatteBlack),
             };
             go.AddComponent<MeshCollider>().sharedMesh = mesh;
+            ExtOwnedMesh.Attach(go, mesh);
             var fl = go.AddComponent<FinishLayer>(); fl.Kind = "eave"; fl.Owner = e;
         }
 

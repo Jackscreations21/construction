@@ -100,7 +100,13 @@ namespace Groundbreak
                     bool clash = false; foreach (var p in prev) if (Mathf.Abs(p - u) < In(15f)) clash = true;
                     if (!clash) { best = u; break; }
                 }
-                if (float.IsNaN(best)) best = w.StudLines.FindLast(u => u <= end && u > x + In(24f));
+                if (float.IsNaN(best))
+                {
+                    // FindLast returns 0 (not "none") when nothing matches — that made a negative plank and, with no stud
+                    // lines at all, an endless loop. No stud in reach: cut a full-length plank.
+                    int bi = w.StudLines.FindLastIndex(u => u <= end && u > x + In(24f));
+                    best = bi >= 0 ? w.StudLines[bi] : end;
+                }
                 c.Planks.Add(new Plank { U0 = x, U1 = best - JointGap * 0.5f });
                 c.Joints.Add(best); c.JointFlashed.Add(true);
                 x = best + JointGap * 0.5f;

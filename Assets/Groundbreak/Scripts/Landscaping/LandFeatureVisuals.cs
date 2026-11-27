@@ -8,6 +8,9 @@ namespace Groundbreak
     {
         static readonly Color Pink = new Color(1f, 0.25f, 0.6f), Orange = new Color(1f, 0.45f, 0.05f);
 
+        /// <summary>The per-stage mesh is rebuilt on every work step; free it with its object (cached LandModels meshes are not owned).</summary>
+        static void Own(GameObject go) { if (go != null) ExtOwnedMesh.Attach(go, go.GetComponent<MeshFilter>().sharedMesh); }
+
         public static void Build(LandscapeFeature f, Transform parent, BoxCollider col)
         {
             switch (f.Kind)
@@ -106,7 +109,7 @@ namespace Groundbreak
                     k.B.AddBox(new Vector3(s * (hw + Units.In(1.2f)), -PaverDepthBase(), -hl + len / 2), new Vector3(Units.In(2.2f), Units.In(0.2f), len), Quaternion.identity, blk);
                 }
             }
-            k.Make(parent, "Walkway");
+            Own(k.Make(parent, "Walkway"));
             col.center = new Vector3(0, -0.02f, 0); col.size = new Vector3(W + 0.3f, 0.04f, L + 0.3f);
         }
 
@@ -131,7 +134,7 @@ namespace Groundbreak
                 float len = L * topF;
                 k.B.AddBox(new Vector3(0, -t / 2, -L / 2 + len / 2), new Vector3(W, t, len), Quaternion.identity, k.M(SurfaceKind.Gravel));
             }
-            k.Make(parent, "Drive");
+            Own(k.Make(parent, "Drive"));
             col.center = new Vector3(0, -0.02f, 0); col.size = new Vector3(W + 0.3f, 0.04f, L + 0.3f);
         }
 
@@ -234,7 +237,7 @@ namespace Groundbreak
                     k.B.AddBox(new Vector3(-post / 2 - Units.In(1.6f), y0 + yy, -gw / 2 + Units.In(4)), new Vector3(Units.In(0.15f), Units.In(1.5f), Units.In(12)), Quaternion.identity, blk);
                 k.B.AddBox(new Vector3(-post / 2 - Units.In(1.6f), y0 + Units.In(40), gw / 2 - Units.In(1.5f)), new Vector3(Units.In(0.4f), Units.In(1.2f), Units.In(4)), Quaternion.identity, blk);
             }
-            k.Make(parent, gate ? "Gate" : "Fence");
+            Own(k.Make(parent, gate ? "Gate" : "Fence"));
             float hgt = f.Stage >= 1 ? 1.85f : 0.4f;
             col.center = new Vector3(0, hgt / 2, 0); col.size = new Vector3(0.2f, hgt, L + 0.3f);
         }
@@ -287,7 +290,7 @@ namespace Groundbreak
                 k.B.AddLathe(Vector3.zero, Quaternion.identity, new[] { new Vector2(rr, 0), new Vector2(rr * 0.7f, h * 0.4f), new Vector2(rr * 0.25f, h * 0.95f), new Vector2(0.001f, h) }, 12, soil, 60f);
                 k.B.ResetTransform();
             }
-            k.Make(parent, "Ground");
+            Own(k.Make(parent, "Ground"));
             if (f.Stage >= 2)
             {
                 var plant = PlantModelFor(f, parent);

@@ -89,6 +89,10 @@ namespace Groundbreak
         }
 
         protected static float Yd(float m3) => m3 / Grade.CubicYard;
+
+        /// <summary>Volume (m³) of a <see cref="GradeField.Raise"/> bump of radius r per meter of peak height. The cosine
+        /// falloff 0.5 + 0.5cos(pi d/r) integrates to r²(pi/2 - 2/pi) ≈ 0.934 r², not the pi r²/2 of a straight cone.</summary>
+        public static float BumpVolumePerMeter(float r) => r * r * (Mathf.PI * 0.5f - 2f / Mathf.PI);
     }
 
     // ---------------------------------------------------------------------- hand tools
@@ -139,9 +143,9 @@ namespace Groundbreak
         protected override void GroundSecondary(RaycastHit hit, LandscapeFeature f)
         {
             float r = GInput.Shift ? 1.0f : 0.6f;
-            float vol = Mathf.PI * r * r * 0.5f * Units.In(2);
-            if (!Grade.TakeFill(vol)) { Say("No loose dirt - dig somewhere or order fill dirt"); return; }
-            Grade.Field.Raise(hit.point, r, Units.In(2));
+            // charge exactly the volume placed (the same measure digging credits), undoing the raise if there's no dirt
+            float vol = Grade.Field.Raise(hit.point, r, Units.In(2));
+            if (!Grade.TakeFill(vol)) { Grade.Field.Raise(hit.point, r, -Units.In(2)); Say("No loose dirt - dig somewhere or order fill dirt"); return; }
             SiteFx.Burst(hit.point, SiteFx.DirtColor, 6, 0.03f, 0.4f, 0.8f);
             Grade.Field.Paint(hit.point, r * 0.8f, LandCover.Dirt, c => c == LandCover.Grass || c == LandCover.Lawn);
             Sfx.Play("shovel", hit.point);
@@ -181,9 +185,9 @@ namespace Groundbreak
         }
         protected override void GroundSecondary(RaycastHit hit, LandscapeFeature f)
         {
-            float r = 1.0f, vol = Mathf.PI * r * r * 0.5f * Units.In(2);
-            if (!Bulk.Take("topsoil", Yd(vol))) { Say("No topsoil on site (Garden Center: bulk)"); return; }
-            Grade.Field.Raise(hit.point, r, Units.In(2));
+            float r = 1.0f;
+            float vol = Grade.Field.Raise(hit.point, r, Units.In(2));
+            if (!Bulk.Take("topsoil", Yd(vol))) { Grade.Field.Raise(hit.point, r, -Units.In(2)); Say("No topsoil on site (Garden Center: bulk)"); return; }
             Grade.Field.Paint(hit.point, r, LandCover.Topsoil, c => c != LandCover.Gravel && c != LandCover.Mulch);
             Sfx.Play("rake", hit.point, 0.6f);
         }
@@ -205,12 +209,13 @@ namespace Groundbreak
         /// <summary>Seed + straw a 1.2 m radius patch. Needs bare soil (dirt/topsoil). 1 bag of seed and 1 bale cover 1,000 sq ft.</summary>
         public static bool SowAt(Vector3 p, out string msg, LandTool say = null)
         {
+            Grade.Ensure(p); // public entry point (tests/crews): the pad can report Dirt before any lot field exists
             var cover = Grade.CoverAt(p.x, p.z);
             if (cover != LandCover.Dirt && cover != LandCover.Topsoil) { msg = "Seed needs bare raked soil (strip/till and spread topsoil first)"; say?.SayPublic(msg); return false; }
             float r = 1.2f, sqft = Mathf.PI * r * r * 10.764f, units = sqft / 1000f;
             if (Bulk.OnHand("grass-seed") < units || Bulk.OnHand("straw-bale") < units) { msg = "Need grass seed and a straw bale on site"; say?.SayPublic(msg); return false; }
             Bulk.Take("grass-seed", units); Bulk.Take("straw-bale", units);
-            Grade.Field.Paint(p, r, LandCover.Seeded, c => c == LandCover.Dirt || c == LandCover.Topsoil);
+            if (Grade.Field != null) Grade.Field.Paint(p, r, LandCover.Seeded, c => c == LandCover.Dirt || c == LandCover.Topsoil);
             LandscapeSystem.AddSeedPatch(p, r);
             Sfx.Play("rake", p, 0.5f);
             msg = "Seeded & strawed - keep it watered (hose) ~5 days";
@@ -266,7 +271,7 @@ namespace Groundbreak
             string id = Loads[Load];
             if (!Bulk.Take(id, LandscapeFeature.LoadYd)) { Say($"No {LandCatalog.Name(id)} on site"); return; }
             float vol = LandscapeFeature.LoadYd * Grade.CubicYard, r = 0.9f;
-            Grade.Field.Raise(hit.point, r, vol / (Mathf.PI * r * r * 0.5f));
+            Grade.Field.Raise(hit.point, r, vol / BumpVolumePerMeter(r));
             var cover = id == "mulch" ? LandCover.Mulch : id == "topsoil" || id == "fill-dirt" ? LandCover.Topsoil : id == "paver-sand" ? LandCover.Sand : LandCover.Gravel;
             Grade.Field.Paint(hit.point, r * 0.85f, cover);
             Sfx.Play("gravel", hit.point);
