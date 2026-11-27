@@ -256,6 +256,7 @@ namespace Groundbreak.Tests
             Wall(at, "App wall");
             if (Game.Player != null) Game.Player.transform.position = at + new Vector3(-3f, 0, -3f);
             Subs.JobsWith["framing-2"] = 2;
+            if (MainMenu.Showing) MainMenu.I.Hide();
             SubsApp.Show("framing");
             Tablet.I.ShowApp(SubsApp.AppName);
             yield return Frames(5);

@@ -27,7 +27,7 @@ instead of doing it yourself or sending your own crew.
 6. **Repeat business**: every finished job with a company takes 2% off their next price, up to 10%.
 
 ## Pricing (standard shop; cheap ×0.80-0.85, premium ×1.28-1.35)
-| Trade | Unit | Rate | Minimum | Measured from |
+| Trade | Unit | Rate | Minimum (× price level) | Measured from |
 |---|---|---|---|---|
 | Excavation | cu yd | $95 | $450 | 12"x12" footing trench under each side of the formed slab (on the building pad) |
 | Concrete | cu yd | $165 (+ ready-mix $165/yd billed to you) | $850 | the active form's takeoff |

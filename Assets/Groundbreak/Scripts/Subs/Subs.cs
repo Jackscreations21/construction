@@ -98,7 +98,7 @@ namespace Groundbreak
             var t = SubCatalog.Trade(c.Trade);
             var q = new SubQuote { Company = c, Trade = t, JobId = jobId, Center = center, Radius = radius, Arrival = CrewManager.ArrivalPoint() };
             q.Qty = SubScopes.Measure(c.Trade, center, radius, out q.Detail);
-            q.ListPrice = Mathf.Max(t.Minimum, Mathf.RoundToInt(q.Qty * t.Rate * c.PriceFactor / 5f) * 5);
+            q.ListPrice = Mathf.RoundToInt(Mathf.Max(t.Minimum * c.PriceFactor, q.Qty * t.Rate * c.PriceFactor) / 5f) * 5;
             float disc = DiscountWith(c.Id);
             q.Price = Mathf.RoundToInt(q.ListPrice * (1f - disc) / 5f) * 5;
             q.Discount = q.ListPrice - q.Price;

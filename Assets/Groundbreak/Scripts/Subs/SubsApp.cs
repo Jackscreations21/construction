@@ -71,7 +71,7 @@ namespace Groundbreak
             GUILayout.Label($"{info.Label}: {info.Scope}. Typical ${Price(info.Rate)}/{info.Unit}, ${info.Minimum:N0} minimum.", label);
             foreach (var c in SubCatalog.For(_trade))
             {
-                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.BeginVertical(Card);
                 int done = Subs.JobsWith.TryGetValue(c.Id, out int n) ? n : 0;
                 string rel = done > 0 ? $" · {done} job(s) together: {Mathf.RoundToInt(Subs.DiscountWith(c.Id) * 100)}% off" : "";
                 GUILayout.Label($"{c.Name} ({c.Phone}) — {c.PriceLevel} · quality {SubCatalog.QualityLabel(c.Quality)} [{CrewTrades.Stars(c.Quality)}] · {SubCatalog.ReliabilityLabel(c.Reliability)} · booked {c.LeadDays} day(s) out{rel}", label);
@@ -105,7 +105,7 @@ namespace Groundbreak
             foreach (var k in Subs.Contracts.ToArray())
             {
                 var c = k.Company; var info = k.TradeInfo;
-                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.BeginVertical(Card);
                 string when = k.State == SubState.Scheduled ? (k.LateNotified ? $"late - now day {k.StartDay}" : $"day {k.PromisedDay}" + (k.PromisedDay <= day ? " (today)" : ""))
                     : k.State == SubState.Done ? $"finished day {k.FinishedDay}" : "on site";
                 GUILayout.Label($"{info?.Label}: {c?.Name} · {Crew.JobLabel(k.JobId)} · {Qty(k.Qty)} {info?.Unit} · ${k.Price:N0}{(k.Paid ? " paid" : k.State == SubState.Done ? " UNPAID" : " on completion")} · {when}", label);
@@ -116,6 +116,21 @@ namespace Groundbreak
                     Subs.RequestCallback(k, out _msg);
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
+            }
+        }
+
+        static GUIStyle _card;
+        /// <summary>A dark row card (the default box skin is light gray, which hides the tablet's light text).</summary>
+        static GUIStyle Card
+        {
+            get
+            {
+                if (_card != null && _card.normal.background != null) return _card;
+                var tex = new Texture2D(1, 1) { hideFlags = HideFlags.DontSave };
+                tex.SetPixel(0, 0, new Color(0.14f, 0.16f, 0.19f, 0.95f)); tex.Apply();
+                _card = new GUIStyle { padding = new RectOffset(10, 10, 6, 6), margin = new RectOffset(0, 0, 3, 3) };
+                _card.normal.background = tex;
+                return _card;
             }
         }
 
