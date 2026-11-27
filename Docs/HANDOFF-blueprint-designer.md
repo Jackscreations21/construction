@@ -14,6 +14,8 @@
    Copying two outbuilding plans can gain one extra auto opening (still valid).
 5. Status (paused for the night): full PlayMode suite passed on this branch BEFORE merging main (128 passed, 0 failed, 2 skipped = windowed-only
    UI captures). main aa6ed35 (map-followup) is merged in, conflict-free. Screenshots looked at: designer_drawing_*, designer_overlay_top/eye.
+   2026-11-27: main c1d7e79 merged (clean). The final run could not start: Unity exited 198 "No valid Unity Editor license found"
+   (access token unavailable: Unity Hub needs the user to sign in). Steps a-d below are still open.
    LEFT TO DO:
    a. One full PlayMode run on the merged branch, via `unity-run.sh` (shared notes folder of local_54073d16...), batchmode; expect 0 failures.
    b. If (a) shows 0 `error CS`: one windowed run via the wrapper with `-testFilter Groundbreak.Tests.PlanDesignerTests.DesignerTabletScreenshots`
