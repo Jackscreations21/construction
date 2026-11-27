@@ -43,3 +43,12 @@ No other shared files were touched. The app registers itself:
 - Concrete defects (no vibration) have no inspection rule; neither do paint and shingles.
 - Excavation only digs the 12"x12" perimeter footing trench of the active slab form on the building pad.
 - Plumbing and HVAC are priced per joint left to make, not per fixture. The game has no fixture plan in the world.
+
+## Status at pause (2026-11-27, lead asked all sessions to pause for the night)
+- Committed on `claude/busy-satoshi-2c8778`. The last full PlayMode run (main d68e427 merged): 127 total, 125 passed, 0 failed, 2 skipped (UICapture + `SubcontractorsAppShot`, windowed-only).
+- Shots looked at: `subs_crew_working` (flatbed with door signs, a sub carpenter framing), `subs_finished_wall` (wall framed and braced).
+- **Left to do, in order:**
+  1. `git merge main` (main is now aa6ed35 with map-followup).
+  2. One full-suite batchmode run through `unity-run.sh`. Check 0 `error CS` and 0 failed.
+  3. One windowed run through `unity-run.sh` with `-testFilter Groundbreak.Tests.SubcontractorTests.SubcontractorsAppShot`, no `-batchmode`. Look at `Logs/shots/subs_app.png`: check the app layout, and that the trade buttons and company rows aren't clipped.
+  4. Commit, then SendMessage the lead "subcontractors DONE @ <commit>" with the branch name and test counts.
