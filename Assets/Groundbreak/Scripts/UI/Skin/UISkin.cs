@@ -10,6 +10,7 @@ namespace Groundbreak
         public static readonly Color Accent = new Color(1f, 0.60f, 0.12f), PanelColor = new Color(0.07f, 0.09f, 0.11f, 0.88f);
         static GUISkin _skin;
         static Texture2D _round, _btn, _btnHover, _btnActive, _btnOn, _field;
+        static GUIStyle _panel;
         static readonly Dictionary<string, Texture2D> _icons = new Dictionary<string, Texture2D>();
         static int _builtFor;
 
@@ -65,6 +66,11 @@ namespace Groundbreak
             _skin.toggle.alignment = TextAnchor.MiddleLeft;
             _skin.label.fontSize = fs; _skin.label.normal.textColor = new Color(0.92f, 0.93f, 0.95f); _skin.label.wordWrap = true;
             _skin.box.normal.background = _round; _skin.box.border = new RectOffset(10, 10, 10, 10);
+            // Panel() tints the white rounded texture with GUI.color; everything else that draws GUI.skin.box (Crew rows, Dealership
+            // cards, tool tags) writes light text and needs a dark box, so the skin's box is a dark rounded panel.
+            _panel = new GUIStyle(_skin.box);
+            _skin.box.normal.background = Rounded(32, 10, new Color(0.10f, 0.12f, 0.15f, 0.92f), new Color(0.30f, 0.33f, 0.38f), 1);
+            _skin.box.normal.textColor = new Color(0.92f, 0.93f, 0.95f);
             _skin.textField.normal.background = _field; _skin.textField.focused.background = _field; _skin.textField.border = new RectOffset(6, 6, 6, 6);
             _skin.textField.fontSize = fs; _skin.textField.normal.textColor = Color.white; _skin.textField.padding = new RectOffset(8, 8, 5, 5);
             _skin.verticalScrollbar.normal.background = _field; _skin.verticalScrollbarThumb.normal.background = _btn;
@@ -83,7 +89,7 @@ namespace Groundbreak
             if (Event.current.type != EventType.Repaint) return;
             if (_round == null) Build();
             var prev = GUI.color; GUI.color = color ?? PanelColor;
-            var style = Skin.box;
+            var style = Skin != null ? _panel : null;
             style.Draw(r, GUIContent.none, false, false, false, false);
             GUI.color = prev;
         }

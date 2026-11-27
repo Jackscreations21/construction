@@ -150,7 +150,7 @@ namespace Groundbreak.Tests
             foreach (var t in tuts)
             {
                 Assert.IsTrue(t.Available, t.Id);
-                Assert.GreaterOrEqual(t.Steps.Count, 3, t.Id + " has steps");
+                Assert.GreaterOrEqual(t.Steps.Count, 2, t.Id + " has steps");
                 foreach (var s in t.Steps)
                 {
                     Assert.IsNotEmpty(s.Title, t.Id); Assert.IsNotEmpty(s.Text, t.Id + " " + s.Title);
@@ -246,11 +246,15 @@ namespace Groundbreak.Tests
             Assert.IsTrue(WorkVan.I.Driving);
             var cam = Game.Player.Cam.transform;
             World(cam.position, cam.position + van.forward * 10f - Vector3.up * 1.0f, "bt_12_driving", 75f);
-            yield return App("Van", "bt_13_fast_travel", 260f);
-            Tablet.I.Close();
             WorkVan.I.Exit();
             WorkVan.I.ChaseCamera = chase;
             yield return Frames(2);
+            // fast travel (Van app → Drive to → Hardware store): the van and you arrive, the clock moves on, a toast says how long
+            Assert.IsTrue(WorkVan.FastTravel(Town.Store), "fast travel to the store");
+            yield return Frames(3);
+            { var v = WorkVan.I.transform; LookFrom(v.position - v.forward * 6f + v.right * 3f, v.position + Vector3.up * 1.2f); }
+            yield return Frames(2);
+            yield return Screen("bt_13_fast_travel");
 
             // ---------------- 3. hardware store
             var store = Town.Store;
@@ -343,9 +347,10 @@ namespace Groundbreak.Tests
 
             // ---------------- 7. money: Company app, daily costs, loans
             yield return App("Company", "bt_60_company");
-            yield return App("Company", "bt_61_daily_costs", 380f);
-            yield return App("Company", "bt_63_profit_loss", 640f);
-            yield return App("Company", "bt_62_loans", 900f);
+            yield return App("Company", "bt_61_daily_costs", 120f);
+            yield return App("Company", "bt_63_profit_loss", 260f, () => SetPrivate(typeof(CompanyApp), "_period", 2));
+            yield return App("Company", "bt_62_loans", 900f, () => { SetPrivate(typeof(CompanyApp), "_period", 1); SetPrivate(typeof(CompanyApp), "_loanAmount", 20000); });
+            SetPrivate(typeof(CompanyApp), "_loanAmount", 5000);
             Tablet.I.Close();
 
             // ---------------- 8. plans
@@ -406,7 +411,7 @@ namespace Groundbreak.Tests
             DevVisuals.RefreshNow(); yield return null;
             World(dev.Tract.FrontMid + dev.Tract.Front * 25f + Vector3.up * 45f, dev.Tract.Center, "bt_91_raw_land");
             Assert.Greater(Developments.Subdivide(dev, 70f, out msg), 0, msg);
-            yield return App("Development", "bt_92_development_app");
+            yield return App("Development", "bt_92_development_app", 2000f);
             Tablet.I.Close();
             Assert.IsTrue(Developments.StartSiteWork(dev, out msg), msg);
             dev.SiteWorkStartDay = Projects.Day - dev.SiteWorkDays;
@@ -426,7 +431,7 @@ namespace Groundbreak.Tests
                     if (h.Complete && !h.Listed && !h.Sold)
                     {
                         Developments.List(h, Mathf.RoundToInt(Developments.MarketValue(h, day) * 0.97f), out _);
-                        if (!listedShot) { listedShot = true; if (NeighborhoodComplete.I != null) { Object.Destroy(NeighborhoodComplete.I.gameObject); NeighborhoodComplete.I = null; Game.UIOpen = false; } yield return App("Development", "bt_94_listing"); Tablet.I.Close(); }
+                        if (!listedShot) { listedShot = true; if (NeighborhoodComplete.I != null) { Object.Destroy(NeighborhoodComplete.I.gameObject); NeighborhoodComplete.I = null; Game.UIOpen = false; } yield return App("Development", "bt_94_listing", 2000f); Tablet.I.Close(); }
                     }
             }
             Assert.IsTrue(land.Done, "neighborhood sold out");

@@ -33,7 +33,7 @@ namespace Groundbreak
 
         static void Van()
         {
-            New("biz-van", "Loading the van and getting around", "What fits in the van and on the roof rack, driving, and fast travel.")
+            New("biz-van", "The van and fast travel", "What fits in the van and on the roof rack, driving, and fast travel.")
                 .Step("What fits in the van",
                     "The van holds about 180 cubic feet behind the seats (the shelves take the rest) and 3,200 lb. Inside: pieces up to 10 ft long and up to 20 sheets laid flat. The roof rack carries up to 6 long pieces (16 ft max, 150 lb) plus your 24 ft ladder.",
                     "E at the rear doors = open/close  ·  E at the roof rack = take/stow the ladder", "bt_10_van_cargo", find: VanSpot, where: "your van")
@@ -50,7 +50,7 @@ namespace Groundbreak
 
         static void Hardware()
         {
-            New("biz-hardware", "Buying parts at the hardware store", "Hartley's Hardware at 201 Main St: repair parts and some lumber, loaded straight into your van.")
+            New("biz-hardware", "Hardware store parts", "Hartley's Hardware at 201 Main St: repair parts and some lumber, loaded straight into your van.")
                 .Step("Drive to the store",
                     "Hartley's Hardware & Lumber is at 201 Main St. Drive there (or Van app → Drive to → Hardware store) and park in its lot. The store only serves you when your van is parked close by.",
                     "Van app → Drive to → Hardware store", "bt_20_store_front", find: StoreSpot, where: "the hardware store")
@@ -64,7 +64,7 @@ namespace Groundbreak
 
         static void Warehouse()
         {
-            New("biz-warehouse", "Renting a warehouse and buying a truck", "Become a Contractor: lease a bay, buy a truck, unlock bigger jobs.")
+            New("biz-warehouse", "Warehouse and a truck", "Become a Contractor: lease a bay, buy a truck, unlock bigger jobs.")
                 .Step("Lease a warehouse",
                     "Open the Warehouse app. A Rented bay costs $4,500 to move in, then about $375 a day (rent + insurance) plus utilities. It stores 1,800 cu ft of material, parks 3 vehicles and gets you 8% off bulk material. Bigger levels come later: Yard + shop ($15,000 move-in) and Headquarters ($48,000).",
                     "Tablet → Warehouse → Lease", "bt_30_warehouse_app", openApp: "Warehouse")
@@ -98,7 +98,7 @@ namespace Groundbreak
 
         static void CrewTut()
         {
-            New("biz-crew", "Hiring workers and running a crew", "Hire, assign, give tasks, pay them and keep them happy.")
+            New("biz-crew", "Hiring and running a crew", "Hire, assign, give tasks, pay them and keep them happy.")
                 .Step("Hire workers",
                     "Open the Crew app, tab 'Hire'. Seven people look for work each morning (the first two are always a laborer and a carpenter). Each shows a trade, a skill level (Helper up to Master) and a daily wage: a laborer gets about $136-208 a day, a carpenter $160-320. Hire 2 and the company becomes a Crew, so you can run several jobs at once.",
                     "Tablet → Crew → Hire", "bt_50_crew_hire", openApp: "Crew")
@@ -115,7 +115,7 @@ namespace Groundbreak
 
         static void Finance()
         {
-            New("biz-finance", "Money: the Company app, daily costs and loans", "Know your cash and what each day costs, and borrow safely.")
+            New("biz-finance", "Money, costs and loans", "Know your cash and what each day costs, and borrow safely.")
                 .Step("Your company at a glance",
                     "The Company app shows cash, debt, reputation, jobs done and equity, plus a checklist of what you need for the next stage.",
                     "Tablet → Company", "bt_60_company", openApp: "Company")
@@ -132,7 +132,7 @@ namespace Groundbreak
 
         static void Plans()
         {
-            New("biz-plans", "Reading a blueprint in the Plans app", "Pick a plan, read the rooms and sizes, and see the material list and cost.")
+            New("biz-plans", "Reading a blueprint", "Pick a plan, read the rooms and sizes, and see the material list and cost.")
                 .Step("Choose a plan",
                     "The Plans app holds every plan in the game, filtered by type: Residential, Outbuilding, Commercial, Industrial. Pick one to see its floor plan drawn to scale, with the overall size and the number of floors.",
                     "Tablet → Plans → filter → pick a plan", "bt_70_plans", openApp: "Plans")
@@ -146,7 +146,7 @@ namespace Groundbreak
 
         static void BuilderTut()
         {
-            New("biz-builder", "Building a full house for a client", "Builder stage: sign a house contract, run the build with subs and your crew, get paid in draws.")
+            New("biz-builder", "A full house for a client", "Builder stage: sign a house contract, run the build with subs and your crew, get paid in draws.")
                 .Step("Sign a house contract",
                     "At the Builder stage (reputation 65 and a Yard + shop), the Jobs app's 'Houses' tab lists client houses: a 1,200 sq ft starter home ($185,000), a two-story ($395,000, reputation 75) and a custom home ($720,000, reputation 85). Press Sign. The client pays a 10% deposit.",
                     "Tablet → Jobs → Houses → Sign", "bt_80_jobs_houses", openApp: "Jobs")
@@ -163,7 +163,7 @@ namespace Groundbreak
 
         static void Developer()
         {
-            New("biz-developer", "Buying land and developing a neighborhood", "Developer stage: buy raw land, split it into lots, put in a street, build spec houses and sell them.")
+            New("biz-developer", "Developing a neighborhood", "Developer stage: buy raw land, split it into lots, put in a street, build spec houses and sell them.")
                 .Step("Buy land",
                     "At the Developer stage (reputation 80, Headquarters and 8 workers), the Jobs app's 'Land' tab lists raw land at about $32,000-44,000 an acre plus 2% closing costs. Buy a tract you can afford to build on.",
                     "Tablet → Jobs → Land → Buy", "bt_90_jobs_land", openApp: "Jobs")
@@ -186,7 +186,7 @@ namespace Groundbreak
 
         static void Reputation()
         {
-            New("biz-reputation", "Reputation and growing your company", "How reputation works and what each stage needs.")
+            New("biz-reputation", "Reputation and stages", "How reputation works and what each stage needs.")
                 .Step("Reputation",
                     "You start at 50. Each finished job moves it from -3 to +3 by quality, and -1 more if it's late. A failed callback costs 2, an ignored one 4, an unpaid bill 1 and bankruptcy 15. Good work on time is the only way up, and bigger jobs need more of it.",
                     "Company app = your reputation", "bt_A0_headquarters", openApp: "Company")
