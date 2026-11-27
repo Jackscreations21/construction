@@ -35,7 +35,7 @@ before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` 
 - All helper sessions so far are DONE and merged; notes in `Docs/HANDOFF-<name>.md`, plus `Docs/JOBS.md`, `Docs/MAP.md`, `Docs/BLUEPRINTS.md`.
 
 ## Sessions
-None running. Two are PROPOSED as cards in the lead chat (the user must click them or say "start"; then `start_session` with the proposal_id only):
+Running since 2026-11-27 ~01:50 UTC (Opus, own worktrees): map-followup local_0a9e536b-d192-479a-b75d-c815596ca74b, tutorials local_226d21d9-1006-4a75-9928-8528661fa526.
 - map-followup, task_cf34d273: dress empty lots, plan ids on map buildings, catalog jobs across the whole map, workers out of the road,
   SiteHud "Job Board" text, retire old Career Job Board, for-sale signs on claimed lots. Folder `Scripts/MapFollowup/`.
 - tutorials, task_38148f7b: business tutorials with pictures, and stop normal test runs rewriting `Resources/Tutorials/*.png`. Folder `Scripts/BusinessTutorials/`.
@@ -46,6 +46,8 @@ Usage watch: session cron every 10 min (pause helpers at 85%). It dies with the 
 2. Balance pass (prices, wages, pay, growth pace) and small fixes, after those two: stored stock hard to see on warehouse racking; held tool visible
    beside the open tablet; crew drywall/paint/dig/sod tasks lack tests; optional delivery fee (`Fleet.DeliveryFee`); cross-gable wing has no UI button;
    van model polish; boxy toilet model (`jobcat_toilet_*`); blueprint overlay room labels overlap fixture markers; map edge shows a dark void from the air.
+3. User request (2026-11-26): after everything above is finished, have one or two sessions go through every bit of code checking for errors
+   (split by folder, e.g. Core+building trades / Business+Town+Map+Integration; fix real bugs, add tests, report). Tracker row `n-codecheck`.
 - The user wants the checklist of everything left written in every reply (the pinned list disappears) and the tracker artifact kept current.
 
 ## First things for the new lead
