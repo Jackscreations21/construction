@@ -11,6 +11,7 @@ namespace Groundbreak
     {
         public string lotId;
         public bool callback;
+        public string scope;                              // job-catalog remodel scope id (null for plain repairs)
         public List<DefectState> defects = new List<DefectState>();
     }
 
@@ -69,6 +70,7 @@ namespace Groundbreak
         /// <summary>Title and customer wording for a defect that isn't spawned (job offers, callbacks).</summary>
         public static (string title, string symptom) Describe(DefectState s)
         {
+            if (s.type == (int)RepairType.Catalog) return JobCatalog.Describe(s);
             int key = s.type * 10000 + s.spot * 100 + s.cause;
             if (_desc.TryGetValue(key, out var d)) return d;
             var go = new GameObject("RepairDescribe");
@@ -86,6 +88,7 @@ namespace Groundbreak
         {
             switch ((RepairType)s.type)
             {
+                case RepairType.Catalog: return JobCatalog.ToolsFor(s);
                 case RepairType.SinkLeak: return new[] { C.Pliers, C.Wrench, C.Bucket };
                 case RepairType.DeadOutlet: return new[] { C.Tester, C.Screwdriver, C.Meter };
                 case RepairType.DrywallHole: return s.cause == DrywallHoleDefect.Large ? new[] { C.JabSaw, C.Drill, C.Knives, C.Sander, C.Brush, C.Roller } : new[] { C.Knife, C.Knives, C.Sander, C.Brush, C.Roller };
@@ -110,9 +113,18 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ payloads
 
+        /// <summary>Job-catalog remodel scopes (JobKind.Remodel, id prefix "jcr-") run on the same defect/invoice machinery as repairs.</summary>
+        public const string ScopePrefix = "jcr-";
+
+        /// <summary>Handled by this service-call system: repairs, and catalog remodel scopes.</summary>
+        public static bool IsService(Job j) => j != null && (j.Kind == JobKind.Repair || (j.Kind == JobKind.Remodel && j.Id != null && j.Id.StartsWith(ScopePrefix)));
+
+        /// <summary>Replaces the built-in offer generator (the job catalog sets this).</summary>
+        public static Action ExternalGenerator;
+
         public static RepairPayload Payload(Job job)
         {
-            if (job == null || job.Kind != JobKind.Repair || string.IsNullOrEmpty(job.Payload)) return null;
+            if (!IsService(job) || string.IsNullOrEmpty(job.Payload)) return null;
             if (_payloads.TryGetValue(job.Id, out var p)) return p;
             try { p = JsonUtility.FromJson<RepairPayload>(job.Payload); } catch (Exception) { p = null; }
             if (p != null) _payloads[job.Id] = p;
@@ -180,6 +192,7 @@ namespace Groundbreak
         /// <summary>Tops up Company.Offers with service calls sized to the company's reputation (2 small calls under 40, up to 5 with punch lists at 70+).</summary>
         public static void GenerateOffers()
         {
+            if (ExternalGenerator != null) { ExternalGenerator(); return; }
             int rep = Company.Reputation;
             int target = rep < 40 ? 2 : rep < 70 ? 3 : 5;
             int have = 0;
@@ -232,7 +245,7 @@ namespace Groundbreak
         public static void Respawn()
         {
             if (!Town.Exists) return;
-            foreach (var j in Company.ActiveJobs) if (j.Kind == JobKind.Repair) Spawn(j);
+            foreach (var j in Company.ActiveJobs) if (IsService(j)) Spawn(j);
         }
 
         public static void DestroyDefects(Job job) { foreach (var d in DefectsFor(job)) d.Remove(); }
@@ -245,7 +258,7 @@ namespace Groundbreak
 
         static void OnAccepted(Job job)
         {
-            if (job.Kind != JobKind.Repair) return;
+            if (!IsService(job)) return;
             if (!Town.Exists) Town.Ensure();
             Spawn(job);
             var lot = LotOf(job);
@@ -305,7 +318,7 @@ namespace Groundbreak
         /// satisfaction), adds a tip for a happy customer, schedules a callback for anything left unfixed or badly done.</summary>
         public static RepairInvoice SendInvoice(Job job)
         {
-            if (job == null || job.Done || !Company.ActiveJobs.Contains(job) || job.Kind != JobKind.Repair) return null;
+            if (job == null || job.Done || !Company.ActiveJobs.Contains(job) || !IsService(job)) return null;
             var inv = PreviewInvoice(job);
             var p = Payload(job);
             var live = DefectsFor(job);
@@ -323,7 +336,7 @@ namespace Groundbreak
                 {
                     var d = live.Find(x => x.S == s);
                     if (d != null && d.IsFixed && d.Quality >= 0.6f) continue;
-                    cb.defects.Add(new DefectState { type = s.type, spot = s.spot, cause = s.cause });
+                    cb.defects.Add(new DefectState { type = s.type, spot = s.spot, cause = s.cause, def = s.def });
                     names.Add(Describe(s).title);
                 }
                 if (cb.defects.Count > 0)
@@ -368,7 +381,7 @@ namespace Groundbreak
             for (int i = Company.Offers.Count - 1; i >= 0; i--)
             {
                 var j = Company.Offers[i];
-                if (j.Kind != JobKind.Repair || j.DueDay >= day) continue;
+                if (!IsService(j) || j.DueDay >= day) continue;
                 Company.Offers.RemoveAt(i);
                 var p = Payload(j);
                 _payloads.Remove(j.Id);

@@ -207,7 +207,7 @@ namespace Groundbreak
             bool anyActive = false;
             foreach (var job in new List<Job>(Company.ActiveJobs))
             {
-                if (job.Kind != JobKind.Repair) continue;
+                if (!RepairJobs.IsService(job)) continue;
                 anyActive = true;
                 var lot = RepairJobs.LotOf(job);
                 var live = RepairJobs.DefectsFor(job);
@@ -242,7 +242,7 @@ namespace Groundbreak
             bool anyOffer = false;
             foreach (var job in new List<Job>(Company.Offers))
             {
-                if (job.Kind != JobKind.Repair) continue;
+                if (!RepairJobs.IsService(job)) continue;
                 anyOffer = true;
                 string block = Company.Blocker(job);
                 GUILayout.BeginHorizontal();
