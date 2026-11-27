@@ -132,7 +132,7 @@ namespace Groundbreak
                 var id = key.Split('|')[0]; var d = Catalog.Get(id); if (d == null) continue;
                 bool interior = key.EndsWith("|int");
                 t.Lines.Add(Line(interior ? fi : fr, d.Name + (d.Category == PieceCategory.GarageDoor ? " (+ track, springs, header)" : ""), counts[key], "pcs",
-                    d.Price + (d.Category == PieceCategory.GarageDoor ? Mathf.RoundToInt(d.Size.x / Units.Foot * 40f) : 0)));
+                    d.Price + (d.Category == PieceCategory.GarageDoor ? Mathf.RoundToInt(d.Size.x / Groundbreak.Units.Foot * 40f) : 0)));
             }
         }
 

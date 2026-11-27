@@ -95,7 +95,7 @@ namespace Groundbreak
                     var k = KindOf(r.Name);
                     if (k == RoomKind.Void) continue;
                     if (IsResidential && k == RoomKind.Garage) continue;
-                    if (k == RoomKind.Stair && r.Floor > 0 && Rooms.Exists(o => o.Floor == r.Floor - 1 && o.Ft == r.Ft)) continue; // stairwell opening
+                    // stairwells count on every floor they serve (ANSI Z765 measures each level to the outside of its walls)
                     s += r.Ft.width * r.Ft.height;
                 }
                 return s;
@@ -423,7 +423,7 @@ namespace Groundbreak
             cands.Sort((p, q) => q.score.CompareTo(p.score));
             foreach (var cd in cands)
             {
-                var def = Catalog.Get(product); float w = def != null ? def.Size.x / Units.Foot + 2f / 12f : 3f;
+                var def = Catalog.Get(product); float w = def != null ? def.Size.x / Groundbreak.Units.Foot + 2f / 12f : 3f;
                 if (cd.b - cd.a < w + 0.5f) continue;
                 // bedrooms/offices: door near the corner (furniture wall stays free); others centered
                 var tries = new List<float> { (cd.a + cd.b) / 2f };
