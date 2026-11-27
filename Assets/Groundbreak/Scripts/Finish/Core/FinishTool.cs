@@ -24,6 +24,7 @@ namespace Groundbreak
             if (Durability <= 0f) { Game.Toast(Name + " is worn out"); return; }
             if (Cordless && Battery <= 0f) { Game.Toast(Name + " battery is dead"); return; }
             if (!FinishAim.Aim(Range, out var hit)) { Game.Toast("Aim at framing or a finished surface"); return; }
+            if (this is ExteriorTool) { var wx = SeasonRules.ExteriorBlock(Name); if (wx != null) { Game.Toast(wx); return; } }   // Seasons
             Use(hit);
         }
 

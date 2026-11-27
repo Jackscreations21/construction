@@ -65,6 +65,7 @@ namespace Groundbreak
         {
             if (o.Yards < 0.25f) { message = "Order at least 1/4 yard"; return null; }
             if (o.Accelerator && o.Retarder) { message = "Pick accelerator OR retarder, not both"; return null; }
+            { var wx = SeasonRules.PourBlock(o.Yards); if (wx != null) { message = wx; return null; } }   // Seasons: weather rules
             int cost = Quote(o, out _);
             if (!Game.Wallet.TrySpend(cost, $"Ready-mix: {o.Mix}")) { message = $"Not enough money (${cost:N0})"; return null; }
             o.Cost = cost; o.YardsLeft = o.Yards; o.State = OrderState.Scheduled;
