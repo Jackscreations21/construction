@@ -47,7 +47,9 @@ namespace Groundbreak
                 foreach (var s in D.Steps)
                 {
                     if (s.Kind == StepKind.Diagnose) { anyDiag = true; if (Did(s.Id)) diagDone = true; }
-                    if (s.Kind == StepKind.Finish && !s.Optional && !Did(s.Id)) p += 0.08f;
+                    // a closing step ("power-on", "water-on") can only be done if its state was opened; leaving a state open
+                    // already keeps the job from counting as fixed, so don't penalize closing steps that were never possible
+                    if (s.Kind == StepKind.Finish && !s.Optional && string.IsNullOrEmpty(s.Closes) && !Did(s.Id)) p += 0.08f;
                 }
                 if (anyDiag && !diagDone) p += 0.1f;
                 return p;
