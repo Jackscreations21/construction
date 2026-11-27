@@ -40,6 +40,12 @@ before merging/committing; on conflict keep main's. (2) `Scripts/Business.meta` 
   job-catalog (492330a, 153 jobs), full-map (6ea95a7, ~260 buildings), blueprints (a267cfc, 46 plans). Nothing is local-only.
 - All helper sessions so far are DONE and merged; notes in `Docs/HANDOFF-<name>.md`, plus `Docs/JOBS.md`, `Docs/MAP.md`, `Docs/BLUEPRINTS.md`.
 
+## PAUSED FOR THE NIGHT (user request, 2026-11-27 ~03:00 UTC)
+main = aa6ed35 + docs (map-followup merged, 125 tests / 124 pass / 1 skipped). The 7 remaining helpers below were told to commit WIP, cancel their
+Unity runs and stop. No usage cron is running. To resume (when the user says so): check `unity.lock` in the shared notes folder is gone, SendMessage each
+"Resume: merge main, continue from your handoff notes, Unity only through unity-run.sh, report DONE to the lead", re-create the usage watch cron,
+set tracker rows `paused:false`. map-followup is DONE and merged (drop it from the table).
+
 ## Sessions (all Opus, own worktrees; report "<name> DONE @ <commit>" to the lead)
 | name | id | folder |
 |---|---|---|
