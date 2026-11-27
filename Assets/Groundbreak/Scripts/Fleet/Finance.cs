@@ -30,7 +30,7 @@ namespace Groundbreak
         public const int LateFee = 35, InsolventDaysToBankruptcy = 3, BankruptcyRepHit = 15;
         public static readonly int[] BankTerms = { 30, 60, 120 };
         public static readonly int[] VehicleTerms = { 36, 60, 84 };
-        static readonly int[] CreditByStage = { 15000, 60000, 150000, 400000, 1500000 };
+        static readonly int[] CreditByStage = { 10000, 60000, 150000, 400000, 1500000 };
 
         public static readonly List<Loan> Loans = new List<Loan>();
         public static readonly List<LedgerEntry> Ledger = new List<LedgerEntry>();

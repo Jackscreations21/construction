@@ -66,7 +66,7 @@ namespace Groundbreak
         {
             New("biz-warehouse", "Warehouse and a truck", "Become a Contractor: lease a bay, buy a truck, unlock bigger jobs.")
                 .Step("Lease a warehouse",
-                    "Open the Warehouse app. A Rented bay costs $4,500 to move in, then about $375 a day (rent + insurance) plus utilities. It stores 1,800 cu ft of material, parks 3 vehicles and gets you 8% off bulk material. Bigger levels come later: Yard + shop ($15,000 move-in) and Headquarters ($48,000).",
+                    "Open the Warehouse app. A Rented bay costs $4,500 to move in, then about $82 a day (rent $70 + insurance $12, about $2,500 a month) plus utilities. It stores 1,800 cu ft of material, parks 3 vehicles and gets you 8% off bulk material. Bigger levels come later: Yard + shop ($15,000 move-in) and Headquarters ($60,000).",
                     "Tablet → Warehouse → Lease", "bt_30_warehouse_app", openApp: "Warehouse")
                 .Step("Your bay",
                     "The warehouse sits on its own lot in town, and your van moves into a stall there. 'Go to the warehouse' takes you there. Store material at a discount and haul it to jobs with a Material run: pick it up, haul it to the warehouse, or load and drive to the site.",
@@ -126,7 +126,7 @@ namespace Groundbreak
                     "Profit & loss splits what came in (invoices, draws, sales) from what went out (material, wages, vehicles, rent). Switch between Today, Last 7 days and All time to see whether a week actually made money.",
                     "Company → Profit & loss → Today / Last 7 days / All time", "bt_63_profit_loss", openApp: "Company")
                 .Step("Borrowing, and not going broke",
-                    "Need cash for a truck or a big job's material? Set an amount, pick 30, 60 or 120 days and press Borrow. Bank loans are 9.5% a year, and your limit grows with your stage ($15k as a Handyman up to $1.5M as a Developer). If you can't pay the bills, you get a $35 late fee. Three unpaid days in a row = bankruptcy: your assets are sold, you lose 15 reputation and drop back a stage.",
+                    "Need cash for a truck or a big job's material? Set an amount, pick 30, 60 or 120 days and press Borrow. Bank loans are 9.5% a year, and your limit grows with your stage ($10k as a Handyman up to $1.5M as a Developer). If you can't pay the bills, you get a $35 late fee. Three unpaid days in a row = bankruptcy: your assets are sold, you lose 15 reputation and drop back a stage.",
                     "Company → Borrow  ·  Pay off", "bt_62_loans", openApp: "Company");
         }
 
@@ -148,7 +148,7 @@ namespace Groundbreak
         {
             New("biz-builder", "A full house for a client", "Builder stage: sign a house contract, run the build with subs and your crew, get paid in draws.")
                 .Step("Sign a house contract",
-                    "At the Builder stage (reputation 65 and a Yard + shop), the Jobs app's 'Houses' tab lists client houses: a 1,200 sq ft starter home ($185,000), a two-story ($395,000, reputation 75) and a custom home ($720,000, reputation 85). Press Sign. The client pays a 10% deposit.",
+                    "At the Builder stage (reputation 65 and a Yard + shop), the Jobs app's 'Houses' tab lists client houses: a 1,200 sq ft starter home ($185,000), a two-story ($395,000, reputation 75) and a custom home ($660,000, reputation 85). Press Sign. The client pays a 10% deposit.",
                     "Tablet → Jobs → Houses → Sign", "bt_80_jobs_houses", openApp: "Jobs")
                 .Step("Foundation first",
                     "The house goes on a town lot, phase by phase in real order: foundation, framing, rough-in, drywall, finish. Subcontractors keep the plan's schedule on their own. You can also choose 'Work this house myself' and build it with your own hands.",
