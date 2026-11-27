@@ -457,6 +457,8 @@ namespace Groundbreak
             return transform.position.y + 0.05f + below;
         }
 
+        protected override void AfterMove() { if (_hook != null) ApplyPose(); }
+
         void ApplyPose()
         {
             if (_turret == null) return;

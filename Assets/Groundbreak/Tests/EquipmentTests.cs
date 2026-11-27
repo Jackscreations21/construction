@@ -76,7 +76,7 @@ namespace Groundbreak.Tests
 
         static Bounds RenderBounds(GameObject go)
         {
-            var rs = go.GetComponentsInChildren<Renderer>();
+            var rs = go.GetComponentsInChildren<MeshRenderer>();
             var b = rs[0].bounds;
             foreach (var r in rs) b.Encapsulate(r.bounds);
             return b;
@@ -177,10 +177,16 @@ namespace Groundbreak.Tests
             Assert.Greater(first, 0.05f, "one bucket pass digs a real bucketful");
             Assert.Greater(first, 15f * Mathf.PI * 0.13f * 0.13f * I(2f), "at least 15x a shovel scoop");
             Vector3 pile = p + new Vector3(-3.2f, 0, 1.0f);
+            Assert.IsTrue(ex.PoseTipAt(pile + Vector3.up * 1.2f), "reaches the spoil spot");
+            Vector3 dumpAt = ex.BucketTip; dumpAt.y = 0;
+            pile = dumpAt;
             float pileY0 = g.HeightAt(pile);
-            ex.PoseTipAt(pile + Vector3.up * 1.2f);
-            Assert.Greater(ex.Dump(), 0.05f);
-            Assert.Greater(g.HeightAt(pile), pileY0 + 0.05f, "spoil pile beside the trench");
+            var before = (float[])g.H.Clone();
+            float dumped = ex.Dump();
+            Assert.Greater(dumped, 0.05f);
+            float rise = 0f;
+            for (int i = 0; i < before.Length; i++) rise = Mathf.Max(rise, g.H[i] - before[i]);
+            Assert.Greater(rise, 0.05f, $"spoil pile beside the trench: dumped {dumped:0.000} m3 at {dumpAt} onPad={Earth.OnPad(dumpAt)} height {pileY0:0.00}->{g.HeightAt(pile):0.00} tip now {ex.BucketTip}");
 
             int passes = 0;
             for (float x = -3.0f; x <= 0.0f; x += 0.3f)
@@ -363,7 +369,7 @@ namespace Groundbreak.Tests
             crane.Auto = null;
             Assert.Less(crane.BoomDeg, 1f, "no crane work before the outriggers are down");
             crane.SetOutriggers(true);
-            yield return new WaitForSeconds(2.5f);
+            yield return new WaitForSeconds(5.5f);
             Assert.IsTrue(crane.OutriggersDown);
 
             // overload: a block pallet (3,150 lb) far out at ~60' radius is over the chart

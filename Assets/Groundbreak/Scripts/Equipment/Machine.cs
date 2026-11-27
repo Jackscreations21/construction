@@ -129,8 +129,12 @@ namespace Groundbreak
             _speed = 0; _yaw = yaw; _y = pos.y; _pitch = _roll = 0;
             transform.SetPositionAndRotation(pos, Quaternion.Euler(0, yaw, 0));
             FollowGround(1f, true);
+            AfterMove();
             Physics.SyncTransforms();
         }
+
+        /// <summary>Called after the machine was moved (teleport, travel step): refresh world-space visuals such as cables.</summary>
+        protected virtual void AfterMove() { }
 
         // ------------------------------------------------------------------ getting in and out
 
@@ -272,6 +276,7 @@ namespace Groundbreak
             if (moved) FollowGround(dt, false);
             Vector3 pos = transform.position; pos.y = _y;
             transform.SetPositionAndRotation(pos, Quaternion.Euler(_pitch, _yaw, _roll));
+            if (moved) AfterMove();
 
             if (_engine != null && _engine.isPlaying)
             {
