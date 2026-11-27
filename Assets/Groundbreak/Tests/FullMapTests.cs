@@ -62,7 +62,7 @@ namespace Groundbreak.Tests
             Assert.Greater(buildings.Count, 200);
             foreach (var l in buildings) { Assert.IsFalse(string.IsNullOrEmpty(l.TypeId), l.Id + " has no type"); Assert.IsTrue(l.TypeId == "ranch" || MapModels.Has(l.TypeId), l.Id + " unknown model " + l.TypeId); }
             Assert.NotNull(MapLayout.PlanFor(buildings.First(l => l.TypeId == "ranch")), "ranch plan");
-            Assert.IsNull(MapLayout.PlanFor(buildings.First(l => l.TypeId == "storefront" && HousePlans.Get(l.PlanId) == null) ), "missing plans are tolerated");
+            Assert.IsNull(MapLayout.PlanFor(buildings.First(l => HousePlans.Get(l.PlanId ?? "") == null)), "missing plans are tolerated");
             // repairs only go to enterable houses; Fleet contractor jobs only to residential lots
             Assert.IsTrue(Town.Addresses.Where(l => l.ServiceCalls).All(l => !l.External || l.TypeId == "ranch"));
             Assert.Greater(Town.Addresses.Count(l => l.ServiceCalls && l.External), 8, "map ranches take service calls");
