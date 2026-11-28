@@ -18,13 +18,15 @@ namespace Groundbreak
     /// </summary>
     public static class SaveSystem
     {
-        /// <summary>2 = adds the "mep", "exterior" and "slabs" extensions and leaves deck lumber out of the piece list
-        /// (version 1 files load unchanged: missing extensions load as empty).</summary>
-        public const int Version = 2;
+        /// <summary>2 = adds the "mep", "exterior" and "slabs" extensions and leaves deck lumber out of the piece list.
+        /// 3 = adds "shell", "concrete", "drywall", "finish", "stairs" and "leftovers" and leaves the pieces those rebuild
+        /// (shell framing, form boards, cut stringers, hung doors) out of the piece list.
+        /// (Version 1 / 2 files load unchanged: missing extensions load as empty.)</summary>
+        public const int Version = 3;
         public const string QuickSlot = "quicksave", AutoSlot = "autosave";
         public static float AutosaveGameMinutes = 5f;
 
-        struct Ext { public string Key; public Func<string> Save; public Action<string> Load; }
+        struct Ext { public string Key; public Func<string> Save; public Action<string> Load; public int Order; }
         static readonly List<Ext> _ext = new List<Ext>();
 
         /// <summary>Fired before a load wipes the world (destroy your runtime objects here if you prefer) and after it completes.</summary>
@@ -32,11 +34,29 @@ namespace Groundbreak
         public static string LastMessage = "";
 
         /// <summary>Register persistent state for a feature. Same key replaces. Safe to call from BeforeSceneLoad.</summary>
-        public static void RegisterExtension(string key, Func<string> save, Action<string> load)
+        public static void RegisterExtension(string key, Func<string> save, Action<string> load) => RegisterExtension(key, save, load, 0);
+
+        /// <summary>Same, with a load order: extensions load in ascending <paramref name="order"/> (ties keep registration order;
+        /// the default is 0). A negative order loads before the rest, e.g. the house shell's framing, which exterior / MEP /
+        /// interior finish sections look for their faces on.</summary>
+        public static void RegisterExtension(string key, Func<string> save, Action<string> load, int order)
         {
             if (string.IsNullOrEmpty(key) || save == null || load == null) throw new ArgumentException("key/save/load required");
             _ext.RemoveAll(e => e.Key == key);
-            _ext.Add(new Ext { Key = key, Save = save, Load = load });
+            _ext.Add(new Ext { Key = key, Save = save, Load = load, Order = order });
+        }
+
+        /// <summary>Extensions in load order (stable insertion sort: ties keep registration order).</summary>
+        static List<Ext> Ordered()
+        {
+            var l = new List<Ext>(_ext);
+            for (int i = 1; i < l.Count; i++)
+            {
+                var x = l[i]; int j = i - 1;
+                while (j >= 0 && l[j].Order > x.Order) { l[j + 1] = l[j]; j--; }
+                l[j + 1] = x;
+            }
+            return l;
         }
 
         public static IEnumerable<string> ExtensionKeys { get { foreach (var e in _ext) yield return e.Key; } }
@@ -273,7 +293,7 @@ namespace Groundbreak
 
             var map = new Dictionary<string, string>();
             foreach (var kv in s.ext) map[kv.key] = kv.value;
-            foreach (var e in _ext)
+            foreach (var e in Ordered())
             {
                 map.TryGetValue(e.Key, out var json);
                 try { e.Load(json); }
@@ -305,7 +325,7 @@ namespace Groundbreak
         /// <summary>Resets every extension (load(null)) — used by New Career / New Free Build.</summary>
         public static void ResetExtensions()
         {
-            foreach (var e in _ext)
+            foreach (var e in Ordered())
             {
                 try { e.Load(null); } catch (Exception ex) { Debug.LogError($"[Save] extension '{e.Key}' failed to reset: {ex}"); }
             }

@@ -152,6 +152,16 @@ namespace Groundbreak
             }
         }
 
+        /// <summary>Save/load: performs the next steps until <see cref="Next"/> reaches <paramref name="n"/>, without tool, stock or
+        /// weather checks and without using stock or nails (the work was paid for when it was first done).</summary>
+        public void ReplayTo(int n)
+        {
+            bool req = RequireStock;
+            RequireStock = false;
+            try { int guard = 0; while (!Done && Next < n && guard++ < 100000) Perform(Current); }
+            finally { RequireStock = req; }
+        }
+
         void LateUpdate()
         {
             var s = Current;

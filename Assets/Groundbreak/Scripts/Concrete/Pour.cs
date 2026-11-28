@@ -554,6 +554,97 @@ namespace Groundbreak
 
         public void OnFormsStripped() { if (Element != null) Element.FormsStripped = true; RebuildMesh(); }
 
+        // ------------------------------------------------------------------ save / load (used by SaveGaps/ConcreteSave)
+
+        /// <summary>Everything a save needs to bring this pour back (plastic or set): per-cell surface, subgrade, placement time
+        /// and finishing flags of the cells inside the forms (base64, in cell order), and the pour's progress.</summary>
+        [System.Serializable]
+        public class SavedState
+        {
+            public bool started, bleedWarned, fiber;
+            public float lastPlace = -1f, coldJointAt = -1f, setRate = 1f, placedM3, capacityM3;
+            public int psi = 3000, slump = 4, cells;
+            public string top, ground, placed, flags;
+            public List<string> defects = new List<string>();
+            public List<Vector3> jointA = new List<Vector3>(), jointB = new List<Vector3>();
+        }
+
+        public SavedState SaveState()
+        {
+            var s = new SavedState
+            {
+                started = _started, bleedWarned = _bleedWarned, fiber = Fiber, lastPlace = _lastPlace, coldJointAt = _coldJointAt, setRate = SetRate,
+                placedM3 = PlacedM3, capacityM3 = CapacityM3, psi = Psi, slump = Slump,
+            };
+            var top = new List<float>(); var ground = new List<float>(); var placed = new List<float>(); var flags = new List<byte>();
+            for (int i = 0; i < _in.Length; i++)
+            {
+                if (!_in[i]) continue;
+                top.Add(_top[i]); ground.Add(_ground[i]); placed.Add(_placed[i]);
+                flags.Add((byte)_flags[i]); flags.Add((byte)(_flags[i] >> 8));
+            }
+            s.cells = top.Count;
+            s.top = Pack(top); s.ground = Pack(ground); s.placed = Pack(placed); s.flags = System.Convert.ToBase64String(flags.ToArray());
+            s.defects.AddRange(Defects);
+            foreach (var (a, b) in Joints) { s.jointA.Add(a); s.jointB.Add(b); }
+            return s;
+        }
+
+        /// <summary>Puts a saved state back on a pour just made by <see cref="Begin"/> over the same forms. Returns false (and
+        /// changes nothing) if the forms enclose a different number of cells than when it was saved. If the pour had set, add the
+        /// ConcreteElement (and anchors) next, then call <see cref="FinishRestore"/>.</summary>
+        public bool LoadState(SavedState s)
+        {
+            if (s == null) return false;
+            int n = 0; for (int i = 0; i < _in.Length; i++) if (_in[i]) n++;
+            var top = Unpack(s.top); var ground = Unpack(s.ground); var placed = Unpack(s.placed);
+            var flags = string.IsNullOrEmpty(s.flags) ? new byte[0] : System.Convert.FromBase64String(s.flags);
+            if (n != s.cells || top.Length != n || ground.Length != n || placed.Length != n || flags.Length != 2 * n) return false;
+            for (int i = 0, k = 0; i < _in.Length; i++)
+            {
+                if (!_in[i]) continue;
+                _top[i] = top[k]; _ground[i] = ground[k]; _placed[i] = placed[k]; _flags[i] = (ushort)(flags[2 * k] | (flags[2 * k + 1] << 8));
+                k++;
+            }
+            _started = s.started; _bleedWarned = s.bleedWarned; _lastPlace = s.lastPlace; _coldJointAt = s.coldJointAt;
+            SetRate = s.setRate > 0f ? s.setRate : 1f; PlacedM3 = s.placedM3; CapacityM3 = s.capacityM3; Psi = s.psi; Slump = s.slump; Fiber = s.fiber;
+            Defects.Clear(); Defects.AddRange(s.defects);
+            Joints.Clear(); for (int i = 0; i < s.jointA.Count && i < s.jointB.Count; i++) Joints.Add((s.jointA[i], s.jointB[i]));
+            return true;
+        }
+
+        /// <summary>After <see cref="LoadState"/> (and the ConcreteElement, for a set pour): control joints, shrinkage cracks and the
+        /// cold-joint seam of a set slab, the surface mesh and its collider.</summary>
+        public void FinishRestore()
+        {
+            if (Joints.Count > 0) BuildJoints();
+            if (Element != null)
+            {
+                JointSpans(out float su, out float sv, out float lim);
+                bool crackU = su > lim + 0.01f, crackV = sv > lim + 0.01f;
+                if (crackU || crackV) BuildCracks(crackU, crackV);
+                if (_coldJointAt >= 0) BuildColdJoint();
+            }
+            RebuildMesh();
+            if (_col != null && _mesh.vertexCount > 0) { _col.sharedMesh = null; _col.sharedMesh = _mesh; }
+        }
+
+        static string Pack(List<float> v)
+        {
+            var b = new byte[v.Count * 4];
+            System.Buffer.BlockCopy(v.ToArray(), 0, b, 0, b.Length);
+            return System.Convert.ToBase64String(b);
+        }
+
+        static float[] Unpack(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return new float[0];
+            var b = System.Convert.FromBase64String(s);
+            var f = new float[b.Length / 4];
+            System.Buffer.BlockCopy(b, 0, f, 0, f.Length * 4);
+            return f;
+        }
+
         // ------------------------------------------------------------------ visuals
 
         void RebuildMesh()

@@ -29,6 +29,7 @@ namespace Groundbreak
             if (!FinishStock.Has("fin-lvp-" + color, boxes)) { Game.Toast($"Need about {boxes} boxes of LVP ({sqft:F0} sq ft + waste) on site"); return null; }
             if (!InteriorSupplies.UseAmount("fin-lvp-underlay", sqft, 100f)) return null;
             var f = PlankFloors.Lay(floor, area, holes, spec, "fin-lvp-" + color);
+            if (f != null) { f.LvpColor = color; f.Seed = seed; }
             if (f != null) Game.Toast($"LVP down: {f.Pieces} pieces ({f.FreshPieces} planks), shortest end-joint stagger {Units.Format(f.MinStagger)}");
             return f;
         }
@@ -63,6 +64,7 @@ namespace Groundbreak
             };
             var f = PlankFloors.Lay(floor, area, holes, spec, "fin-hw-redoak");
             if (f == null) return null;
+            f.Seed = seed;
             InteriorSupplies.UseFasteners("fin-cleats", f.Nails);
             InteriorSupplies.UseFasteners("fin-nails-15ga", f.FaceNails);
             Game.Toast($"Hardwood down: {f.Pieces} strips, {f.Nails} cleats blind-nailed, {f.FaceNails} face nails at the walls");
