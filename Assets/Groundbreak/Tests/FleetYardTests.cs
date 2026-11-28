@@ -194,7 +194,7 @@ namespace Groundbreak.Tests
             Shot(s.CameraSpot, s.CameraLook, "yf_12_yard_exterior");
             Shot(s.InteriorCameraSpot, s.InteriorCameraLook, "yf_13_shop_interior", 70f);
 
-            Cash(200000);    // HQ move-in $125,000
+            Cash(200000);    // HQ move-in $100,000
             Assert.IsTrue(Yard.Lease(3, out msg), msg);
             yield return Frames(3);
             s = YardSite.I;

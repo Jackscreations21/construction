@@ -66,7 +66,7 @@ namespace Groundbreak
         {
             New("biz-warehouse", "Warehouse and a truck", "Become a Contractor: lease a bay, buy a truck, unlock bigger jobs.")
                 .Step("Lease a warehouse",
-                    "Open the Warehouse app. A Rented bay costs $4,500 to move in, then about $82 a day (rent $70 + insurance $12, about $2,500 a month) plus utilities. It stores 1,800 cu ft of material, parks 3 vehicles and gets you 8% off bulk material. Bigger levels come later: Yard + shop ($15,000 move-in) and Headquarters ($125,000).",
+                    "Open the Warehouse app. A Rented bay costs $4,500 to move in, then about $82 a day (rent $70 + insurance $12, about $2,500 a month) plus utilities. It stores 1,800 cu ft of material, parks 3 vehicles and gets you 8% off bulk material. Bigger levels come later: Yard + shop ($15,000 move-in) and Headquarters ($100,000).",
                     "Tablet → Warehouse → Lease", "bt_30_warehouse_app", openApp: "Warehouse")
                 .Step("Your bay",
                     "The warehouse sits on its own lot in town, and your van moves into a stall there. 'Go to the warehouse' takes you there. Store material at a discount and haul it to jobs with a Material run: pick it up, haul it to the warehouse, or load and drive to the site.",

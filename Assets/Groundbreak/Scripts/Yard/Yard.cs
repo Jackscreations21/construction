@@ -19,7 +19,7 @@ namespace Groundbreak
         // Rent per game day = monthly gross rent / 30 (the career calendar has 30-day months). 2026 Midwest figures (Docs/BALANCE.md):
         // 1,500 sq ft flex bay ~$2,100/mo, 2,400 sq ft shop on a 0.7 ac fenced yard ~$5,400/mo, 7,200 sq ft HQ on 1.7 ac ~$12,600/mo.
         // Insurance = general liability + property for the premises. Move-in = deposit + first month + fit-out.
-        // HQ move-in $125,000 = 2 months deposit + first month (~$38k) + office/dock fit-out and racking (~$87k); it is also the
+        // HQ move-in $100,000 = 2 months deposit + first month (~$38k) + office/dock fit-out and racking (~$62k); it is also the
         // pacing lever that puts the Developer stage around day 105-115 for a perfect player (Docs/BALANCE.md).
         public static readonly YardLevelInfo[] Levels =
         {
@@ -28,7 +28,7 @@ namespace Groundbreak
                 Description = "30' x 50' bay in a flex building: 12x14 overhead door, small office, pallet racking, workbench. 3 parking stalls." },
             new YardLevelInfo { Level = 2, Name = "Yard + shop", RentPerDay = 180, InsurancePerDay = 25, MoveIn = 15000, StorageCuFt = 7000, Stalls = 8, Discount = 0.12f,
                 Description = "Fenced 150' x 200' gravel yard with a 40' x 60' steel shop, lumber racks and aggregate bunkers. 8 truck stalls." },
-            new YardLevelInfo { Level = 3, Name = "Headquarters", RentPerDay = 420, InsurancePerDay = 50, MoveIn = 125000, StorageCuFt = 24000, Stalls = 14, Discount = 0.15f,
+            new YardLevelInfo { Level = 3, Name = "Headquarters", RentPerDay = 420, InsurancePerDay = 50, MoveIn = 100000, StorageCuFt = 24000, Stalls = 14, Discount = 0.15f,
                 Description = "60' x 120' warehouse with a two-storey office, loading dock and 4 doors on a 250' x 300' yard. 14+ stalls." },
         };
 

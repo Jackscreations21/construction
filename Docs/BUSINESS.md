@@ -72,5 +72,5 @@ Money = `Game.Wallet`. Reputation = `Career.Reputation` (`Company.Reputation` wr
 - **Sub invoices are pro-rated**: the scope left when the sub arrives is measured; if your crew did part of the quoted work first,
   the invoice is the quote x the share left (never under the company's minimum). Nothing left on arrival, or their hands did no
   work at all: no invoice.
-- **HQ move-in $125,000** (was $60,000): perfect play now reaches Developer around day 105-115 (Docs/BALANCE.md).
+- **HQ move-in $100,000** (was $60,000): perfect play now reaches Developer around day 105-115 (Docs/BALANCE.md).
 - Off-site crews still finish service calls by simulation (unchanged, as decided).
