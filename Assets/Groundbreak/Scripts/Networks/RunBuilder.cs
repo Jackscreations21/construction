@@ -152,7 +152,16 @@ namespace Groundbreak
             float ft = meters / Units.Foot;
             if (AvailableFeet(s) + 1e-3f < ft) return false;
             _offcutFt.TryGetValue(s.Id, out float off);
-            while (off < ft) { Game.Stock.TryTake(s.StockId, 1); off += s.FeetPerUnit; }
+            int taken = 0;
+            while (off < ft)
+            {
+                if (!Game.Stock.TryTake(s.StockId, 1))
+                {
+                    if (taken > 0) Game.Stock.Add(s.StockId, taken); // put back what this call opened: no free pipe
+                    return false;
+                }
+                taken++; off += s.FeetPerUnit;
+            }
             _offcutFt[s.Id] = off - ft;
             return true;
         }
@@ -202,6 +211,7 @@ namespace Groundbreak
             if (end != null)
             {
                 if (!end.Accepts(spec)) { res.Warnings.Add($"{spec.Name} doesn't fit {end.Node.Label} ({end.Label})."); return res; }
+                if (!end.Free) { res.Warnings.Add($"{end.Node.Label} ({end.Label}) already has a run connected."); return res; }
                 pts[pts.Count - 1] = end.WorldPos;
             }
             // remove duplicate points

@@ -226,8 +226,24 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ stakes / braces
 
+        /// <summary>Drops stakes that were pulled (pry bar) or destroyed from the run, so StakeT only lists stakes still in the ground.</summary>
+        public static void PruneStakes(FormRun r)
+        {
+            if (r == null || !r.Stakes.Exists(s => s == null || !s.gameObject.activeInHierarchy)) return;
+            r.Stakes.RemoveAll(s => s == null || !s.gameObject.activeInHierarchy);
+            r.StakeT.Clear();
+            foreach (var s in r.Stakes)
+            {
+                Vector3 d = s.transform.position - r.A; d.y = 0f;
+                Vector3 dir = r.Dir; dir.y = 0f;
+                r.StakeT.Add(Mathf.Clamp(Vector3.Dot(d, dir.normalized), 0f, r.Length));
+            }
+            r.StakeT.Sort();
+        }
+
         public static bool AddStake(FormRun r, float t, FormOutline o)
         {
+            PruneStakes(r);
             t = Mathf.Clamp(t, 0f, r.Length);
             foreach (var s in r.StakeT) if (Mathf.Abs(s - t) < 4f * Units.Inch) return false;
             if (!CTool.TakeStock(StakeId, 1, "form stakes")) return false;
@@ -302,6 +318,7 @@ namespace Groundbreak
             float din = Units.ToInches(depth) - 0.5f;   // 1/2" tolerance for settlement
             float allowed = din <= 8f ? 48f : din <= 16f ? 36f : 24f;
             float braceEvery = din <= 8f ? 0f : din <= 16f ? 72f : 48f;
+            PruneStakes(r);
             if (r.StakeT.Count == 0) { why = "no stakes"; return 1f; }
             float risk = 0f;
             float maxGap = 0f;

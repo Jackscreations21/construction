@@ -261,6 +261,8 @@ namespace Groundbreak
                     var np = Piece.Create(def, b - a, fp.World((a + b) * 0.5f, vC, dC), rot);
                     np.SetSize(new Vector3(size.x, size.y, b - a));
                     np.Fasten();
+                    // the cut-off plates are still framing on this face (trim nails, drywall screws find them)
+                    fp.Members.Add(new FramePlane.Member { Piece = np, R = Rect.MinMaxRect(a, m.R.yMin, b, m.R.yMax), AlongV = false, Depth = m.Depth });
                 }
                 Part(m.R.xMin, ro.xMin);
                 Part(ro.xMax, m.R.xMax);

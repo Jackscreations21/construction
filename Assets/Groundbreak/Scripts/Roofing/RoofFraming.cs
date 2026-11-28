@@ -561,6 +561,18 @@ namespace Groundbreak
             while (RoofStock.Depth(ridgeSize) < g.D && ridgeSize != "2x12") ridgeSize = RoofStock.Deeper(ridgeSize);
             string hipSize = RoofStock.Deeper(rs);
             string cjSize = W <= 14 * Units.Foot ? "2x6" : "2x8";
+            // a common rafter is one board from tail to ridge (it can't be spliced mid-span): longer than the longest stock = refuse
+            float rafterLen = (g.s - I(0.75f) + g.tailH) / g.cos, longest = Splice.LongestStock(rs);
+            if (rafterLen > longest + I(0.5f))
+            {
+                string why = "Rafters would be " + Units.Format(rafterLen) + " - longer than the longest " + rs + " (" + Units.Format(longest) +
+                             "). Add a bearing wall / purlin under the rafters or use engineered trusses.";
+                Debug.LogWarning("[RoofFraming] " + why);
+                Game.Toast("Can't stick-frame this roof: " + why);
+                var refused = FramingJob.Create("Stick-framed roof refused: rafters over " + Units.Format(longest));
+                MakeRoot(refused, fp);
+                return refused;
+            }
             var job = FramingJob.Create("Stick-framed " + (hip ? "hip" : "gable") + " roof (" + rise + "/12, " + rs + " rafters 16\" O.C.)");
             var root = MakeRoot(job, fp);
             float s = g.s, oc = I(16f), t = I(1.5f);

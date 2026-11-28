@@ -272,7 +272,7 @@ namespace Groundbreak.Tests
 
             Stock(("crusher-run", 16), ("gravel-57", 8), ("paver-sand", 2), ("paver-holland", 400), ("paver-edging", 6), ("poly-sand", 2),
                   ("sod-roll", 40), ("topsoil", 6), ("tree-maple", 2), ("tree-spruce", 1), ("shrub-boxwood", 6), ("shrub-hydrangea", 2), ("perennial-hosta", 4),
-                  ("4x4x8", 8), ("postmix-50", 20), ("pt2x4x8", 12), ("picket-cedar", 80), ("gate-kit", 1), ("retaining-block", 30),
+                  (LandscapeFeature.PostStock, 8), ("postmix-50", 32), ("pt2x4x8", 12), ("picket-cedar", 80), ("gate-kit", 1), ("retaining-block", 30),
                   ("path-light", 4), ("mailbox-kit", 1), ("grass-seed", 2), ("straw-bale", 2), ("mulch", 3));
 
             // --- paver walk from the front door to the street ---

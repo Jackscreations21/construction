@@ -316,6 +316,9 @@ namespace Groundbreak
 
         // ================================================================ joints
 
+        /// <summary>Joint-feet of compound one screw spot uses per coat (a 2" dab: ~6000 spots per bucket).</summary>
+        public const float ScrewSpotFeet = 0.05f;
+
         static bool TakeMud(string compound, float feet)
         {
             _mudLeft.TryGetValue(compound, out float left);
@@ -356,15 +359,23 @@ namespace Groundbreak
         /// <summary>Spot screws (one coat) within radius of uv. Returns screws spotted.</summary>
         public static int SpotScrews(DrywallSurface s, Vector2 uv, float radius, out string why)
         {
-            why = null; int n = 0, wet = 0;
+            why = null; int ready = 0, wet = 0;
             foreach (var sc in s.Screws)
             {
                 if ((sc.P - uv).sqrMagnitude > radius * radius || sc.Spots >= 3) continue;
                 if (DrywallSurface.ScrewWet(sc)) { wet++; continue; }
+                ready++;
+            }
+            if (ready == 0) { if (wet > 0) why = "Those screw spots are still wet"; return 0; }
+            // the mud comes out of the bucket first: no compound, no spotting
+            if (!TakeMud("dw-mud-ap", ready * ScrewSpotFeet)) { why = "Out of joint compound"; return 0; }
+            int n = 0;
+            foreach (var sc in s.Screws)
+            {
+                if ((sc.P - uv).sqrMagnitude > radius * radius || sc.Spots >= 3 || DrywallSurface.ScrewWet(sc)) continue;
                 sc.Spots++; sc.SpotTime = FinishTime.Now; sc.Sanded = false; n++;
             }
-            if (n > 0) { TakeMud("dw-mud-ap", n * 0.05f); s.Changed(false); s.RebuildScrews(); }
-            else if (wet > 0) why = "Those screw spots are still wet";
+            s.Changed(false); s.RebuildScrews();
             return n;
         }
 
@@ -381,8 +392,13 @@ namespace Groundbreak
                 foreach (var g in seam.Segs)
                     if (g.Coats == coat - 1) { if (Coat(s, seam, g, DrywallRules.KnifeForCoat[coat - 1], mesh, compound, out var why)) n++; else last = why; }
             }
-            foreach (var sc in s.Screws)
-                if (sc.Spots == coat - 1 && !DrywallSurface.ScrewWet(sc)) { sc.Spots++; sc.SpotTime = FinishTime.Now; n++; }
+            int readyScrews = 0;
+            foreach (var sc in s.Screws) if (sc.Spots == coat - 1 && !DrywallSurface.ScrewWet(sc)) readyScrews++;
+            string screwMud = DrywallRules.Compound(compound).Setting ? "dw-mud-ap" : compound; // screw spots: all-purpose (or the coat's compound)
+            if (readyScrews > 0 && !TakeMud(screwMud, readyScrews * ScrewSpotFeet)) last = "Out of joint compound for the screw spots";
+            else
+                foreach (var sc in s.Screws)
+                    if (sc.Spots == coat - 1 && !DrywallSurface.ScrewWet(sc)) { sc.Spots++; sc.SpotTime = FinishTime.Now; n++; }
             s.RebuildScrews(); s.Changed(false); s.Refresh();
             if (last != null && n == 0) Game.Toast(last);
             return n;

@@ -27,7 +27,7 @@ namespace Groundbreak
         /// <summary>Cold climate = vapor retarder required on exterior walls (kraft facing or 6-mil poly).</summary>
         public static bool ColdClimate { get => ClimateZone >= 5; set => ClimateZone = value ? 6 : 4; }
         public static float WallMinR = 13f;          // exterior wall cavity
-        public static float AtticMinR = 38f;         // ceiling / attic
+        public static float AtticMinR = 49f;         // ceiling / attic: IRC 2021 Table N1102.1.3, climate zone 4 (was R-38 before 2018)
         public static float LooseFillRPerInch = 2.5f; // blown fiberglass
         public static float ClosedCellRPerInch = 6.5f;
         public static float RulerEverySqFt = 300f;   // attic depth markers: one per 300 sq ft
@@ -53,6 +53,9 @@ namespace Groundbreak
             B("ins-r30-u23", "R-30 unfaced roll 23\" x 25'", 30, 10f, 23, 300, false, true, false, 69, 1),
             B("ins-r38-u15", "R-38 unfaced roll 15\" x 25'", 38, 12f, 15, 300, false, true, false, 59, 1),
             B("ins-r38-u23", "R-38 unfaced roll 23\" x 25'", 38, 12f, 23, 300, false, true, false, 84, 1),
+            // R-49 ceiling batts (climate zone 4 attic minimum, IRC 2021): 16" deep unfaced batts, 48" long
+            B("ins-r49-u15", "R-49 unfaced batt 15\" x 48\" (bag of 8)", 49, 16f, 15, 48, false, false, false, 78, 8),
+            B("ins-r49-u23", "R-49 unfaced batt 23\" x 48\" (bag of 6)", 49, 16f, 23, 48, false, false, false, 86, 6),
         };
 
         static BattProduct B(string id, string name, float r, float t, float w, float l, bool faced, bool roll, bool hd, int price, int per) =>

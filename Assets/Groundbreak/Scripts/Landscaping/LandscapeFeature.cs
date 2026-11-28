@@ -41,8 +41,22 @@ namespace Groundbreak
 
         public const float WalkDepth = 0.1873f;               // 7-3/8": 4" base + 1" sand + 2-3/8" paver
         public static readonly float BaseT = Units.In(4), SandT = Units.In(1), PaverT = Units.In(2.375f);
-        public static readonly float DriveDepth = Units.In(6);
+        public static readonly float DriveDepth = Units.In(8);    // 4" crusher-run base + 4" #57 top (8" total)
         public static readonly float FenceHeight = 6 * Units.Foot;
+        /// <summary>Post embedment: 30" minimum for a 6' privacy fence, or the frost depth if deeper (36" where the game builds).</summary>
+        public static float PostDepth => Mathf.Max(Units.In(30f), ExteriorSite.FrostDepth);
+        /// <summary>PT 4x4 x 10' posts: 6' above grade + up to 4' in the ground.</summary>
+        public const string PostStock = "pt4x4x10";
+        /// <summary>50 lb bags of post mix per post: 10" hole, PostDepth deep, minus the 4x4 (a bag yields about 0.375 cu ft).</summary>
+        public static int PostMixBags
+        {
+            get
+            {
+                float r = 5f, d = Units.ToInches(PostDepth);
+                float cuFt = (Mathf.PI * r * r - 3.5f * 3.5f) * d / 1728f;
+                return Mathf.Max(2, Mathf.CeilToInt(cuFt / 0.375f - 0.01f));
+            }
+        }
         public const float LoadYd = 0.222f;                   // 6 cu ft wheelbarrow load
 
         public static float HoursNow => GameClock.I != null ? GameClock.I.Day * 24f + GameClock.I.Hours : Time.time / 50f;
@@ -81,21 +95,22 @@ namespace Groundbreak
                 case LandscapeKind.GravelDrive:
                 {
                     float L = Length;
-                    float baseYd = Yd(AreaM2 * Units.In(4)), topYd = Yd(AreaM2 * Units.In(2));
+                    float baseYd = Yd(AreaM2 * Units.In(4)), topYd = Yd(AreaM2 * Units.In(4));
                     int bl = Mathf.Max(1, Ceil(baseYd / 0.5f)), tl = Mathf.Max(1, Ceil(topYd / 0.5f));
                     s.Add(new StageDef("Strip sod", "sodcutter", null, 0, Mathf.Max(1, Ceil(L / 1.5f))));
-                    s.Add(new StageDef("Excavate 6\"", "shovel", null, 0, Mathf.Max(2, Ceil(L / 1.5f))));
+                    s.Add(new StageDef("Excavate 8\"", "shovel", null, 0, Mathf.Max(2, Ceil(L / 1.5f))));
                     s.Add(new StageDef("Spread 4\" crusher-run base (1/2 yd dumps)", "wheelbarrow", "crusher-run", baseYd / bl, bl));
-                    s.Add(new StageDef("Top with 2\" #57 stone", "wheelbarrow", "gravel-57", topYd / tl, tl));
+                    s.Add(new StageDef("Top with 4\" #57 stone", "wheelbarrow", "gravel-57", topYd / tl, tl));
                     break;
                 }
                 case LandscapeKind.Fence:
                 case LandscapeKind.Gate:
                 {
                     int posts = Posts;
-                    s.Add(new StageDef("Dig 10\" post holes, 24\" deep", "posthole", null, 0, posts * 2));
-                    s.Add(new StageDef("Set 4x4 posts plumb", "landhands", "4x4x8", 1, posts));
-                    s.Add(new StageDef("Pour post concrete (2 bags/post)", "landhands", "postmix-50", 2, posts));
+                    string deep = Units.Format(PostDepth);
+                    s.Add(new StageDef($"Dig 10\" post holes, {deep} deep (below frost, 30\" min)", "posthole", null, 0, posts * 2));
+                    s.Add(new StageDef($"Set PT 4x4 posts plumb, {deep} in the ground", "landhands", PostStock, 1, posts));
+                    s.Add(new StageDef($"Pour post concrete ({PostMixBags} bags/post)", "landhands", "postmix-50", PostMixBags, posts));
                     if (Kind == LandscapeKind.Fence)
                     {
                         s.Add(new StageDef("Nail 2x4 rails (3 per bay)", "landhands", "pt2x4x8", 1, Bays * 3));

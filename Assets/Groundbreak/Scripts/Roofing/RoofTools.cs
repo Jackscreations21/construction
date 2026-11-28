@@ -11,7 +11,7 @@ namespace Groundbreak
             ToolFactory.Register(new ToolShopItem { Id = "roofnailer", Name = "Coil Roofing Nailer", Price = 279, Description = "Pneumatic coil nailer, 1-1/4\" roofing nails. Shingles, starter, drip edge, ridge vent. Shows course + nail line." }, () => new RoofingNailer());
             ToolFactory.Register(new ToolShopItem { Id = "hatchet", Name = "Roofing Hatchet", Price = 49, Description = "Shingle hatchet with an adjustable exposure gauge (5-5/8\" architectural / 5\" 3-tab) and a cutting blade." }, () => new RoofingHatchet());
             ToolFactory.Register(new ToolShopItem { Id = "capstapler", Name = "Cap Stapler", Price = 129, Description = "Hammer-tacker style cap stapler for synthetic underlayment: 12\" O.C. on laps, 24\" in the field." }, () => new CapStapler());
-            ToolFactory.Register(new ToolShopItem { Id = "harness", Name = "Fall Protection Harness Kit", Price = 119, Description = "Harness + 25' lanyard + rope grab. LMB near a roof anchor to clip in (required above 6/12 without roof jacks)." }, () => new SafetyHarness());
+            ToolFactory.Register(new ToolShopItem { Id = "harness", Name = "Fall Protection Harness Kit", Price = 169, Description = "Harness, 6' shock-absorbing lanyard, 50' rope lifeline + rope grab. LMB near a roof anchor to clip in (required above 6/12 without roof jacks)." }, () => new SafetyHarness());
 
             Catalog.Register(
                 new PieceDefinition { Id = "truss-fink", Name = "Engineered Fink truss (24\" O.C., to 32' span)", Category = PieceCategory.Consumable, Price = 128, UnitsPerPurchase = 1, Color = new Color(0.86f, 0.72f, 0.50f) },
@@ -148,7 +148,7 @@ namespace Groundbreak
             if (a == null) { Game.Toast("No roof anchor within reach - install one at the ridge"); return; }
             RoofSafety.ClippedIn = true;
             RoofSafety.Anchor = a;
-            Game.Toast("Clipped in to the roof anchor (" + Mathf.RoundToInt(RoofSafety.LanyardLength / Units.Foot) + "' lanyard + rope grab)");
+            Game.Toast("Clipped in to the roof anchor (" + Mathf.RoundToInt(RoofSafety.LanyardLength / Units.Foot) + "' rope lifeline + rope grab)");
         }
 
         public override void Secondary()

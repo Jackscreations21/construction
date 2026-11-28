@@ -146,8 +146,16 @@ namespace Groundbreak
                     Vector3 d = (Points[i] - Points[i - 1]).normalized;
                     Vector3 c = Points[i - 1] + d * (s - acc);
                     first.Add(c - d * gap * 0.5f);
-                    second.Add(c + d * gap * 0.5f);
                     cut = true;
+                    if (i < Points.Count - 1 && l - (s - acc) < gap)
+                    {
+                        // cut right on an interior vertex: start the second run along the NEXT segment (no doubled-back stub)
+                        Vector3 dn = (Points[i + 1] - Points[i]).normalized;
+                        second.Add(Points[i] + dn * gap * 0.5f);
+                        acc += l;
+                        continue;
+                    }
+                    second.Add(c + d * gap * 0.5f);
                 }
                 if (cut) second.Add(Points[i]); else first.Add(Points[i]);
                 acc += l;

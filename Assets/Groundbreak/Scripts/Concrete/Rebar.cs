@@ -93,10 +93,36 @@ namespace Groundbreak
 
         /// <summary>Slab mat: bars both ways at `spacing` O.C., 3" clear of the forms, at mid-depth on chairs.
         /// Plus 2 continuous bars in a thickened-edge trench if the subgrade drops at the forms. Returns bars placed.</summary>
-        public static int AutoGrid(FormOutline o, string defId = "rebar-4", float spacing = 18f * Units.Inch)
+        /// <summary>Why the last AutoGrid placed nothing (null = forms not closed).</summary>
+        public static string LastRefusal;
+
+        /// <summary>Bars whose midpoint is inside this outline.</summary>
+        public static int BarsIn(FormOutline o)
         {
             if (o == null || !o.Closed) return 0;
+            int n = 0;
+            foreach (var b in Bars) if (o.Contains((b.A + b.B) * 0.5f)) n++;
+            return n;
+        }
+
+        /// <summary>Crossings inside this outline (and how many of them are tied).</summary>
+        public static int CrossingsIn(FormOutline o, out int tied)
+        {
+            tied = 0;
+            if (o == null || !o.Closed) return 0;
+            int n = 0;
+            foreach (var c in Crossings) if (o.Contains(c.P)) { n++; if (c.Tied) tied++; }
+            return n;
+        }
+
+        public static int AutoGrid(FormOutline o, string defId = "rebar-4", float spacing = 18f * Units.Inch)
+        {
+            LastRefusal = null;
+            if (o == null || !o.Closed) return 0;
+            // one mat per slab: a second F press must not lay (and charge for) a second full grid on top of the first
+            if (BarsIn(o) > 0) { LastRefusal = "This slab already has rebar in it - lay extra bars by hand (LMB) if you need them"; return 0; }
             var def = Catalog.Get(defId); float rad = def.Size.x * 0.5f;
+            int crossBefore = Crossings.Count;
             var poly = o.Polygon;
             Vector2 c = Vector2.zero; foreach (var p in poly) c += p; c /= poly.Length;
             float interior = SiteGround.GroundY(new Vector3(c.x, 0, c.y));
@@ -125,8 +151,8 @@ namespace Groundbreak
                 }
             }
             // chairs under every other crossing (~36" grid)
-            int idx = 0;
-            foreach (var cr in Crossings) { if ((idx++ % 2) == 0) AddChair(cr.P - Vector3.up * rad * 2f, rad); }
+            for (int ci = crossBefore, idx = 0; ci < Crossings.Count; ci++, idx++)
+                if ((idx % 2) == 0) AddChair(Crossings[ci].P - Vector3.up * rad * 2f, rad);
 
             // thickened edge: two continuous bars 3" up from the trench bottom
             var r0 = o.Runs[0];
@@ -237,7 +263,7 @@ namespace Groundbreak
             if (GInput.GetKeyDown(KeyCode.F))
             {
                 int n = RebarSystem.AutoGrid(FormSystem.Active, Sizes[_size]);
-                Game.Toast(n > 0 ? $"Placed {n} bars on chairs · {RebarSystem.Crossings.Count} crossings to tie" : "Close and stake the forms first");
+                Game.Toast(n > 0 ? $"Placed {n} bars on chairs · {RebarSystem.Crossings.Count} crossings to tie" : RebarSystem.LastRefusal ?? "Close and stake the forms first");
             }
         }
     }

@@ -15,7 +15,7 @@ namespace Groundbreak
         public static void UseForLayout(StairResult r)
         {
             Layout = r;
-            HasLayout = r.Valid && r.Risers >= 2;
+            HasLayout = r.Valid && r.Risers >= 2 && r.LengthOk;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -47,7 +47,8 @@ namespace Groundbreak
             bool showCurrent = HasLayout;
 
             GUILayout.Label("Stair Calculator", Hd);
-            GUILayout.Label("IRC R311.7: risers 7 3/4\" max, treads 10\" min, 36\" min width, 6' 8\" headroom, risers within 3/8\" of each other.", L);
+            GUILayout.Label("IRC R311.7: risers 7 3/4\" max, treads 10\" min, 36\" min width, 6' 8\" headroom, risers within 3/8\" of each other; "
+                            + "handrail 34\"-38\" above the nosings on 4 or more risers.", L);
             GUILayout.Space(4);
 
             GUILayout.BeginHorizontal();
@@ -60,7 +61,7 @@ namespace Groundbreak
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Unit run (tread, 10\" min):", L, GUILayout.Width(fs * 14));
+            GUILayout.Label("Unit run (tread, 10\"-11 1/4\"):", L, GUILayout.Width(fs * 14));
             _run = GUILayout.TextField(_run, _field, GUILayout.Width(fs * 8));
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
@@ -83,18 +84,28 @@ namespace Groundbreak
 
             Line(L, "Risers", r.Risers + " @ " + StairMath.FormatIn(r.UnitRiseIn) + (r.RiseOk ? "" : "  (over 7 3/4\"!)"));
             Line(L, "Treads", r.Treads + " @ " + StairMath.FormatIn(r.UnitRunIn) + " run" + (r.RunOk ? "" : "  (under 10\"!)") +
-                              "  - two 2x6 = " + StairMath.FormatIn(r.TreadDepthIn) + " deep, " + StairMath.FormatIn(r.NosingIn) + " nosing");
+                              (r.RunCapped ? "  (capped: two 2x6 cover 11 1/4\")" : "") +
+                              "  - two 2x6 = " + StairMath.FormatIn(r.TreadDepthIn) + " deep, " + StairMath.FormatIn(r.NosingIn) + " nosing" +
+                              (r.NosingOk ? "" : "  (nosing must be 3/4\"-1 1/4\" under an 11\" tread!)"));
             Line(L, "Total run", StairMath.FormatFtIn(r.TotalRunIn) + "   (angle " + r.AngleDeg.ToString("0.0") + " deg)");
             Line(L, "Stringer", StairMath.FormatFtIn(r.StringerLengthIn) + " of 2x12 (hypotenuse " + StairMath.FormatFtIn(r.HypotenuseIn) + ") - cut from "
-                                + (Catalog.Get(r.StockId) != null ? Catalog.Get(r.StockId).Name : r.StockId) + ", 3 for a 36\" stair");
+                                + (Catalog.Get(r.StockId) != null ? Catalog.Get(r.StockId).Name : r.StockId) + ", 3 for a 36\" stair"
+                                + (r.LengthOk ? "" : "  TOO LONG for a 16' 2x12 - add a landing and split the flight"));
             Line(L, "Throat", StairMath.FormatIn(r.ThroatIn) + (r.ThroatOk ? "  OK (5\" min on a 2x12)" : "  TOO THIN - use a longer run or add a stringer"));
             Line(L, "Drop", "cut " + StairMath.FormatIn(r.TreadThicknessIn) + " off the bottom (tread thickness) and " + StairMath.FormatIn(r.RiserThicknessIn) + " off the top (riser board)");
             GUILayout.Label(r.HeadroomNote, L);
+            if (r.HandrailRequired)
+                GUILayout.Label("Handrail required (" + r.Risers + " risers): top 34\"-38\" plumb above the nosing line, 1 1/4\"-2\" round grip, "
+                                + "1 1/2\" clear of the post or wall, from above the top riser to above the bottom riser.", L);
             GUILayout.Space(6);
             if (GUILayout.Button("Use for layout (sets the framing square's stair gauges)", B))
             {
-                UseForLayout(r);
-                tab.ShowMessage("Framing square set: " + StairMath.FormatIn(r.UnitRiseIn) + " on the tongue, " + StairMath.FormatIn(r.UnitRunIn) + " on the blade.");
+                if (!r.LengthOk) tab.ShowMessage("Can't lay that out: " + r.BuildProblem);
+                else
+                {
+                    UseForLayout(r);
+                    tab.ShowMessage("Framing square set: " + StairMath.FormatIn(r.UnitRiseIn) + " on the tongue, " + StairMath.FormatIn(r.UnitRunIn) + " on the blade.");
+                }
             }
             DrawCurrent(L, showCurrent);
         }

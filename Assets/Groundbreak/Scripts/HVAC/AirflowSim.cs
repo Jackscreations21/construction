@@ -161,17 +161,26 @@ namespace Groundbreak
     /// Also checks return path, line sets, condensate drains and exhaust fan terminations.</summary>
     public static class AirflowSim
     {
-        static HvacReport _cache; static int _cacheVer = -1, _cacheFrame = -1;
+        static HvacReport _cache; static int _cacheVer = -1; static float _cacheAt = -1f;
+        /// <summary>Longest a cached report is reused while the graph version is unchanged (state like joint tape or a unit's
+        /// wiring may change without a version bump).</summary>
+        public const float CacheSeconds = 0.5f;
 
-        /// <summary>Cached per frame + graph version (cheap to call from OnGUI).</summary>
+        /// <summary>Recomputed when the network changes (graph version), else at most every <see cref="CacheSeconds"/>
+        /// (cheap to call from OnGUI every frame).</summary>
         public static HvacReport Current
         {
             get
             {
-                if (_cache == null || _cacheVer != NetGraph.Version || _cacheFrame != Time.frameCount) { _cache = Evaluate(); _cacheVer = NetGraph.Version; _cacheFrame = Time.frameCount; }
+                float now = Time.unscaledTime;
+                if (_cache == null || _cacheVer != NetGraph.Version || now - _cacheAt >= CacheSeconds || now < _cacheAt)
+                { _cache = Evaluate(); _cacheVer = NetGraph.Version; _cacheAt = now; }
                 return _cache;
             }
         }
+
+        /// <summary>Drops the cached report (next <see cref="Current"/> recomputes).</summary>
+        public static void Invalidate() { _cache = null; }
 
         /// <summary>Leak fraction of one un-taped joint (10–15 %, fixed per joint).</summary>
         public static float LeakOf(NetPort p)

@@ -42,14 +42,29 @@ namespace Groundbreak
 
             // 3. Rim (band) joists on the long sides, end joists between them
             float ry = y0 + sillT + joistD / 2;
-            AddMember(job, root, "Set rim joist (front)", "2x8", L, new Vector3(L / 2, ry, t / 2), X, Z, MemberRole.RimJoist, 6, ghost);
-            AddMember(job, root, "Set rim joist (back)", "2x8", L, new Vector3(L / 2, ry, W - t / 2), X, Z, MemberRole.RimJoist, 6, ghost);
-            AddMember(job, root, "Set end joist (left)", "2x8", W - 2 * t, new Vector3(t / 2, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
-
-            // 4. Joists at 16" O.C. (crowns up), toe-nailed to the sill and end-nailed through the rim
+            // 4. (layout first) joists at 16" O.C.
             float oc = I(16f);
             var joistX = new List<float>();
             for (float x = oc; x < L - t - I(2f); x += oc) joistX.Add(x);
+
+            // rims longer than one board: butt joints centered on a joist, staggered off the sill joints
+            var sillJoints = Splice.Joints(Splice.Segments(L, Splice.LongestStock("pt2x6")));
+            var rimSegs = Splice.Segments(L, Splice.LongestStock("2x8"), joistX, sillJoints, I(12f));
+            for (int k = 0; k < rimSegs.Count; k++)
+            {
+                var (a, b) = rimSegs[k];
+                string part = rimSegs.Count > 1 ? " piece " + (k + 1) + "/" + rimSegs.Count + " (joint on a joist)" : "";
+                AddMember(job, root, "Set rim joist (front)" + part, "2x8", b - a, new Vector3((a + b) / 2, ry, t / 2), X, Z, MemberRole.RimJoist, 6, ghost);
+            }
+            for (int k = 0; k < rimSegs.Count; k++)
+            {
+                var (a, b) = rimSegs[k];
+                string part = rimSegs.Count > 1 ? " piece " + (k + 1) + "/" + rimSegs.Count + " (joint on a joist)" : "";
+                AddMember(job, root, "Set rim joist (back)" + part, "2x8", b - a, new Vector3((a + b) / 2, ry, W - t / 2), X, Z, MemberRole.RimJoist, 6, ghost);
+            }
+            AddMember(job, root, "Set end joist (left)", "2x8", W - 2 * t, new Vector3(t / 2, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
+
+            // joists (crowns up), toe-nailed to the sill and end-nailed through the rim
             foreach (var x in joistX)
                 AddMember(job, root, "Joist @ " + Units.Format(x) + " O.C. (crown up)", "2x8", W - 2 * t, new Vector3(x, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
             AddMember(job, root, "Set end joist (right)", "2x8", W - 2 * t, new Vector3(L - t / 2, ry, W / 2), Z, X, MemberRole.Joist, 6, ghost);
@@ -74,13 +89,19 @@ namespace Groundbreak
         {
             float sillT = I(1.5f), sillW = I(5.5f);
             Vector3 X = Vector3.right, Z = Vector3.forward, U = Vector3.up;
-            var sills = new List<(Vector3 c, float len, Vector3 dir)>
+            var runs = new List<(Vector3 c, float len, Vector3 dir)>
             {
                 (new Vector3(L / 2, y0 + sillT / 2, sillW / 2), L, X),
                 (new Vector3(L / 2, y0 + sillT / 2, W - sillW / 2), L, X),
                 (new Vector3(sillW / 2, y0 + sillT / 2, W / 2), W - 2 * sillW, Z),
                 (new Vector3(L - sillW / 2, y0 + sillT / 2, W / 2), W - 2 * sillW, Z),
             };
+            // a run longer than the longest PT board is laid in pieces; every piece gets its own anchor bolts (12" from each end)
+            var sills = new List<(Vector3 c, float len, Vector3 dir)>();
+            float maxSill = Splice.LongestStock("pt2x6");
+            foreach (var r in runs)
+                foreach (var (a, b) in Splice.Segments(r.len, maxSill))
+                    sills.Add((r.c + r.dir * ((a + b) / 2 - r.len / 2), b - a, r.dir));
             foreach (var s in sills)
             {
                 var sc = s;

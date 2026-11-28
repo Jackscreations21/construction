@@ -109,7 +109,7 @@ namespace Groundbreak
                         m.Poly(pts, uvs, p.Normal, s);
                     }
                     if (!m.Empty) m.Attach(root, "Ice & water shield (valley)");
-                }, Line(e.A, e.B, 0.9f)).Use("ice-water", ice.Take(e.Length * 2f));
+                }, Line(e.A, e.B, 0.9f)).Use("ice-water", ice.Take(e.Length)); // one 36" strip (18" each side) per valley length
             }
             // 3. synthetic underlayment: 48" courses lapped 4", starting over the top of the ice & water, cap-stapled
             var roll = new Meter(250 * Units.Foot);

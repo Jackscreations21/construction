@@ -232,6 +232,6 @@ namespace Groundbreak
             DeckBuilder.NextStage(d);
             ToolUtil.Wear(this, 0.002f);
         }
-        public override string Hint => "LMB on the wall: lay out a deck (ledger top at the aim point); LMB again: build the next stage";
+        public override string Hint => "LMB on the wall: lay out a deck (deck surface at the aim point, ledger top one decking board below it); LMB again: build the next stage";
     }
 }

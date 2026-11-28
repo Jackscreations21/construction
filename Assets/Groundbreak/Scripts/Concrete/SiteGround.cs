@@ -195,19 +195,24 @@ namespace Groundbreak
             int n = 0;
             if (!CellOf(center, out int cx, out int cz)) return 0;
             int r = Mathf.CeilToInt(radius / Cell);
+            var fresh = new HashSet<int>();
             for (int z = Mathf.Max(1, cz - r); z <= Mathf.Min(N - 2, cz + r); z++)
                 for (int x = Mathf.Max(1, cx - r); x <= Mathf.Min(N - 2, cx + r); x++)
                 {
                     int ci = CI(x, z);
                     if (Compacted[ci] || Cover[ci] == GroundCover.Grass) continue;
-                    Compacted[ci] = true; n++;
+                    Compacted[ci] = true; n++; fresh.Add(ci);
                 }
             if (n > 0)
             {
-                // settle the vertices of newly compacted cells
-                for (int z = Mathf.Max(1, cz - r); z <= Mathf.Min(N - 1, cz + r); z++)
-                    for (int x = Mathf.Max(1, cx - r); x <= Mathf.Min(N - 1, cx + r); x++)
-                        if (Compacted[CI(x, z)] && Compacted[CI(x - 1, z - 1)]) H[VI(x, z)] -= 0.0005f;
+                // settle each vertex once: when its cells become compacted in this pass (a second pass over already
+                // compacted ground does not lower it again)
+                for (int z = Mathf.Max(1, cz - r); z <= Mathf.Min(N - 1, cz + r + 1); z++)
+                    for (int x = Mathf.Max(1, cx - r); x <= Mathf.Min(N - 1, cx + r + 1); x++)
+                    {
+                        int a = CI(x, z), b = CI(x - 1, z - 1);
+                        if (Compacted[a] && Compacted[b] && (fresh.Contains(a) || fresh.Contains(b))) H[VI(x, z)] -= 0.0005f;
+                    }
                 Touch();
             }
             return n;
