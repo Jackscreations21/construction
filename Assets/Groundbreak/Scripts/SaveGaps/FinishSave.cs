@@ -23,13 +23,13 @@ namespace Groundbreak
             public SaveGaps.PlaneRef face = new SaveGaps.PlaneRef(); public float c, u, w, bottomY, levelErr; public bool isWall, filler, sink, shim, black;
             public int finish, wIn, screws, studs; public Vector3 pos; public Quaternion rot;
         }
-        [Serializable] class CtD { public List<int> bases = new List<int>(); public int type; public Vector3 pos; public Quaternion rot; }
+        [Serializable] class CtD { public List<int> bases = new List<int>(); public int type; public Vector3 pos; public Quaternion rot; public bool hasOverhang; public float oMin, oMax, front; }
         [Serializable] class BsD { public int counter = -1; public string grout; public float height; }
         [Serializable]
         class FloorD
         {
             public bool tile; public int type; public SaveGaps.PlaneRef floor = new SaveGaps.PlaneRef(); public Rect area; public List<Rect> holes = new List<Rect>();
-            public float gap; public string color; public int seed;
+            public float gap; public string color; public int seed; public string paper;   // hardwood underlayment: "rosin" / "felt" (empty in older saves = rosin)
             public string tileId; public int step; public float thinsetAt, setAt, groutAt; public string grout;
         }
         [Serializable]
@@ -83,7 +83,7 @@ namespace Groundbreak
             foreach (var ct in Countertop.All)
             {
                 if (ct == null || !ct.gameObject.activeInHierarchy) continue;
-                var cd = new CtD { type = (int)ct.Type, pos = ct.transform.position, rot = ct.transform.rotation };
+                var cd = new CtD { type = (int)ct.Type, pos = ct.transform.position, rot = ct.transform.rotation, hasOverhang = true, oMin = ct.OverhangXMin, oMax = ct.OverhangXMax, front = ct.FrontOverhang };
                 foreach (var b in ct.Bases) { int i = cabs.IndexOf(b); if (i >= 0) cd.bases.Add(i); }
                 if (cd.bases.Count == 0) continue;
                 cts.Add(ct); d.counters.Add(cd);
@@ -107,6 +107,7 @@ namespace Groundbreak
                 var t = fi.GetComponent<TileFloor>();
                 if (t != null) { fd.tile = true; fd.tileId = t.TileId; fd.step = (int)t.Step; fd.thinsetAt = t.ThinsetAt; fd.setAt = t.SetAt; fd.groutAt = t.GroutAt; fd.grout = t.GroutName; }
                 else if (fi.Type == FloorType.Tile) continue;
+                if (fi.Type == FloorType.Hardwood) fd.paper = HardwoodPaper(fi);
                 d.floors.Add(fd);
             }
             var doors = new List<HungDoor>();
@@ -164,7 +165,12 @@ namespace Groundbreak
                     var fp = SaveGaps.FindPlane(fd.floor);
                     if (fp == null) { missing++; continue; }
                     if (fd.tile) RestoreTile(fp, fd);
-                    else if ((FloorType)fd.type == FloorType.Hardwood) SaveGaps.Replay(() => Hardwood.Install(fp, fd.area, fd.holes, fd.gap, fd.seed), "flooring-nailer", "finish-nailer");
+                    else if ((FloorType)fd.type == FloorType.Hardwood)
+                    {
+                        FloorInstall fi = null;
+                        SaveGaps.Replay(() => fi = Hardwood.Install(fp, fd.area, fd.holes, fd.gap, fd.seed), "flooring-nailer", "finish-nailer");
+                        if (fi != null && fd.paper == "felt") SetHardwoodPaper(fi, InteriorMaterials.Underlay);
+                    }
                     else SaveGaps.Replay(() => Lvp.Install(fp, fd.area, fd.holes, string.IsNullOrEmpty(fd.color) ? "oak" : fd.color, fd.gap, fd.seed), "pull-bar");
                 }
                 catch (Exception e) { Debug.LogError("[Save] floor failed to restore: " + e); }
@@ -196,8 +202,11 @@ namespace Groundbreak
                     foreach (var i in cd.bases) if (i >= 0 && i < cabs.Count && cabs[i] != null) run.Add(cabs[i]);
                     if (run.Count > 0)
                     {
-                        SaveGaps.Replay(() => ct = Countertops.Install(run, (CounterType)cd.type));
-                        if (ct != null) ct.transform.SetPositionAndRotation(cd.pos, cd.rot);
+                        // the overhangs it was built with (not measured again from the walls)
+                        if (cd.hasOverhang) { Countertops.EndOverhangOverrideMin = cd.oMin; Countertops.EndOverhangOverrideMax = cd.oMax; }
+                        try { SaveGaps.Replay(() => ct = Countertops.Install(run, (CounterType)cd.type)); }
+                        finally { Countertops.EndOverhangOverrideMin = null; Countertops.EndOverhangOverrideMax = null; }
+                        if (ct != null) { ct.transform.SetPositionAndRotation(cd.pos, cd.rot); if (cd.hasOverhang) ct.FrontOverhang = cd.front; }
                     }
                 }
                 catch (Exception e) { Debug.LogError("[Save] countertop failed to restore: " + e); }
@@ -244,6 +253,23 @@ namespace Groundbreak
                 catch (Exception e) { Debug.LogError("[Save] trim piece failed to restore: " + e); }
             }
             if (missing > 0) Debug.LogWarning($"[Save] finish: {missing} item(s) had no matching framing face and were skipped");
+        }
+
+        /// <summary>Which paper is under a hardwood floor: the last material of its mesh is the underlayment.</summary>
+        static string HardwoodPaper(FloorInstall fi)
+        {
+            var mr = fi.GetComponentInChildren<MeshRenderer>();
+            if (mr == null || mr.sharedMaterials.Length == 0) return "rosin";
+            return mr.sharedMaterials[mr.sharedMaterials.Length - 1] == FinishMaterials.Get(InteriorMaterials.Underlay) ? "felt" : "rosin";
+        }
+
+        static void SetHardwoodPaper(FloorInstall fi, string matKey)
+        {
+            var mr = fi.GetComponentInChildren<MeshRenderer>();
+            if (mr == null || mr.sharedMaterials.Length == 0) return;
+            var mats = mr.sharedMaterials;
+            mats[mats.Length - 1] = FinishMaterials.Get(matKey);
+            mr.sharedMaterials = mats;
         }
 
         static void RestoreTile(FramePlane fp, FloorD fd)

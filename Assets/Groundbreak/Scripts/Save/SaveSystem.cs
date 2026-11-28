@@ -85,7 +85,8 @@ namespace Groundbreak
         [Serializable] public class PieceData { public string id; public Vector3 size, pos; public Quaternion rot; public int state, nails; }
         [Serializable] public class Count { public string id; public int n; }
         [Serializable] public class Scrap { public string id; public float len; }
-        [Serializable] public class ToolData { public string id; public float battery = 1, durability = 1; }
+        /// <summary>state = per-instance tool state (<see cref="ToolStateSave"/>: caulk tube feet left, loaded mode, ...); null in old saves.</summary>
+        [Serializable] public class ToolData { public string id; public float battery = 1, durability = 1; public string state; }
         [Serializable] public class KV { public string key, value; }
 
         [Serializable]
@@ -156,7 +157,7 @@ namespace Groundbreak
             var belt = Game.Belt;
             if (belt != null)
             {
-                foreach (var t in belt.Owned) s.owned.Add(new ToolData { id = t.Id, battery = t.Battery, durability = t.Durability });
+                foreach (var t in belt.Owned) s.owned.Add(new ToolData { id = t.Id, battery = t.Battery, durability = t.Durability, state = ToolStateSave.Save(t) });
                 for (int i = 0; i < ToolBelt.SlotCount; i++) s.slots.Add(belt.Slots[i] != null ? belt.Owned.IndexOf(belt.Slots[i]) : -1);
                 s.activeSlot = belt.ActiveIndex; s.nails = belt.Nails; s.nailCapacity = belt.NailCapacity;
             }
@@ -265,6 +266,7 @@ namespace Groundbreak
                     var t = ToolFactory.Create(td.id);
                     if (t == null) { owned.Add(null); continue; }
                     t.Battery = td.battery; t.Durability = td.durability;
+                    ToolStateSave.Load(t, td.state);
                     owned.Add(t);
                 }
                 belt.Owned.Clear();

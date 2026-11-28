@@ -111,6 +111,13 @@ namespace Groundbreak
             var d = new Data();
             var p = ShellProject.Current;
             if (p == null) return JsonUtility.ToJson(d);
+            if (IsStale(p))
+            {
+                // a project whose jobs and walls were all destroyed (left over from an earlier session / scene clear): it doesn't
+                // belong to this world, so it isn't saved (it used to be planned again on load) and is forgotten
+                ShellProject.Current = null; _rootsFrame = -1;
+                return JsonUtility.ToJson(d);
+            }
             d.has = true; d.fp = p.Fp; d.pitch = p.PitchRise; d.stick = p.StickFrame; d.hip = p.Hip;
             for (int w = 0; w < p.Openings.Length; w++)
                 foreach (var o in p.Openings[w])
@@ -143,6 +150,16 @@ namespace Groundbreak
                 d.pieces.Add(new SaveSystem.PieceData { id = q.Def.Id, size = q.Size, pos = q.transform.position, rot = q.transform.rotation, state = (int)q.State, nails = q.Nails });
             }
             return JsonUtility.ToJson(d);
+        }
+
+        /// <summary>Started jobs / walls that are all gone (destroyed): the project's world was cleared without it.</summary>
+        public static bool IsStale(ShellProject p)
+        {
+            if (p == null) return false;
+            int started = 0, alive = 0;
+            foreach (var j in p.Jobs) { started++; if (j != null) alive++; }
+            if (p.Walls != null) foreach (var w in p.Walls) { started++; if (w != null) alive++; }
+            return started > 0 && alive == 0;
         }
 
         // ================================================================== load

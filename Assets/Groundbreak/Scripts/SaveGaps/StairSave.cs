@@ -27,7 +27,7 @@ namespace Groundbreak
         static void Init()
         {
             SaveSystem.RegisterExtension(Key, Save, Load, 5);
-            SaveSystem.RegisterPieceFilter("cutstringer", p => p.GetComponent<CutStringer>() != null && !ShellSave.IsShellPiece(p));
+            SaveSystem.RegisterPieceFilter("cutstringer", p => p.GetComponent<CutStringer>() != null && !ShellSave.IsShellPiece(p) && !JobSave.IsJobPiece(p));
         }
 
         static float M(float inches) => inches * Units.Inch;
@@ -38,7 +38,7 @@ namespace Groundbreak
             foreach (var cs in UnityEngine.Object.FindObjectsByType<CutStringer>(FindObjectsSortMode.InstanceID))
             {
                 var p = cs != null ? cs.GetComponent<Piece>() : null;
-                if (p == null || p.Def == null || !p.gameObject.activeInHierarchy || ShellSave.IsShellPiece(p)) continue;
+                if (p == null || p.Def == null || !p.gameObject.activeInHierarchy || ShellSave.IsShellPiece(p) || JobSave.IsJobPiece(p)) continue;
                 var m = p.GetComponent<StructuralMember>();
                 d.cut.Add(new CutD
                 {
@@ -96,6 +96,29 @@ namespace Groundbreak
             p.State = (PieceState)cd.state; p.Nails = cd.nails;
             p.gameObject.name = (cd.builder ? "Stringer (" : "Cut stringer (") + def.Name + ")";
             p.gameObject.AddComponent<CutStringer>().Result = r;
+            if (cd.builder) SeatContacts(p.transform, lay, uC, xc, zc);
+        }
+
+        /// <summary>The thin contact boxes under each seat cut of a stair-builder stringer (same as <see cref="StairBuilder.MakeStringer"/>),
+        /// so treads / risers set on it find their support. Built in the member's frame: the stair frame's lateral offset cancels.</summary>
+        static void SeatContacts(Transform member, StringerLayout lay, float uC, float xc, float zc)
+        {
+            var r = lay.R;
+            Vector2 c2 = lay.FromBoard(xc, zc, uC);
+            var rot = Quaternion.LookRotation(new Vector3(0f, lay.U.y, lay.U.x), Vector3.left);
+            var inv = Quaternion.Inverse(rot);
+            for (int k = 1; k <= r.Risers - 1; k++)
+            {
+                if (member.Find("SeatContact " + k) != null) continue;
+                float x0 = (k - 1) * r.UnitRunIn, x1 = Mathf.Min(k * r.UnitRunIn, lay.XTop);
+                float y1 = k * r.UnitRiseIn - r.TreadThicknessIn, y0 = y1 - 1f;
+                var go = new GameObject("SeatContact " + k);
+                go.transform.SetParent(member, false);
+                go.transform.localRotation = inv;
+                go.transform.localPosition = inv * new Vector3(0f, M((y0 + y1) * 0.5f - c2.y), M((x0 + x1) * 0.5f - c2.x));
+                var bc = go.AddComponent<BoxCollider>();
+                bc.size = new Vector3(M(1.5f), M(y1 - y0), M(x1 - x0));
+            }
         }
 
         /// <summary>Board frame of a stair-builder stringer (same as <see cref="StairBuilder.MakeStringer"/>): layout center and

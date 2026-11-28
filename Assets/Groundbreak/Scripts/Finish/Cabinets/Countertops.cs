@@ -29,6 +29,8 @@ namespace Groundbreak
     public static class Countertops
     {
         public static readonly float Depth = Units.In(25.5f), FreeEndOverhang = Units.In(1f);
+        /// <summary>Save/load: end overhangs to use instead of measuring for walls (a reloaded top keeps the overhangs it was built with).</summary>
+        public static float? EndOverhangOverrideMin, EndOverhangOverrideMax;
         public static float Thickness(CounterType t) => t == CounterType.Laminate || t == CounterType.ButcherBlock ? Units.In(1.5f) : 0.03f;
         static string StockId(CounterType t) => t == CounterType.Laminate ? "fin-ct-laminate" : t == CounterType.ButcherBlock ? "fin-ct-butcher" : t == CounterType.Granite ? "fin-ct-granite" : "fin-ct-quartz";
         static string Mat(CounterType t) => t == CounterType.Laminate ? InteriorMaterials.Laminate : t == CounterType.ButcherBlock ? InteriorMaterials.Butcher : t == CounterType.Granite ? InteriorMaterials.Granite : InteriorMaterials.Quartz;
@@ -53,8 +55,8 @@ namespace Groundbreak
             float topY = first.BottomY + Cabinets.BaseH;
             Vector3 origin = first.transform.position + R * xMin; origin.y = topY;
             float L = xMax - xMin;
-            float oMin = WallAt(origin + Vector3.up * 0.05f + first.transform.forward * 0.3f, -R) ? 0f : FreeEndOverhang;
-            float oMax = WallAt(origin + R * L + Vector3.up * 0.05f + first.transform.forward * 0.3f, R) ? 0f : FreeEndOverhang;
+            float oMin = EndOverhangOverrideMin.HasValue ? EndOverhangOverrideMin.Value : WallAt(origin + Vector3.up * 0.05f + first.transform.forward * 0.3f, -R) ? 0f : FreeEndOverhang;
+            float oMax = EndOverhangOverrideMax.HasValue ? EndOverhangOverrideMax.Value : WallAt(origin + R * L + Vector3.up * 0.05f + first.transform.forward * 0.3f, R) ? 0f : FreeEndOverhang;
             float T = Thickness(type), total = L + oMin + oMax;
             int feet = Mathf.CeilToInt(total / Units.Foot - 0.01f);
             if (!FinishStock.Take(StockId(type), feet)) return null;
