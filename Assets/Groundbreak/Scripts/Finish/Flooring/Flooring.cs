@@ -19,6 +19,9 @@ namespace Groundbreak
         public float MinStagger = float.MaxValue; // shortest end-joint offset between adjacent rows (m)
         public int Pieces, FreshPieces, Cuts, Nails, FaceNails;
         public bool RowsAlongU;
+        /// <summary>Install inputs a save needs to lay the same floor again: LVP color and the plank layout seed.</summary>
+        public string LvpColor = "";
+        public int Seed;
         public float SqFt => Area.width * Area.height / (Units.Foot * Units.Foot);
 
         void OnEnable() { if (!All.Contains(this)) All.Add(this); }

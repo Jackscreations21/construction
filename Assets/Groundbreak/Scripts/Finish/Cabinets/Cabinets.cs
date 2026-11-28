@@ -82,6 +82,10 @@ namespace Groundbreak
             return res;
         }
 
+        /// <summary>Save/load: builds one cabinet box exactly as <see cref="InstallRun"/> did (no stock, tools or toast).</summary>
+        public static CabinetUnit Rebuild(FramePlane wall, float c, float u, float W, float bottomY, bool isWall, CabFinish fin, bool filler, bool sink, bool shim, bool black, int wIn)
+            => Build(wall, c, u, W, bottomY, isWall, fin, filler, sink, shim, black, wIn);
+
         static CabinetUnit Build(FramePlane wall, float c, float u, float W, float bottomY, bool isWall, CabFinish fin, bool filler, bool sink, bool shim, bool black, int wIn)
         {
             float H = isWall ? WallH : BaseH, D = isWall ? WallBox : BaseBox;

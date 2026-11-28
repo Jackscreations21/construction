@@ -8,7 +8,19 @@ namespace Groundbreak
     public class RestoredSlab : MonoBehaviour
     {
         public Mesh Mesh;
+        float _tint = -1f, _next;
         void OnDestroy() { if (Mesh != null) Destroy(Mesh); }
+
+        /// <summary>Green concrete lightens as it dries (same curve as a PourSystem slab): keep the restored slab's colour current.</summary>
+        void Update()
+        {
+            if (Time.time < _next) return;
+            _next = Time.time + 1f;
+            var el = GetComponent<ConcreteElement>();
+            if (el == null) return;
+            float tint = Mathf.Round(Mathf.Lerp(0.66f, 0.86f, Mathf.Clamp01(el.AgeDays / 5f)) * 20f) / 20f;
+            if (Mathf.Abs(tint - _tint) > 0.02f) { _tint = tint; el.ApplyLook(GetComponent<MeshRenderer>()); }
+        }
     }
 
     /// <summary>
@@ -54,6 +66,7 @@ namespace Groundbreak
             foreach (var el in ConcreteElement.All)
             {
                 if (el == null || !el.gameObject.activeInHierarchy || el.Outline == null || el.Outline.Length < 3) continue;
+                if (ConcreteSave.Handles(el)) continue;   // saved with its pour (and forms) by the "concrete" section
                 var sd = new SlabData
                 {
                     kind = el.Kind, topY = el.TopY, thickIn = el.ThicknessInches, pouredAt = el.PouredAt, yards = el.Yards, cureLag = el.CureLagMinutes,
@@ -93,6 +106,14 @@ namespace Groundbreak
                 catch (Exception e) { Debug.LogError("[Save] slab failed to restore: " + e); }
             }
             ApplyPending(); // in case "seasons" already loaded (AfterLoad repeats it after every section)
+        }
+
+        /// <summary>Curing blankets / heater to put back on a slab restored by another section (once "seasons" has loaded too).</summary>
+        public static void QueueProtection(ConcreteElement el, int blankets, bool heater)
+        {
+            if (el == null) return;
+            _pending.Add((el, blankets, heater));
+            SeasonRules.RestoreProtection(el, blankets, heater);
         }
 
         static void ApplyPending()
