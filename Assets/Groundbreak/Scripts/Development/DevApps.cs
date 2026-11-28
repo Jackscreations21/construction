@@ -72,6 +72,7 @@ namespace Groundbreak
             { PlanOverlay.Show(p, PlanPlacement.On(on.Lot, p), _floor); Msg("Plan overlay laid out on " + on.Lot.Address); }
             if (p.Floors > 1 && GUILayout.Button($"Floor {_floor + 1} of {p.Floors}", B, GUILayout.Width(Fs * 8))) { _floor = (_floor + 1) % p.Floors; if (on != null) PlanOverlay.Show(p, PlanPlacement.On(on.Lot, p), _floor); }
             if (PlanOverlay.Root != null && GUILayout.Button("Hide overlay", B, GUILayout.Width(Fs * 8))) PlanOverlay.Hide();
+            if (GUILayout.Button("Edit a copy", B, GUILayout.Width(Fs * 8))) { PlanDesignerApp.EditCopy(p); GUIUtility.ExitGUI(); }   // the tablet switches to the Plan Designer
             GUILayout.EndHorizontal();
             GUILayout.Space(6);
             GUILayout.Label("Material takeoff (from real dimensions)", Hd);
