@@ -293,3 +293,13 @@ Shared Core files changed: `Core/GInput.cs` (one additive mapping line) and `Cor
 - Meshes never destroyed for TrimPiece, Bead, Countertop, Cabinet, HungDoor frame, TileFloor layers, MEP fitting bodies and fixture trim; corner beads are not parented to their surface.
 - `ElLabels.Text` caches one material/texture per distinct label string forever; `ElVisuals._panelHash` keeps destroyed panels as keys.
 - `DeliveryService.RebuildPiles` rebuilds every pile on every stock change; `ToolUtil.CenterLabel` and `MainMenu` allocate a GUIStyle per OnGUI call.
+
+## Update 2026-11-28: "Needs a decision" resolved
+Everything in the list above is fixed except:
+- NEC 210.52 receptacle spacing and the GFCI LOAD-side rule: skipped, the electrical model has no room/wall-line data and no LINE/LOAD terminals.
+- Ceiling joists and hips over 16 ft stay single pieces (they were already charged the right board count).
+- `Fleet/Jobs/ContractorJobSite.cs` builds its own plates and was not checked for the splice rule.
+- Guards on open stair sides over 30 in (IRC R312) are not modelled.
+Chosen values: stairs 36 in minimum, handrail on 4+ risers at 34-38 in, tread run capped at 11-1/4 in, stringer over 16 ft refused (add a landing),
+attic R-49, gravel drive 8 in, fence posts 36 in deep on 10 ft posts, roof kit is a 50 ft rope lifeline + rope grab ($169), 20 ft 2x8/2x10/2x12 stock.
+Save items: see `Docs/SAVEGAPS.md` (round 3). The Tablet items were fixed in `Scripts/UI`. Tests: `CodeValuesTests`, `CodeValuesExploitTests`, `StairToolTests`.

@@ -264,3 +264,13 @@ Shared/core files touched (small, additive): `Landscaping/LandModel.cs` (one lin
 - **SkidSteer.OnDestroy** sets a child's parent while being destroyed without the try/catch TruckCrane uses.
 - **Plan designer drafts** with errors may be unregistered on load before projects load (PlanDesigner extension loads first).
 - **Catalog build accept** ignores a failed lot claim / missing plan (no path found that triggers it).
+
+## Update 2026-11-28: "Needs a decision" resolved
+Everything in the list above is fixed except:
+- Off-site crews finishing service calls without diagnosing: left as is (intended simplification).
+- Equipment pick-up / haul-off fee waived when the wallet is short: left as is (blocking a return would keep rent running).
+Choices: saw station = own-crew carpentry 10% faster and 4% less material on crew-built wood jobs; weather seed rolled per new career (1 in tests);
+"End lease" and downgrades blocked while the stage needs the premises; unpaid loan at a sale becomes a "Loan shortfall" note; "Order what's missing"
+charges the $79 delivery fee under Materials; warehouse space counts loads on the road; downgrade sells equipment the smaller level can't hold at 40%;
+weekly rental rate caps each 7-day block; subs invoice pro rata; commercial/industrial builds claim strip/industrial tracts (`MapFollowup/CommercialSites.cs`);
+HQ move-in $100,000 for pacing (see `Docs/BALANCE.md`). Tests: `BusinessRulesTests`, `MapCommercialTests`.
