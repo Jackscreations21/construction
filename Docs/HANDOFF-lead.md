@@ -88,3 +88,28 @@ Operating notes that still apply:
 - Forklift: no hand-unloading labor on warehouse loads over 2,000 lb ($45/ton without it), 3% off warehouse stock, warehouse runs half time. Not drivable. `Scripts/Forklift/`.
 - Can't sell the last vehicle of a type an active job needs. Full suite: 255 total, 250 passed, 0 failed, 5 skipped.
 - Open decisions left: saw station has no effect, same weather seed each career, stair width/handrail, R-38 vs R-49, pacing.
+
+## Update 2026-11-28: the last list is done (lead local_98a2032f, second stint)
+**Final full PlayMode run on combined main: 306 total, 301 passed, 0 failed, 5 skipped by design, 0 error CS.** Pushed. Nothing is running.
+Merged today (all done by worktree subagents on Opus, one Unity at a time):
+- Business rules (`Scripts/SawStation/`, `Tests/BusinessRulesTests.cs`): saw station = own-crew carpentry 10% faster, 4% less material on crew-built
+  wood jobs; weather seed per career; End lease / downgrade blocked while the stage needs the premises; loan shortfall note at a sale; $79 delivery
+  fee on "Order what's missing"; warehouse space counts loads on the road; weekly rental cap; subs invoice pro rata.
+- Pacing: HQ move-in $60,000 -> $100,000; the balance model reaches Developer on day 111 (Builder day 59). $125,000 was tried first and gave day
+  122 once the realism fixes were in.
+- Code values (`Tests/CodeValuesTests.cs`): stairs 36 in minimum + handrail on 4+ risers (`Stairs/StairHandrail.cs`), stringer over 16 ft refused,
+  attic R-49, exploits closed, 8 in gravel drive, 36 in fence posts, 50 ft rope lifeline, 20 ft lumber.
+- Stair Layout Kit (`Stairs/StairLayoutKit.cs`, $45): the player-facing way to start `StairBuilder` stairs and landings (there was none before).
+- Map / plans (`MapFollowup/CommercialSites.cs`, `Tests/MapCommercialTests.cs`): commercial and industrial builds claim strip / industrial tracts;
+  plans storefront-24, storefront-30, bank-2800, grocery-20000 (50 plans); Ridge Rd fallback lots on a real street; "Edit a copy in the Plan
+  Designer" in both plans apps; tablet tracks its open app by name and does not open over full-screen UI.
+- Save gaps round 3 (`Docs/SAVEGAPS.md`): stair-builder jobs, ready-mix orders and trucks, open form outline, per-tool state, insulation marks,
+  felt underlayment, countertop overhangs. Save version stays 3.
+- Yard equipment models (`Yard/YardEquipmentModels.cs`): real saw station, forklift, compressor, lift, fuel tank, shop items. HQ front racks cut
+  from 12 bays to 9 (they went through the wall).
+- Decisions recorded at the bottom of `Docs/CODECHECK-A.md` and `Docs/CODECHECK-B.md`.
+Consciously skipped (reasons in those docs / helper reports): NEC 210.52 outlet spacing and GFCI LOAD side (no data in the model), stair guards
+(R312), excavator dozing / crane hook swing / crews running machines, weather extras (blanket models, tree shadows, calendar speed), commercial
+interiors for service calls, one- and three-story storefront plans, `ContractorJobSite` plate splices not checked.
+Operating notes: a full suite run takes about 9 minutes. `unity-run.sh` treats a lock older than 20 minutes as stale; fine at 9 minutes, but
+touch the lock during anything longer. Unpicked big features (bidding, permits, safety, co-op, walkthroughs) are still not started.
