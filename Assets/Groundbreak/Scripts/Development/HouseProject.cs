@@ -212,7 +212,8 @@ namespace Groundbreak
                     if (!(p.Kind == ProjectKind.Spec ? Developments.FundSpec(p, ph.Value, PhaseCost(p, ph.Value)) : FundPhase(p, ph.Value, PhaseCost(p, ph.Value)))) { Game.Toast($"{p.Lot.Address}: can't fund {HousePlan.Label(ph.Value)}, work stopped"); continue; }
                     p.Funded[i] = true;
                 }
-                p.Progress[i] = Mathf.Min(1f, p.Progress[i] + Crew.DailyProgress(p, ph.Value, day));
+                CrewLaborCredit.Apply(p);      // own crew's share of today's sub labor, measured before today's progress (Balance)
+                p.Progress[i] =Mathf.Min(1f, p.Progress[i] + Crew.DailyProgress(p, ph.Value, day));
                 if (p.Progress[i] >= 0.999f)
                 {
                     // the crew calls for the inspection; the inspector signs it off

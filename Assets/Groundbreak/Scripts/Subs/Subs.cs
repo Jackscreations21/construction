@@ -34,6 +34,12 @@ namespace Groundbreak
         public SubState State;
         public bool Paid, LateNotified, InspectionFailed;
         public string Status = "";       // what the crew is doing (UI)
+        /// <summary>Work left in the sub's scope when they first got to site (-1 = not measured yet / old save): the invoice is
+        /// pro-rated to it when your own crew or you did part of the quoted work before they arrived.</summary>
+        public float QtyAtStart = -1f;
+        /// <summary>Work units the sub's own hands have done on this contract (survives a save; UnitsBase = count before the load).</summary>
+        public int WorkUnits, UnitsBase;
+        public int QuotedPrice;          // the price before pro-rating (0 = not pro-rated)
         public SubCompany Company => SubCatalog.Get(CompanyId);
         public SubTradeInfo TradeInfo => SubCatalog.Trade(Trade);
         public bool Active => State == SubState.Scheduled || State == SubState.OnSite || State == SubState.Callback;
@@ -171,7 +177,12 @@ namespace Groundbreak
                     }
                     if (Day >= k.StartDay && WorkHours())
                     {
-                        if (k.State == SubState.Scheduled) k.State = SubState.OnSite;
+                        if (k.State == SubState.Scheduled)
+                        {
+                            k.State = SubState.OnSite;
+                            k.QtyAtStart = SubScopes.Measure(k.Trade, k.Center, k.Radius, out _);   // what is really left when they get there
+                            if (k.QtyAtStart <= 0.0001f) { NothingLeft(k); continue; }
+                        }
                         SubCrews.Arrive(k);
                         Game.Toast($"{k.Company?.Name} is on site ({k.TradeInfo?.Label})");
                         Changed?.Invoke();
@@ -182,14 +193,46 @@ namespace Groundbreak
                 if (!WorkHours()) { if (SubCrews.Present(k)) { SubCrews.SendHome(k); k.Status = "Gone for the day, back at 7:00 AM"; Changed?.Invoke(); } continue; }
                 if (!SubCrews.Present(k)) SubCrews.Arrive(k);
                 k.Status = SubCrews.Doing(k);
+                if (k.State == SubState.OnSite) k.WorkUnits = k.UnitsBase + SubCrews.UnitsOf(k);
                 if (SubCrews.WorkDone(k)) Finish(k);
             }
+        }
+
+        /// <summary>The sub showed up and the scope was already done (your crew or you finished it): they leave, no invoice.</summary>
+        static void NothingLeft(SubContract k)
+        {
+            k.QuotedPrice = k.Price; k.Price = 0; k.Paid = true;
+            k.State = SubState.Done; k.FinishedDay = Day;
+            k.Status = "Nothing left to do when they arrived - no charge";
+            Game.Toast($"{k.Company?.Name}: the {k.TradeInfo?.Label.ToLowerInvariant()} work was already done - no charge");
+            SubCrews.Clear(k);
+            Changed?.Invoke();
+        }
+
+        /// <summary>The invoice for the work the sub actually did: nothing if their hands did no work at all, otherwise the quote
+        /// scaled by the share of the quoted scope still left when they arrived (never below the company's minimum, never above the quote).</summary>
+        public static int ProRatedPrice(SubContract k)
+        {
+            if (k == null) return 0;
+            if (k.WorkUnits <= 0) return 0;
+            if (k.QtyAtStart < 0f || k.Qty <= 0.0001f) return k.Price;
+            float frac = Mathf.Clamp01(k.QtyAtStart / k.Qty);
+            if (frac >= 0.999f) return k.Price;
+            var t = k.TradeInfo; var c = k.Company;
+            int min = t != null ? Mathf.RoundToInt(t.Minimum * (c != null ? c.PriceFactor : 1f) / 5f) * 5 : 0;
+            return Mathf.Min(k.Price, Mathf.Max(min, Mathf.RoundToInt(k.Price * frac / 5f) * 5));
         }
 
         static void Finish(SubContract k)
         {
             k.Mistakes = SubCrews.MistakesOf(k);
             bool callback = k.State == SubState.Callback;
+            if (!callback)
+            {
+                k.WorkUnits = k.UnitsBase + SubCrews.UnitsOf(k);
+                int pr = ProRatedPrice(k);
+                if (pr < k.Price) { k.QuotedPrice = k.Price; k.Price = pr; }
+            }
             SubCrews.SendHome(k);
             k.State = SubState.Done; k.FinishedDay = Day;
             var co = k.Company;
@@ -203,6 +246,7 @@ namespace Groundbreak
             {
                 JobsWith[k.CompanyId] = (JobsWith.TryGetValue(k.CompanyId, out int n) ? n : 0) + 1;
                 k.Status = k.Mistakes > 0 ? $"Done - invoiced; {k.Mistakes} workmanship defect(s) left" : "Done - invoiced";
+                if (k.QuotedPrice > k.Price && k.Price > 0) k.Status += $" (pro-rated: ${k.Price:N0} of the ${k.QuotedPrice:N0} quote, part of the work was done before they got there)";
                 TryPay(k, 0);
             }
             SubCrews.Clear(k, keepTasks: true);
@@ -213,6 +257,7 @@ namespace Groundbreak
         static bool TryPay(SubContract k, int lateDays)
         {
             if (k.Paid) return true;
+            if (k.Price <= 0) { k.Paid = true; k.Status = "Done - nothing of theirs to bill, no charge"; return true; }
             int amount = k.Price + Mathf.RoundToInt(k.Price * LateFeePerDay * lateDays);
             if (GameSettings.UnlimitedMoney || Game.Wallet.TrySpend(amount, $"Sub invoice: {k.Company?.Name} ({k.TradeInfo?.Label})"))
             {
@@ -295,7 +340,7 @@ namespace Groundbreak
             ResetState();
             if (string.IsNullOrEmpty(json)) return;
             var d = JsonUtility.FromJson<Data>(json);
-            foreach (var k in d.contracts) { if (k.State == SubState.OnSite || k.State == SubState.Callback) k.Status = "Back at 7:00 AM"; Contracts.Add(k); }
+            foreach (var k in d.contracts) { if (k.State == SubState.OnSite || k.State == SubState.Callback) k.Status = "Back at 7:00 AM"; k.UnitsBase = k.WorkUnits; Contracts.Add(k); }
             foreach (var r in d.rel) JobsWith[r.id] = r.n;
             Changed?.Invoke();
         }

@@ -110,6 +110,27 @@ namespace Groundbreak
             return l;
         }
 
+        /// <summary>Term of the note a lender writes for a sale shortfall (<see cref="AddShortfallNote"/>).</summary>
+        public const int ShortfallTermDays = 60;
+
+        /// <summary>A sale (spec house, flip) didn't leave enough cash to pay off its loan: the lender turns the unpaid rest into an
+        /// unsecured note at the bank rate (deficiency balance). No cash changes hands; the debt shows in the Company app and is
+        /// paid daily with the other loans. Returns the note, or null for nothing owed.</summary>
+        public static Loan AddShortfallNote(string what, int amount)
+        {
+            if (amount <= 0) return null;
+            float apr = CurrentBankApr;
+            var l = new Loan
+            {
+                Id = Guid.NewGuid().ToString("N").Substring(0, 6), Kind = "bank", Label = $"Loan shortfall: {what}",
+                Principal = amount, Balance = amount, Apr = apr, TermDays = ShortfallTermDays, Payment = PaymentFor(amount, apr, ShortfallTermDays),
+            };
+            Loans.Add(l);
+            Game.Toast($"Not enough cash to pay off the loan on {what}: ${amount:N0} is still owed (note at {apr * 100f:0.0}%, ${l.Payment:N0}/day).");
+            Notify();
+            return l;
+        }
+
         public static bool PayOff(Loan l, out string msg)
         {
             int due = Mathf.CeilToInt(l.Balance);

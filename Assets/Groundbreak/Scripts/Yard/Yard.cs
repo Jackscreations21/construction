@@ -19,6 +19,8 @@ namespace Groundbreak
         // Rent per game day = monthly gross rent / 30 (the career calendar has 30-day months). 2026 Midwest figures (Docs/BALANCE.md):
         // 1,500 sq ft flex bay ~$2,100/mo, 2,400 sq ft shop on a 0.7 ac fenced yard ~$5,400/mo, 7,200 sq ft HQ on 1.7 ac ~$12,600/mo.
         // Insurance = general liability + property for the premises. Move-in = deposit + first month + fit-out.
+        // HQ move-in $125,000 = 2 months deposit + first month (~$38k) + office/dock fit-out and racking (~$87k); it is also the
+        // pacing lever that puts the Developer stage around day 105-115 for a perfect player (Docs/BALANCE.md).
         public static readonly YardLevelInfo[] Levels =
         {
             null,
@@ -26,7 +28,7 @@ namespace Groundbreak
                 Description = "30' x 50' bay in a flex building: 12x14 overhead door, small office, pallet racking, workbench. 3 parking stalls." },
             new YardLevelInfo { Level = 2, Name = "Yard + shop", RentPerDay = 180, InsurancePerDay = 25, MoveIn = 15000, StorageCuFt = 7000, Stalls = 8, Discount = 0.12f,
                 Description = "Fenced 150' x 200' gravel yard with a 40' x 60' steel shop, lumber racks and aggregate bunkers. 8 truck stalls." },
-            new YardLevelInfo { Level = 3, Name = "Headquarters", RentPerDay = 420, InsurancePerDay = 50, MoveIn = 60000, StorageCuFt = 24000, Stalls = 14, Discount = 0.15f,
+            new YardLevelInfo { Level = 3, Name = "Headquarters", RentPerDay = 420, InsurancePerDay = 50, MoveIn = 125000, StorageCuFt = 24000, Stalls = 14, Discount = 0.15f,
                 Description = "60' x 120' warehouse with a two-storey office, loading dock and 4 doors on a 250' x 300' yard. 14+ stalls." },
         };
 
@@ -48,7 +50,8 @@ namespace Groundbreak
         public static YardLevelInfo Current => Company.WarehouseLevel > 0 && Company.WarehouseLevel < Levels.Length ? Levels[Company.WarehouseLevel] : null;
         public static float Discount => Current != null ? Current.Discount : 0f;
         public static int CapacityCuFt => Current != null ? Current.StorageCuFt : 0;
-        public static float FreeCuFt => Mathf.Max(0f, CapacityCuFt - StoredCuFt);
+        /// <summary>Space left for new loads: capacity minus what is on the racking and what is already on the road to it.</summary>
+        public static float FreeCuFt => Mathf.Max(0f, CapacityCuFt - StoredCuFt - Fleet.InboundCuFt);
         public static bool HasEquipment(string id) => OwnedEquipment.Contains(id);
         public static EquipmentInfo EquipmentOf(string id) => Equipment.Find(e => e.Id == id);
 
@@ -76,23 +79,77 @@ namespace Groundbreak
 
         // ------------------------------------------------------------------ lease
 
-        /// <summary>Leases the given level (move-in = deposit + first rent + fit-out). Moving up keeps the stock and equipment.</summary>
+        /// <summary>Premises level the company's stage stands on (Career): Contractor needs a warehouse, Builder the yard + shop,
+        /// Developer the HQ. The stage never goes down, so the lease can't either (no rent-free Contractor).</summary>
+        public static int RequiredLevelForStage(CompanyStage s) =>
+            s >= CompanyStage.Developer ? 3 : s >= CompanyStage.Builder ? 2 : s >= CompanyStage.Contractor ? 1 : 0;
+
+        /// <summary>Why the company can't drop to this premises level (0 = no lease) right now, or null.</summary>
+        public static string DowngradeBlocker(int level)
+        {
+            if (!GameSettings.IsCareer) return null;
+            int need = RequiredLevelForStage(Company.Stage);
+            if (level >= need) return null;
+            return level <= 0
+                ? $"Can't end the lease: a {Company.Stage} company needs {(need == 1 ? "a warehouse" : "its " + Levels[need].Name.ToLower())}. Only a bankruptcy gives the premises up."
+                : $"Can't move down to a {Levels[level].Name.ToLower()}: a {Company.Stage} company needs a {Levels[need].Name.ToLower()} or bigger.";
+        }
+
+        /// <summary>Shop equipment the given level can't hold (fuel tank, vehicle lift in a bay).</summary>
+        public static List<EquipmentInfo> EquipmentLostAt(int level)
+        {
+            var l = new List<EquipmentInfo>();
+            foreach (var id in OwnedEquipment) { var e = EquipmentOf(id); if (e != null && e.MinLevel > level) l.Add(e); }
+            return l;
+        }
+
+        /// <summary>Salvage value of shop equipment that has to go (end of lease, a move to smaller premises): 40% of new.</summary>
+        public static int SalvageValue(EquipmentInfo e) => e == null ? 0 : e.Price * 4 / 10;
+
+        /// <summary>Leases the given level (move-in = deposit + first rent + fit-out). Moving up keeps the stock and equipment.
+        /// Moving down (Career: never below what the stage needs) sells equipment the smaller premises can't hold at 40%.</summary>
         public static bool Lease(int level, out string msg)
         {
             if (level < 1 || level >= Levels.Length) { msg = "No such premises."; return false; }
             if (level == Company.WarehouseLevel) { msg = "You already lease this."; return false; }
             var info = Levels[level];
-            if (level < Company.WarehouseLevel && StoredCuFt > info.StorageCuFt) { msg = $"Too much stock to fit in a {info.Name.ToLower()}."; return false; }
+            if (level < Company.WarehouseLevel)
+            {
+                var why = DowngradeBlocker(level);
+                if (why != null) { msg = why; return false; }
+                if (StoredCuFt + Fleet.InboundCuFt > info.StorageCuFt) { msg = $"Too much stock to fit in a {info.Name.ToLower()}."; return false; }
+            }
             if (!Game.Wallet.TrySpend(info.MoveIn, $"Warehouse move-in: {info.Name}")) { msg = $"Move-in costs ${info.MoveIn:N0}; you have ${Game.Wallet.Money:N0}."; return false; }
             int before = Company.WarehouseLevel;
+            string sold = "";
+            if (level < before)
+            {
+                int cash = 0; var names = new List<string>();
+                foreach (var e in EquipmentLostAt(level)) { cash += SalvageValue(e); names.Add(e.Name); OwnedEquipment.Remove(e.Id); }
+                if (cash > 0) { Game.Wallet.Add(cash, "Sold shop equipment (move to smaller premises)"); sold = $" Sold {string.Join(", ", names)} (no room for it): ${cash:N0}."; }
+            }
             Company.HasWarehouse = true;
             Company.WarehouseLevel = level;
             Position = TownHook.HQPosition;
             Company.RecomputeStage();
-            msg = before == 0 ? $"Leased: {info.Name}. Rent ${info.RentPerDay:N0}/day." : $"Moved to: {info.Name}. Rent ${info.RentPerDay:N0}/day.";
+            msg = (before == 0 ? $"Leased: {info.Name}. Rent ${info.RentPerDay:N0}/day." : $"Moved to: {info.Name}. Rent ${info.RentPerDay:N0}/day.") + sold;
             Game.Toast(msg);
             YardSite.Rebuild();
+            YardFleetRuntime.MarkBuilt();      // built once here; the runtime must not rebuild it again next frame
             MarkDirty();
+            return true;
+        }
+
+        /// <summary>The Warehouse app's "End lease": refused (Career) while the company's stage needs the premises.</summary>
+        public static bool TryEndLease(out int cash, out string msg)
+        {
+            cash = 0;
+            if (!Company.HasWarehouse) { msg = "You have no lease."; return false; }
+            var why = DowngradeBlocker(0);
+            if (why != null) { msg = why; return false; }
+            cash = EndLease();
+            if (cash > 0) Game.Wallet.Add(cash, "Sold warehouse stock & equipment");
+            msg = $"Lease ended, raised ${cash:N0}.";
             return true;
         }
 
@@ -104,12 +161,13 @@ namespace Groundbreak
                 if (kv.Value > 0) cash += Mathf.RoundToInt(Cargo.PriceOf(kv.Key) * 0.5f * kv.Value / Cargo.UnitsPerPurchase(kv.Key));
             if (cash > 0) report?.Add($"Warehouse stock sold: ${cash:N0}");
             int eq = 0;
-            foreach (var id in OwnedEquipment) { var e = EquipmentOf(id); if (e != null) eq += e.Price * 4 / 10; }
+            foreach (var id in OwnedEquipment) eq += SalvageValue(EquipmentOf(id));
             if (eq > 0) report?.Add($"Shop equipment sold: ${eq:N0}");
             if (Company.HasWarehouse) report?.Add("Lease terminated: " + (Current != null ? Current.Name : "warehouse"));
             ClearStock(); OwnedEquipment.Clear();
             Company.HasWarehouse = false; Company.WarehouseLevel = 0;
             YardSite.Rebuild();
+            YardFleetRuntime.MarkBuilt();
             MarkDirty();
             return cash + eq;
         }

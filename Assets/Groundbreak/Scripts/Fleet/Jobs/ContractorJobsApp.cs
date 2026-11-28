@@ -94,13 +94,15 @@ namespace Groundbreak
             GUILayout.Label(j.Title, header, GUILayout.Width(fs * 24));
             GUILayout.Label($"${j.Payout:N0}", header, GUILayout.Width(fs * 6));
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(_showScope == j.Id ? "Hide scope" : "Scope", button, GUILayout.Width(fs * 7))) _showScope = _showScope == j.Id ? null : j.Id;
+            if (GUILayout.Button(_showScope == j.Id ? "Hide scope" : "Scope", button, GUILayout.Width(fs * 7)))
+            { _showScope = _showScope == j.Id ? null : j.Id; GUIUtility.ExitGUI(); }   // the scope label appears/disappears: end this GUI event
             GUI.enabled = blocker == null;
             if (GUILayout.Button("Accept", button, GUILayout.Width(fs * 7)))
             {
-                Company.Accept(j, out var msg);
+                bool ok = Company.Accept(j, out var msg);
                 Show(msg);
                 _nextCheck = 0f;
+                if (ok) { GUI.enabled = true; GUIUtility.ExitGUI(); }   // the offer moves to "In progress"
             }
             GUI.enabled = true;
             GUILayout.EndHorizontal();
@@ -153,7 +155,7 @@ namespace Groundbreak
                 var spec = ContractorJobs.SpecOf(j);
                 GUILayout.Label($"{yards:0.##} cu yd of {(spec != null ? spec.psi : 3000)} psi ready-mix - order it from Concrete Dispatch when the forms are ready", label);
             }
-            if (takeoff.Count > 0 && DeliveryService.I != null && GUILayout.Button($"Order what's missing (${MissingCost(takeoff):N0})", button, GUILayout.Width(fs * 18)))
+            if (takeoff.Count > 0 && DeliveryService.I != null && GUILayout.Button(MissingButton(takeoff), button, GUILayout.Width(fs * 18)))
                 OrderMissing(takeoff);
 
             // re-roof: the roofing stages are started here (there is no Framing Plans project for an existing house)
@@ -215,14 +217,31 @@ namespace Groundbreak
 
         static int MissingCost(Dictionary<string, int> takeoff) => ContractorJobs.CatalogCost(MissingCart(takeoff));
 
-        static void OrderMissing(Dictionary<string, int> takeoff)
+        /// <summary>Same reason text the supply store uses, so the P&amp;L files it under Materials.</summary>
+        public const string OrderReason = "Supply order (job materials)";
+
+        static string MissingButton(Dictionary<string, int> takeoff)
+        {
+            int fee = Fleet.SupplierDeliveryFee;
+            return fee > 0 ? $"Order what's missing (${MissingCost(takeoff):N0} + ${fee} delivery)" : $"Order what's missing (${MissingCost(takeoff):N0})";
+        }
+
+        /// <summary>Orders the takeoff lines not in site stock from the supplier: materials + the store's delivery fee
+        /// (<see cref="Fleet.SupplierDeliveryFee"/>, Career), filed as a supply order. Returns false with the reason.</summary>
+        public static bool OrderMissing(Dictionary<string, int> takeoff, out string msg)
         {
             var cart = MissingCart(takeoff);
-            if (cart.Count == 0) { Show("Everything on the takeoff is already in stock."); return; }
-            int cost = ContractorJobs.CatalogCost(cart);
-            if (!GameSettings.UnlimitedMoney && !Game.Wallet.TrySpend(cost, "Job materials")) { Show($"Need ${cost:N0} for the materials."); return; }
+            if (cart.Count == 0) { msg = "Everything on the takeoff is already in stock."; return false; }
+            if (DeliveryService.I == null) { msg = "Delivery service unavailable."; return false; }
+            int materials = ContractorJobs.CatalogCost(cart), fee = Fleet.SupplierDeliveryFee;
+            int cost = Fleet.StoreOrderTotal(materials, false);
+            if (!GameSettings.UnlimitedMoney && !Game.Wallet.TrySpend(cost, OrderReason))
+            { msg = $"Need ${cost:N0} for the materials" + (fee > 0 ? $" (incl. ${fee} delivery)." : "."); return false; }
             DeliveryService.I.Order(cart, false);
-            Show($"Ordered ${cost:N0} of materials - the truck drops them at the delivery point.");
+            msg = $"Ordered ${materials:N0} of materials" + (fee > 0 ? $" + ${fee} delivery" : "") + " - the truck drops them at the delivery point.";
+            return true;
         }
+
+        static void OrderMissing(Dictionary<string, int> takeoff) { OrderMissing(takeoff, out var msg); Show(msg); }
     }
 }

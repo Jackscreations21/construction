@@ -636,7 +636,11 @@ namespace Groundbreak
 
         protected override void OnDestroy()
         {
-            if (Carried != null) { var l = Carried; Carried = null; if (l != null) l.SetDown(); }
+            if (Carried != null)
+            {
+                var l = Carried; Carried = null;
+                try { if (l != null) l.SetDown(); } catch (System.Exception) { }   // re-parenting a child while this is being destroyed can throw (same as TruckCrane)
+            }
             base.OnDestroy();
         }
     }

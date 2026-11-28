@@ -35,19 +35,18 @@ namespace Groundbreak
             return Mathf.RoundToInt(PhaseLabor(p, ph.Value) * today * crewShare);
         }
 
-        static void OnDay(int day)
+        /// <summary>Credits today's crew share for one project. Called by <see cref="Projects.DayStep"/> for each project after the
+        /// phase is funded and before its progress moves, so the order is fixed: the day a phase starts and the day it finishes
+        /// both earn their credit (it used to be a separate DayStarted handler in undefined order, losing about a day per phase).
+        /// Returns the credit.</summary>
+        public static int Apply(HouseProject p)
         {
-            if (!GameSettings.IsCareer || !(Projects.Crew is CrewHouseProgress)) return;
-            foreach (var p in Projects.All.ToArray())
-            {
-                int c = CreditFor(p);
-                if (c <= 0) continue;
-                p.CostSpent -= c;
-                if (!GameSettings.UnlimitedMoney) Game.Wallet.Add(c, $"{Label}: {p.Lot?.Address}");
-            }
+            if (!GameSettings.IsCareer || !(Projects.Crew is CrewHouseProgress)) return 0;
+            int c = CreditFor(p);
+            if (c <= 0) return 0;
+            p.CostSpent -= c;
+            if (!GameSettings.UnlimitedMoney) Game.Wallet.Add(c, $"{Label}: {p.Lot?.Address}");
+            return c;
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Init() { Company.DayStarted += OnDay; }
     }
 }

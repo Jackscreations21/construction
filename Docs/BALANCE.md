@@ -25,7 +25,7 @@ The model never idles, never fails an inspection and never travels, so its days 
 | Contractor | bay $97 (rent $70, insurance $12, utilities $15), used pickup $15 + loan $177, van $17 | contractor jobs $917/day net of materials + 1 call | $823 (winter, calls only: $75) | $5,758 | day 19 |
 | Crew | + payroll laborer $152, carpenter $200 | each worker nets $150-225/day on off-site contractor jobs | $1,169 | $8,181 | day 26 |
 | Builder | yard + shop $235/day, 4 workers | client houses at 13-35% margin + crew jobs | $2,577 | $18,042 | day ~54 |
-| Developer | HQ $515/day, 8 workers | spec houses 6-23% profit each, client houses, crew jobs | $4,190 | $29,332 | day ~85 |
+| Developer | HQ $515/day, 8 workers | spec houses 6-23% profit each, client houses, crew jobs | $4,190 | $29,332 | day 111 (was ~85 with a $60k HQ) |
 
 Other checks (all in BalanceTests):
 - Service call average invoice $120-500 (is $203). Contractor jobs pay 25-85% over materials (fences ~55%, decks ~71%).
@@ -48,6 +48,8 @@ Other checks (all in BalanceTests):
 | `Scripts/Yard/Yard.cs` | Rented bay rent / insurance per day | $340 / $35 -> $70 / $12 | Was ~5x real ($124k/yr for a 1,500 sq ft flex bay). Real 2026 Midwest: ~$2,100/mo + GL/property ~$4.3k/yr. At $390/day a contractor with no job that week lost money on service calls alone (trap). |
 | `Scripts/Yard/Yard.cs` | Yard + shop rent / insurance | $950 / $70 -> $180 / $25 | 2,400 sq ft shop on a 0.7 ac fenced yard ~$5,400/mo. |
 | `Scripts/Yard/Yard.cs` | Headquarters rent / insurance / move-in | $2,400 / $140 / $48,000 -> $420 / $50 / $60,000 | 7,200 sq ft + office on 1.7 ac ~$12,600/mo; move-in = 2 months deposit + first month + office fit-out. The higher move-in keeps Developer later after rent dropped. |
+| `Scripts/Yard/Yard.cs` (pacing pass, 2026-11-28) | Headquarters move-in | $60,000 -> $125,000 | Perfect play reached Developer on day ~85, a bit fast. Move-in = 2 months deposit + first month (~$38k) + office/dock fit-out and racking (~$87k). The model now reaches Developer on day 111 (Builder still day 54); `Pacing_DecentPlayer_HitsStageTargets` asserts Developer in days 100-120. Tutorial text updated to $125,000. |
+| `Scripts/Equipment/Equipment.cs` (2026-11-28) | Rental billing | daily rate every day -> each 7-day block capped at the weekly rate | The weekly rate was shown but never billed. The rent-vs-buy check above still uses the daily rate (short rentals); on week-long rentals buying takes longer to pay off. |
 | `Scripts/Fleet/Finance.cs` | Bank credit cap at Handyman | $15,000 -> $10,000 | A new company could borrow ~$6.5k on day 1 and skip the Handyman stage entirely. |
 | `Scripts/Business/Company.cs` (shared Core, additive) | `Complete`: rep gain for jobs paying < `SmallJobPayout` ($1,000) | up to +3 -> up to +1 | Three perfect $150 calls a day took a handyman from 50 to 70 reputation in ~4 days. Bad work still costs the full -3. |
 | `Scripts/Crew/Crew.cs` | Off-site crew jobs (`OnDayStarted`) + `JobSim.MaterialsCharged` | free materials -> job's `MaterialBudget` charged pro rata with progress ("Materials (crew job)") | Exploit: the payout includes materials (35-45% of a fence) but the simulation never bought any, so each worker netted ~$470/day. If you can't pay, the crew waits that day. |

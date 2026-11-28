@@ -43,3 +43,34 @@ Money = `Game.Wallet`. Reputation = `Career.Reputation` (`Company.Reputation` wr
 - Realism still matters: real repair procedures, real vehicle payloads/bed sizes, real wages and prices (US), real job durations scaled by the game clock.
 - Tablet apps via `Tablet.RegisterApp`. All persistent state via `SaveSystem.RegisterExtension`. Tests under `Assets/Groundbreak/Tests/` with screenshots.
 - Tests share one world: put test content far from the origin and from other features; restore state in teardown (`Company.ResetState()`).
+
+## Business rules pass (2026-11-28, `Tests/BusinessRulesTests.cs`)
+- **Yard saw station** (`Scripts/SawStation/SawStationRules.cs`, $2,200, any premises): a miter-saw bench with stops + a cabinet
+  table saw, so the crew pre-cuts framing and trim from cut lists at the shop. Your own crew's carpentry is **10% faster**
+  (house framing and trim phases through `Crew.Speed(w, "carpenter")`, carpentry tasks on site, and off-site crew jobs that are
+  wood builds: deck, fence, shed, garage), and crew-built wood jobs buy **4% less material** (less lumber waste). Subs' hands,
+  concrete, roofing and paving get nothing. The Warehouse app shows this text where the station is sold.
+- **Weather per career**: `MainMenu.NewGameStarted` rolls a new `Climate.Seed` (`SeasonWeather.NewCareerSeed`); it is saved in the
+  "seasons" section, so a loaded career keeps its weather. Batch mode (tests) keeps seed 1 (`SeasonWeather.RandomizeSeedOnNewGame`).
+- **Premises vs stage**: the stage never goes down, so in Career the lease can't either. "End lease" is refused while the stage
+  needs the premises (Contractor: a warehouse, Builder: yard + shop, Developer: HQ), with a message saying so; moving to a smaller
+  level is refused below that too. Only a bankruptcy gives the premises up. Free Build has no such rule.
+- **Moving to smaller premises** sells the shop equipment the smaller level can't hold (fuel tank, vehicle lift in a bay) at the
+  same 40% salvage value as ending the lease; the app warns first and the move message names what was sold.
+- **Loan shortfall at a sale** (spec house, flip): what the sale and the cash on hand don't cover stays owed as a bank note
+  ("Loan shortfall: address", bank APR, 60 days, `Finance.AddShortfallNote`), shown in the Company app with the other loans.
+- **Job app "Order what's missing"** charges the store's $79 supplier delivery fee (Career) and is filed as "Supply order (job
+  materials)", i.e. Materials in the P&L.
+- **Warehouse space** counts loads already on the road to it (`Fleet.InboundCuFt` inside `Yard.FreeCuFt`), so two trucks or a
+  supplier drop can't overfill it; the Warehouse app shows "+N on the road".
+- **Spec house started before site work**: starting the site work adds each existing house's share of it to its cost (the same
+  land share a house started afterwards gets).
+- **Crew labor credit** runs inside `Projects.DayStep` (after the phase is funded, before its progress moves) instead of a
+  separate `DayStarted` handler, so the first and the last day of each phase are credited.
+- **Equipment rental weekly rate** is billed: each 7-day block costs at most the weekly rate (mini excavator $375/day, $1,150/week:
+  days 1-3 $375, day 4 $25, days 5-7 free). The pick-up fee waived when you're broke is unchanged.
+- **Sub invoices are pro-rated**: the scope left when the sub arrives is measured; if your crew did part of the quoted work first,
+  the invoice is the quote x the share left (never under the company's minimum). Nothing left on arrival, or their hands did no
+  work at all: no invoice.
+- **HQ move-in $125,000** (was $60,000): perfect play now reaches Developer around day 105-115 (Docs/BALANCE.md).
+- Off-site crews still finish service calls by simulation (unchanged, as decided).

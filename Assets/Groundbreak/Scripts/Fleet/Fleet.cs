@@ -53,6 +53,18 @@ namespace Groundbreak
         public static bool HasRack(string uid) { var i = Infos.Find(x => x.uid == uid); return i != null && i.rack; }
         public static void Forget(string uid) { Infos.RemoveAll(x => x.uid == uid); Trips.RemoveAll(t => t.vehicleUid == uid); }
         public static bool IsBusy(string uid) => Trips.Exists(t => t.vehicleUid == uid);
+
+        /// <summary>Cubic feet of loads on the road to the warehouse (counted against its free space until they arrive).</summary>
+        public static float InboundCuFt
+        {
+            get
+            {
+                float s = 0f;
+                foreach (var t in Trips)
+                    if (t.toYard) for (int k = 0; k < t.ids.Count && k < t.qty.Count; k++) s += Cargo.UnitVolumeCuFt(t.ids[k]) * t.qty[k];
+                return s;
+            }
+        }
         public static OwnedVehicle Find(string uid) => Company.Vehicles.Find(v => v.Uid == uid);
 
         public static int Price(string typeId, bool used) { var t = FleetCatalog.Get(typeId); return t == null ? 0 : used ? t.PriceUsed : t.PriceNew; }

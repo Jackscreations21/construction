@@ -27,6 +27,9 @@ namespace Groundbreak
             if (Yard.Dirty && YardSite.I != null) { Yard.Dirty = false; YardSite.I.RefreshContents(); }
         }
 
+        /// <summary>The premises were just rebuilt for the current level (Yard.Lease / EndLease): don't rebuild them again next frame.</summary>
+        public static void MarkBuilt() { if (I != null) I._builtLevel = Company.WarehouseLevel; }
+
         /// <summary>Walks the player (teleports) to the warehouse door. Fast travel proper belongs to the Town feature.</summary>
         public static bool GoToYard(out string msg)
         {

@@ -279,6 +279,7 @@ namespace Groundbreak.Tests
             Assert.That(p.Crew, Is.InRange(p.Contractor, p.Contractor + 30), "Crew soon after");
             Assert.That(p.Builder, Is.InRange(p.Contractor + 14, 180), "Builder within a season or two");
             Assert.That(p.Developer, Is.InRange(p.Builder + 20, 400), "Developer after that");
+            Assert.That(p.Developer, Is.InRange(100, 120), "perfect play reaches Developer around day 105-115 (HQ move-in is the lever)");
         }
 
         [UnityTest]

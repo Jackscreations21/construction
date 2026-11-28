@@ -551,7 +551,12 @@ namespace Groundbreak
             int commission = Mathf.RoundToInt(price * CommissionPct), closing = Mathf.RoundToInt(price * SellClosingPct);
             Game.Wallet.Add(price - commission - closing, $"Flip sold: {f.address} ${price:N0} (less {CommissionPct:P1} commission, {SellClosingPct:P1} closing)");
             int payoff = f.loanBalance;
-            if (payoff > 0) Game.Wallet.TrySpend(Mathf.Min(payoff, Game.Wallet.Money), $"Hard-money loan payoff: {f.address}");
+            if (payoff > 0)
+            {
+                int paid = Mathf.Min(payoff, Mathf.Max(0, Game.Wallet.Money));
+                if (paid > 0) Game.Wallet.TrySpend(paid, $"Hard-money loan payoff: {f.address}");
+                Finance.AddShortfallNote(f.address, payoff - paid);              // the unpaid rest stays owed as company debt
+            }
             f.netProceeds = price - commission - closing;    // the full purchase price is already in costSpent, so the payoff is not a cost
             f.loanBalance = 0;
             f.salePrice = price; f.soldDay = day; f.Status = FlipStatus.Sold; f.offerPrice = 0;

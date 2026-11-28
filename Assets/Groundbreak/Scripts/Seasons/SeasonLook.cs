@@ -262,6 +262,10 @@ namespace Groundbreak
             {
                 if (m == null || !_seen.Add(m)) continue;
                 if (m.name.EndsWith("_Snow") || m.name == "GB_Snow") continue;
+                // a copy made from a material while the season look was on it (new Material(tinted)) carries the tint/snow texture:
+                // take the originals from the material it was copied from instead of keeping the winter look as "original"
+                var twin = _applied != null ? FindTwin(m) : null;
+                if (twin != null) { _mats.Add(CopyOf(twin, m)); continue; }
                 if (!Classify(m, out var k)) continue;
                 var o = new Orig
                 {
@@ -275,6 +279,26 @@ namespace Groundbreak
                 _mats.Add(o);
             }
         }
+
+        /// <summary>A tracked material with the same name whose current (looked) state this one matches exactly: its source.</summary>
+        static Orig FindTwin(Material m)
+        {
+            foreach (var o in _mats)
+            {
+                var s = o.M;
+                if (s == null || s == m || s.name != m.name) continue;
+                if (s.shader != m.shader || s.color != m.color || s.mainTexture != m.mainTexture) continue;
+                if (o.Color == s.color && o.Tex == s.mainTexture) continue;   // the source isn't changed by the look: nothing to undo
+                return o;
+            }
+            return null;
+        }
+
+        static Orig CopyOf(Orig src, Material m) => new Orig
+        {
+            M = m, K = src.K, Color = src.Color, Tex = src.Tex, Scale = src.Scale, Keywords = src.Keywords, Queue = src.Queue, RenderType = src.RenderType,
+            Terrain = src.Terrain, TintA = src.TintA, TintB = src.TintB, Gloss = src.Gloss, GlossMap = src.GlossMap, HasGloss = src.HasGloss, HasGlossMap = src.HasGlossMap,
+        };
 
         static void Restore(Orig o)
         {

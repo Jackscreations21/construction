@@ -135,6 +135,19 @@ namespace Groundbreak
         {
             FreeMonth = 5; FreeSky = Sky.Clear; FreeStorm = StormKind.None; Override = null; BatchSimulate = false; GroundOverride = null; _free = null; _freeKey = -1;
             Climate.Seed = 1; Climate.ClearCache();
+            RandomizeSeedOnNewGame = !Application.isBatchMode;
+        }
+
+        /// <summary>A new game (MainMenu.NewGame) rolls a fresh weather seed so every career gets its own weather; the seed is
+        /// saved with the "seasons" section, so a loaded career keeps it. Off in batch mode (tests keep seed 1).</summary>
+        public static bool RandomizeSeedOnNewGame = true;
+
+        /// <summary>Picks a new weather seed (2..int.MaxValue-1; 1 stays the default/test seed).</summary>
+        public static int NewCareerSeed()
+        {
+            Climate.Seed = new System.Random(unchecked(Environment.TickCount * 31 + Guid.NewGuid().GetHashCode())).Next(2, int.MaxValue);
+            Climate.ClearCache(); _free = null; _freeKey = -1;
+            return Climate.Seed;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -142,6 +155,7 @@ namespace Groundbreak
         {
             Weather.Provider = () => (Raining, TempF);
             SaveSystem.RegisterExtension("seasons", Save, Load);
+            MainMenu.NewGameStarted += _ => { if (RandomizeSeedOnNewGame) NewCareerSeed(); };
         }
 
         [Serializable] class Data { public int seed = 1, freeMonth = 5, freeSky, freeStorm; public string rules = "", storms = ""; }

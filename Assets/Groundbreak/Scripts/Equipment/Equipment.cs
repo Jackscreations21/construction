@@ -105,10 +105,26 @@ namespace Groundbreak
         public static bool Available(string id) => !GameSettings.IsCareer || IsOwned(id) || IsRented(id);
         public static Machine OnSite(string id) => Machine.All.Find(m => m != null && m.TypeId == id);
 
+        /// <summary>What rental day <paramref name="day"/> (1 = the day it was delivered) costs. Rental yards cap each 7-day block at the
+        /// weekly rate: the daily rate is billed until the week's total reaches <see cref="EquipmentType.RentPerWeek"/>, then the rest of
+        /// that week is free (mini excavator $375/day, $1,150/week: days 1-3 $375, day 4 $25, days 5-7 $0).</summary>
+        public static int RentForDay(EquipmentType t, int day)
+        {
+            if (t == null || day < 1) return 0;
+            int week = t.RentPerWeek > 0 ? t.RentPerWeek : t.RentPerDay * 7;
+            int pos = (day - 1) % 7;
+            int before = Mathf.Min(pos * t.RentPerDay, week), after = Mathf.Min((pos + 1) * t.RentPerDay, week);
+            return Mathf.Max(0, after - before);
+        }
+
+        /// <summary>Total rent for a rental of <paramref name="days"/> days (weekly cap applied per 7-day block).</summary>
+        public static int RentFor(EquipmentType t, int days) { int s = 0; for (int d = 1; d <= days; d++) s += RentForDay(t, d); return s; }
+
+        // charged each morning for the day that starts (Rentals holds the days billed so far; DayStarted then counts the new one)
         static int RentalCostPerDay()
         {
             int s = 0;
-            foreach (var k in Rentals.Keys) { var t = Get(k); if (t != null) s += t.RentPerDay; }
+            foreach (var kv in Rentals) s += RentForDay(Get(kv.Key), kv.Value + 1);
             return s;
         }
 
@@ -337,7 +353,7 @@ namespace Groundbreak
                 GUILayout.Label($"{e.Name}  —  {e.Model}" + (status.Length > 0 ? $"   [{status}]" : ""), header);
                 GUILayout.Label(e.Specs, label);
                 if (career)
-                    GUILayout.Label($"Rent ${e.RentPerDay:N0}/day (${e.RentPerWeek:N0}/week rate)" +
+                    GUILayout.Label($"Rent ${e.RentPerDay:N0}/day, capped at the ${e.RentPerWeek:N0}/week rate (the rest of a week is free once the week's rent reaches it)" +
                         (e.PriceNew > 0 ? $"  ·  buy ${e.PriceNew:N0} new / ${e.PriceUsed:N0} used, ~${e.InsuranceMaintPerDay}/day insurance + upkeep" : "  ·  buy it at the Dealership"), label);
                 GUILayout.BeginHorizontal();
                 if (m == null && Available(e.Id))
