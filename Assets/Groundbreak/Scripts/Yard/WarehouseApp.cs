@@ -127,6 +127,7 @@ namespace Groundbreak
             GUILayout.Label($"{veh.Name}: {report.Summary(type)}", header);
             var prev = GUI.color;
             if (!report.Fits) { GUI.color = new Color(1f, 0.55f, 0.5f); foreach (var pr in report.Problems) GUILayout.Label("  " + pr, label); GUI.color = prev; }
+            if (_dest != 0 && Company.HasWarehouse && _cart.Count > 0) GUILayout.Label(ForkliftRules.LoadLine(_cart, _dest == 2), label);   // forklift vs hand handling at the yard
             int cost = _dest == 2 ? 0 : Fleet.MaterialCost(_cart, _dest == 1);
             GUILayout.BeginHorizontal();
             GUI.enabled = report.Fits && report.WeightLb > 0;
@@ -137,7 +138,8 @@ namespace Groundbreak
                 if (ok) _cart.Clear();
             }
             GUI.enabled = _dest == 1 && Company.HasWarehouse && _cart.Count > 0;
-            if (GUILayout.Button($"Supplier delivers to warehouse (+${Fleet.DeliveryFee})", button, GUILayout.Width(fs * 15)))
+            int unload = ForkliftRules.HandlingFee(_cart);
+            if (GUILayout.Button($"Supplier delivers to warehouse (+${Fleet.DeliveryFee}" + (unload > 0 && _dest == 1 ? $" +${unload:N0} unloading)" : ")"), button, GUILayout.Width(fs * 15)))
             { if (Yard.OrderDelivered(new Dictionary<string, int>(_cart), out _msg)) _cart.Clear(); }
             GUI.enabled = true;
             if (GUILayout.Button("Clear", button, GUILayout.Width(fs * 4))) _cart.Clear();

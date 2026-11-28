@@ -591,7 +591,7 @@ namespace Groundbreak
         void PlaceEquipment()
         {
             var inside = new SitePart(); var outside = new SitePart();
-            int yellow = inside.M(SurfaceKind.TruckPaint, new Color(0.95f, 0.72f, 0.08f)), black = inside.M(SurfaceKind.MatteBlack), steel = inside.M(SurfaceKind.BrushedSteel);
+            int yellow = inside.M(SurfaceKind.PaintedSteel, new Color(0.95f, 0.72f, 0.08f)), black = inside.M(SurfaceKind.MatteBlack), steel = inside.M(SurfaceKind.BrushedSteel);
             int tire = inside.M(SurfaceKind.Tire), red = inside.M(SurfaceKind.TruckPaint), blue = inside.M(SurfaceKind.PaintedSteel, new Color(0.15f, 0.3f, 0.6f));
             Vector3 c = _equipInside;
             if (Yard.HasEquipment("forklift"))
@@ -599,6 +599,11 @@ namespace Groundbreak
                 float x = c.x, z = c.z;
                 inside.Box(x - 0.55f, x + 0.55f, c.y + 0.2f, c.y + 1.1f, z - 1.2f, z + 0.6f, yellow);           // body + counterweight
                 inside.Box(x - 0.5f, x + 0.5f, c.y + 1.1f, c.y + 1.15f, z - 0.4f, z + 0.5f, black);
+                inside.Box(x - 0.55f, x + 0.55f, c.y + 0.25f, c.y + 1.2f, z - 1.55f, z - 1.2f, yellow);         // cast counterweight (2.5 m to the fork face)
+                inside.Box(x - 0.25f, x + 0.25f, c.y + 1.15f, c.y + 1.25f, z - 0.75f, z - 0.3f, black);         // seat
+                inside.Box(x - 0.25f, x + 0.25f, c.y + 1.25f, c.y + 1.75f, z - 0.8f, z - 0.7f, black);          // seat back
+                inside.Strut(new Vector3(x, c.y + 1.15f, z + 0.35f), new Vector3(x, c.y + 1.6f, z + 0.1f), 0.03f, 0.03f, black);   // steering column
+                inside.CylY(x, z + 0.1f, c.y + 1.6f, c.y + 1.63f, 0.17f, 16, black);                                              // wheel
                 foreach (float sx in new[] { -0.5f, 0.5f }) foreach (float sz in new[] { -0.3f, 0.45f }) inside.Strut(new Vector3(x + sx, c.y + 1.15f, z + sz), new Vector3(x + sx, c.y + 2.15f, z + sz), 0.05f, 0.05f, black);
                 inside.Box(x - 0.55f, x + 0.55f, c.y + 2.15f, c.y + 2.2f, z - 0.35f, z + 0.5f, black);          // overhead guard
                 inside.Box(x - 0.4f, x - 0.3f, c.y + 0.1f, c.y + 2.6f, z + 0.65f, z + 0.75f, steel);            // mast

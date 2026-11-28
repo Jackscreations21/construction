@@ -232,11 +232,13 @@ Shared/core files touched (small, additive): `Landscaping/LandModel.cs` (one lin
 
 ## Needs a decision (not changed)
 
-- **Forklift does nothing** (Yard.cs): the $28,000 forklift says "warehouse runs take half the time" but no code uses it; the saw
-  station has no effect either. Implement or reword.
+- ~~**Forklift does nothing**~~ Fixed (`Scripts/Forklift/ForkliftRules.cs`): without it the crew hand-handles warehouse loads over
+  2,000 lb (1.5 labor-h/ton at $30/h, in and out), with it no labor, 3% lift pricing on warehouse stock and warehouse runs at half
+  time. The saw station still has no effect.
 - **End lease / sell trucks keeps the stage** (Yard.EndLease, Company.RecomputeStage never goes down): reach Contractor, end the lease,
   and stay Contractor with no rent. Block "End lease" in Career while Stage ≥ Contractor, or drop the stage like bankruptcy does.
-- **Selling a vehicle an active job needs** (Fleet.Sell): only checked at accept; the job can still be finished and paid.
+- ~~**Selling a vehicle an active job needs**~~ Fixed (`Scripts/Forklift/JobVehicleLock.cs`): `Fleet.Sell` refuses the last vehicle of a
+  type an active job needs and names the job; a job found without its vehicle (old save) is on hold (crew and sign-off).
 - **Job app "Order what's missing"** (ContractorJobsApp): no supplier delivery fee (the store charges $79) and filed as "Other expenses".
 - **Warehouse capacity ignores loads on the road** (Fleet.CheckRun): two trucks sent at once can overfill storage.
 - **Downgrading the yard keeps equipment the smaller level can't have** (Yard.Lease): lift discount at a level-1 bay.

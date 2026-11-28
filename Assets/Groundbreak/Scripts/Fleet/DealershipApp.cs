@@ -68,7 +68,8 @@ namespace Groundbreak
                 var loan = Finance.LoanOn(o.Uid);
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{o.Name}  ·  condition {o.Condition * 100:0}%" + (Fleet.HasRack(o.Uid) ? " · rack" : "") +
-                                (loan != null ? $" · owes ${loan.Balance:N0}" : "") + (Fleet.IsBusy(o.Uid) ? " · ON A RUN" : ""), label, GUILayout.Width(fs * 26));
+                                (loan != null ? $" · owes ${loan.Balance:N0}" : "") + (Fleet.IsBusy(o.Uid) ? " · ON A RUN" : "") +
+                                (JobVehicleLock.JobNeeding(o) is Job need ? $" · needed for \"{need.Title}\"" : ""), label, GUILayout.Width(fs * 26));
                 GUILayout.FlexibleSpace();
                 if (vt != null && vt.RackMaxItemLength > 0 && !Fleet.HasRack(o.Uid) && GUILayout.Button($"Add rack ${vt.RackPrice:N0}", button, GUILayout.Width(fs * 8))) Fleet.AddRack(o, out _msg);
                 int svc = Fleet.ServiceCost(o);

@@ -99,6 +99,8 @@ namespace Groundbreak
         {
             if (v == null || !Company.Vehicles.Contains(v)) { msg = "Not in the fleet."; return false; }
             if (IsBusy(v.Uid)) { msg = "That truck is out on a run."; return false; }
+            var needed = JobVehicleLock.SaleBlocker(v);                          // an accepted job still needs it
+            if (needed != null) { msg = needed; return false; }
             int value = ResaleValue(v);
             var loan = Finance.LoanOn(v.Uid);
             int owed = loan != null ? Mathf.CeilToInt(loan.Balance) : 0;
@@ -191,7 +193,7 @@ namespace Groundbreak
         {
             float s = 0;
             foreach (var kv in cart) if (kv.Value > 0) s += Cargo.PriceOf(kv.Key) * kv.Value;
-            if (toYard) s *= 1f - Yard.Discount;
+            if (toYard) s *= 1f - Yard.Discount - ForkliftRules.ExtraDiscount;   // + lift pricing with a forklift
             return Mathf.CeilToInt(s);
         }
 
@@ -201,11 +203,15 @@ namespace Groundbreak
         {
             if (!CheckRun(v, cart, toYard, out var t, out var report, out msg)) return false;
             int cost = MaterialCost(cart, toYard), fuel = TripFuel(t);
-            if (Game.Wallet.Money < cost + fuel) { msg = $"Materials ${cost:N0} + fuel ${fuel:N0}; you have ${Game.Wallet.Money:N0}."; return false; }
+            int handling = toYard ? ForkliftRules.HandlingFee(cart) : 0;         // crew hand-unloads at the yard without a forklift
+            if (Game.Wallet.Money < cost + fuel + handling)
+            { msg = $"Materials ${cost:N0} + fuel ${fuel:N0}" + (handling > 0 ? $" + hand unloading ${handling:N0}" : "") + $"; you have ${Game.Wallet.Money:N0}."; return false; }
             Game.Wallet.TrySpend(cost, toYard ? "Materials (warehouse stock)" : "Materials (picked up)");
             if (fuel > 0) Game.Wallet.TrySpend(fuel, "Fuel: supplier run");
-            Start(v, cart, toYard, toYard ? "Supplier → warehouse" : "Supplier → job site");
-            msg = $"{v.Name} is on a supplier run ({report.WeightLb:N0} lb). Materials ${cost:N0}, fuel ${fuel:N0}, no delivery fee.";
+            if (handling > 0) Game.Wallet.TrySpend(handling, ForkliftRules.UnloadReason);
+            Start(v, cart, toYard, toYard ? "Supplier → warehouse" : "Supplier → job site", toYard);
+            msg = $"{v.Name} is on a supplier run ({report.WeightLb:N0} lb). Materials ${cost:N0}, fuel ${fuel:N0}, no delivery fee" +
+                  (handling > 0 ? $", hand unloading ${handling:N0}." : ".");
             Game.Toast(msg);
             return true;
         }
@@ -218,11 +224,14 @@ namespace Groundbreak
             foreach (var kv in cart)
                 if (kv.Value > 0 && Yard.Stock.Count(kv.Key) < kv.Value * Cargo.UnitsPerPurchase(kv.Key))
                 { msg = $"Not enough {Cargo.NameOf(kv.Key)} in the warehouse."; return false; }
-            int fuel = TripFuel(t);
-            if (fuel > 0 && !Game.Wallet.TrySpend(fuel, "Fuel: warehouse run")) { msg = $"Fuel for the run is ${fuel:N0}."; return false; }
+            int fuel = TripFuel(t), handling = ForkliftRules.HandlingFee(cart);   // crew hand-loads at the yard without a forklift
+            if (Game.Wallet.Money < fuel + handling)
+            { msg = $"Fuel for the run is ${fuel:N0}" + (handling > 0 ? $" + hand loading ${handling:N0}" : "") + "."; return false; }
+            if (fuel > 0) Game.Wallet.TrySpend(fuel, "Fuel: warehouse run");
+            if (handling > 0) Game.Wallet.TrySpend(handling, ForkliftRules.LoadReason);
             foreach (var kv in cart) if (kv.Value > 0) Yard.Stock.TryTake(kv.Key, kv.Value * Cargo.UnitsPerPurchase(kv.Key));
-            Start(v, cart, false, "Warehouse → job site");
-            msg = $"{v.Name} loaded from the warehouse ({report.WeightLb:N0} lb), on its way to the site.";
+            Start(v, cart, false, "Warehouse → job site", true);
+            msg = $"{v.Name} loaded from the warehouse ({report.WeightLb:N0} lb), on its way to the site" + (handling > 0 ? $" (hand loading ${handling:N0})." : ".");
             Game.Toast(msg);
             return true;
         }
@@ -244,9 +253,9 @@ namespace Groundbreak
             msg = null; return true;
         }
 
-        static void Start(OwnedVehicle v, Dictionary<string, int> cart, bool toYard, string label)
+        static void Start(OwnedVehicle v, Dictionary<string, int> cart, bool toYard, string label, bool atYard = false)
         {
-            var trip = new Trip { vehicleUid = v.Uid, toYard = toYard, label = label, secondsLeft = TripSeconds };
+            var trip = new Trip { vehicleUid = v.Uid, toYard = toYard, label = label, secondsLeft = TripSeconds * (atYard ? ForkliftRules.TripFactor : 1f) };
             foreach (var kv in cart) if (kv.Value > 0) { trip.ids.Add(kv.Key); trip.qty.Add(kv.Value); }
             v.Condition = Mathf.Max(0.2f, v.Condition - 0.001f);
             Trips.Add(trip);
