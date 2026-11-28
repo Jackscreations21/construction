@@ -20,10 +20,14 @@ namespace Groundbreak
         Tool _equipped;
         bool _showList;
 
+        /// <summary>Tools every new belt starts with (also used by New Game to reset the belt).</summary>
+        public static readonly string[] StarterTools = { "place", "hammer", "saw", "tape", "prybar", "level" };
+        public const int StarterNails = 200;
+
         void Awake()
         {
             Game.Belt = this;
-            foreach (var id in new[] { "place", "hammer", "saw", "tape", "prybar", "level" })
+            foreach (var id in StarterTools)
             {
                 var t = ToolFactory.Create(id);
                 if (t != null) AddTool(t);

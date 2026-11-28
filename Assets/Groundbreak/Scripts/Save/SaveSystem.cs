@@ -18,7 +18,9 @@ namespace Groundbreak
     /// </summary>
     public static class SaveSystem
     {
-        public const int Version = 1;
+        /// <summary>2 = adds the "mep", "exterior" and "slabs" extensions and leaves deck lumber out of the piece list
+        /// (version 1 files load unchanged: missing extensions load as empty).</summary>
+        public const int Version = 2;
         public const string QuickSlot = "quicksave", AutoSlot = "autosave";
         public static float AutosaveGameMinutes = 5f;
 
@@ -38,6 +40,25 @@ namespace Groundbreak
         }
 
         public static IEnumerable<string> ExtensionKeys { get { foreach (var e in _ext) yield return e.Key; } }
+
+        static readonly Dictionary<string, Func<Piece, bool>> _skipPiece = new Dictionary<string, Func<Piece, bool>>();
+
+        /// <summary>Leave pieces out of the plain piece list because a feature saves and rebuilds them itself (e.g. deck lumber,
+        /// rebuilt stage by stage from the deck's own save section). Same key replaces. Safe to call from BeforeSceneLoad.</summary>
+        public static void RegisterPieceFilter(string key, Func<Piece, bool> skip)
+        {
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("key required");
+            if (skip == null) _skipPiece.Remove(key); else _skipPiece[key] = skip;
+        }
+
+        static bool Skipped(Piece p)
+        {
+            foreach (var f in _skipPiece.Values)
+            {
+                try { if (f(p)) return true; } catch (Exception ex) { Debug.LogError("[Save] piece filter failed: " + ex); }
+            }
+            return false;
+        }
 
         // ------------------------------------------------------------------ data
 
@@ -108,6 +129,7 @@ namespace Groundbreak
             {
                 if (p == null || p.Def == null || !p.gameObject.activeInHierarchy) continue;
                 if (p.GetComponentInParent<MaterialPile>() != null) continue;
+                if (_skipPiece.Count > 0 && Skipped(p)) continue;
                 s.pieces.Add(new PieceData { id = p.Def.Id, size = p.Size, pos = p.transform.position, rot = p.transform.rotation, state = (int)p.State, nails = p.Nails });
             }
 
@@ -258,6 +280,26 @@ namespace Groundbreak
                 catch (Exception ex) { Debug.LogError($"[Save] extension '{e.Key}' failed to load: {ex}"); }
             }
             AfterLoad?.Invoke();
+        }
+
+        /// <summary>New game: site stock back to the starting materials (<see cref="GameBootstrap.StarterStock"/>), no scrap,
+        /// the starter tool belt (full nail pouch) and the snap origin reset, so nothing carries over from the previous career.
+        /// Called by <see cref="MainMenu.NewGame"/>.</summary>
+        public static void ResetBaseState()
+        {
+            var start = new Dictionary<string, int>();
+            foreach (var (id, n) in GameBootstrap.StarterStock) start[id] = n;
+            SetStock(start);
+            Game.Stock.Scrap.Clear();
+            Game.Snap.Origin = Vector3.zero; Game.Snap.OriginYaw = 0f;
+            var belt = Game.Belt;
+            if (belt == null) return;
+            for (int i = 0; i < ToolBelt.SlotCount; i++) belt.Slots[i] = null;
+            belt.Select(0);                       // unequips the old active tool (hides its gizmos)
+            belt.Owned.Clear();
+            foreach (var id in ToolBelt.StarterTools) { var t = ToolFactory.Create(id); if (t != null) belt.AddTool(t); }
+            belt.NailCapacity = ToolBelt.StarterNails; belt.Nails = ToolBelt.StarterNails;
+            belt.Select(0);
         }
 
         /// <summary>Resets every extension (load(null)) — used by New Career / New Free Build.</summary>
