@@ -39,6 +39,7 @@ namespace Groundbreak
         {
             GameSettings.Mode = mode;
             SaveSystem.ClearPieces();
+            SaveSystem.ResetBaseState();   // site stock, scrap, tool belt, snap origin: nothing carries over from the last career
             SaveSystem.ResetExtensions();
             Game.Wallet = new Wallet(mode == GameMode.Career ? 25000 : 50000);
             if (GameClock.I != null) { GameClock.I.Day = 1; GameClock.I.Hours = 7f; }

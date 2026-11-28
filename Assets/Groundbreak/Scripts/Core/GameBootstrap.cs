@@ -5,6 +5,12 @@ namespace Groundbreak
     /// <summary>Builds the whole prototype scene from code, so any empty scene works: press Play.</summary>
     public static class GameBootstrap
     {
+        /// <summary>Materials on site at the start of every game (fresh boot and New Game).</summary>
+        public static readonly (string id, int n)[] StarterStock =
+        {
+            ("2x4x8", 12), ("2x4x925", 16), ("pt2x4x8", 2), ("osb716", 4), ("nails16d", 500), ("nails8d", 500),
+        };
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => Game.ResetStatics();
 
@@ -37,12 +43,7 @@ namespace Groundbreak
             ground.GetComponent<Renderer>().sharedMaterial = grass;
 
             // Starting materials on site
-            Game.Stock.Add("2x4x8", 12);
-            Game.Stock.Add("2x4x925", 16);
-            Game.Stock.Add("pt2x4x8", 2);
-            Game.Stock.Add("osb716", 4);
-            Game.Stock.Add("nails16d", 500);
-            Game.Stock.Add("nails8d", 500);
+            foreach (var (id, n) in StarterStock) Game.Stock.Add(id, n);
 
             // Systems
             var systems = new GameObject("Systems");

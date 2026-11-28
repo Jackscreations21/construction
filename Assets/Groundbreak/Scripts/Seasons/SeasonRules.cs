@@ -80,11 +80,23 @@ namespace Groundbreak
         static readonly List<Protection> _prot = new List<Protection>();
         public static bool IsProtected(ConcreteElement el) => _prot.Exists(p => p.El == el);
         public static int BlanketsOn(ConcreteElement el) { var p = _prot.Find(x => x.El == el); return p != null ? p.Blankets : 0; }
+        public static bool HeaterOn(ConcreteElement el) { var p = _prot.Find(x => x.El == el); return p != null && p.Heater; }
+
+        /// <summary>True while a save is restoring slabs: <see cref="OnPoured"/> must not lay (and charge for) blankets again.</summary>
+        public static bool Restoring;
+
+        /// <summary>Puts saved protection (blankets already out of stock / heater) back on a restored slab. No stock change.</summary>
+        public static void RestoreProtection(ConcreteElement el, int blankets, bool heater)
+        {
+            if (el == null || (blankets <= 0 && !heater)) return;
+            _prot.RemoveAll(x => x.El == el);
+            _prot.Add(new Protection { El = el, Blankets = Mathf.Max(0, blankets), Heater = heater });
+        }
 
         /// <summary>A new slab: if it's cold, the crew lays blankets / sets the heater from site stock.</summary>
         public static void OnPoured(ConcreteElement el)
         {
-            if (el == null || !SeasonWeather.RulesOn) return;
+            if (el == null || !SeasonWeather.RulesOn || Restoring) return;
             float low = MinTempAhead(48f);
             if (low >= PourMinF) return;
             int need = BlanketsFor(el.Yards);
@@ -322,7 +334,7 @@ namespace Groundbreak
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void StaticReset() { _prot.Clear(); _thawReadyAt = _thawUntil = -1f; _lastNow = -1f; _lastShingleWarn = -100f; }
+        static void StaticReset() { Restoring = false; _prot.Clear(); _thawReadyAt = _thawUntil = -1f; _lastNow = -1f; _lastShingleWarn = -100f; }
 
         /// <summary>Tests: forget thaw/protection state.</summary>
         public static void ResetState() => StaticReset();

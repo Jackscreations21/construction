@@ -54,6 +54,14 @@ namespace Groundbreak
 
         public static State StateOf(ExteriorWall w) => S(w);
 
+        /// <summary>Rebuilds every lift and the static parts from the state (used when a save is loaded).</summary>
+        public static void RebuildAll(ExteriorWall w)
+        {
+            var s = S(w);
+            for (int lift = 0; lift * LiftCourses < s.Courses; lift++) RebuildLift(w, lift);
+            RebuildStatic(w);
+        }
+
         public static float BottomOf(State s, int i) => s.BaseV + Joint + i * Course;
         static float ZBack(ExteriorWall w) => w.WrapZ - S(w).Air;
         static float ZFront(ExteriorWall w) => ZBack(w) - BrickD;
