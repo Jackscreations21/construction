@@ -170,7 +170,9 @@ namespace Groundbreak
                 .Step("Cut it", "Cut the sawtooth with the circular saw and finish the corners by hand so you don't over-cut. Cut one, check it, then use it as the pattern.",
                       "Framing Square: RMB cut (needs the circular saw on your belt)", "s_03_cut")
                 .Step("Set stringers and treads", "Hang three stringers from the landing, then risers and treads. Every rise must match within 3/8\" or people trip.",
-                      "Aim at the blue ghosts · nailer", "s_04_stairs");
+                      "Aim at the blue ghosts · nailer", "s_04_stairs")
+                .Step("Start a stair job with the Stair Layout Kit", "Aim the kit at the rim of the deck or landing: it measures the rise plumb down to where the bottom step lands, shows the stairs as a ghost and lists risers, run, stringer stock and whether a handrail is needed. If the stringer would pass 16', build a landing first and run two flights.",
+                      "Stair Layout Kit: -/= width (36\" min) · LMB start the stair job · RMB landing mode", "s_04_stairs");
         }
 
         static void Roof()
