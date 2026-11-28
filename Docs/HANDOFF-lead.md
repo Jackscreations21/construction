@@ -72,3 +72,9 @@ Operating notes that still apply:
 2. `get_usage`; create the monitoring cron (CronCreate, every 5–10 min) with the pause rule above.
 3. Set the in-chat checklist with `update_plan` from "Left to do".
 4. Check `git log origin/main..main` and `git status` here, then continue at "Left to do" step 1.
+
+## Update: save gaps round 1 merged
+- Exterior (wrap, siding, brick, eaves, decks), MEP networks, set slabs + curing blankets now save; New Game resets site stock and tool belt. Save version 2, old saves load. See `Docs/SAVEGAPS.md`.
+- Full suite on the merged tree: 242 total, 237 passed, 0 failed, 5 skipped by design.
+- Still not saved (round 2, waiting on the user): wet concrete (forms, rebar, pours), roofing, drywall/paint/insulation, interior finishes, cut stair stringers.
+- Unity Hub closes itself sometimes; exit 198 = reopen the Hub app.
