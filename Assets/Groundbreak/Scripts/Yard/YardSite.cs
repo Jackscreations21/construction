@@ -23,6 +23,8 @@ namespace Groundbreak
         readonly List<Vector3> _bulkSlots = new List<Vector3>();                                    // bunkers / bulk-bag spots
         readonly List<(Vector3 pos, float yaw)> _stalls = new List<(Vector3, float)>();
         Vector3 _streetParking, _equipInside, _equipOutside;
+        // shop equipment poses (local floor point + yaw), set by the level builders; models in YardEquipmentModels
+        (Vector3 pos, float yaw) _sawPose, _forkPose, _compPose, _liftPose;
 
         GameObject _colliders;
         Transform _contents;
@@ -64,6 +66,24 @@ namespace Groundbreak
             if (i < 0 || i >= _stalls.Count) return false;
             pos = W(_stalls[i].pos); pos.y = transform.position.y;
             yaw = _stalls[i].yaw + transform.eulerAngles.y;
+            return true;
+        }
+
+        /// <summary>World floor point + facing of a shop equipment model ("sawstation", "forklift", "compressor", "lift",
+        /// "fueltank"); the model's front/working side faces rot * back. False for an unknown id.</summary>
+        public bool TryEquipmentPose(string id, out Vector3 pos, out Quaternion rot)
+        {
+            (Vector3 pos, float yaw) p;
+            switch (id)
+            {
+                case "sawstation": p = _sawPose; break;
+                case "forklift": p = _forkPose; break;
+                case "compressor": p = _compPose; break;
+                case "lift": p = _liftPose; break;
+                case "fueltank": p = (_equipOutside, 0f); break;
+                default: pos = transform.position; rot = transform.rotation; return false;
+            }
+            pos = W(p.pos); rot = transform.rotation * Quaternion.Euler(0f, p.yaw, 0f);
             return true;
         }
 
@@ -266,17 +286,15 @@ namespace Groundbreak
         void Workbench(SitePart p, float x0, float z, bool againstBackWall)
         {
             int top = p.M(SurfaceKind.Plywood), frame = p.M(SurfaceKind.PineLumber), peg = p.M(SurfaceKind.Plywood, new Color(0.75f, 0.62f, 0.45f));
-            int red = p.M(SurfaceKind.TruckPaint), steel = p.M(SurfaceKind.BrushedSteel), black = p.M(SurfaceKind.MatteBlack);
             float x1 = x0 + F(8), d = 0.76f, zb = againstBackWall ? z - d : z;
             Solid(p, x0, x1, 0.86f, 0.91f, zb, zb + d, top);
             foreach (float x in new[] { x0 + 0.05f, x1 - 0.1f }) foreach (float zz in new[] { zb + 0.05f, zb + d - 0.1f }) p.Box(x, x + 0.05f, 0.1f, 0.86f, zz, zz + 0.05f, frame);
             p.Box(x0, x1, 0.25f, 0.29f, zb + 0.05f, zb + d - 0.05f, top);                       // lower shelf
             p.Box(x0, x1, 1.0f, 2.2f, zb + d - 0.02f, zb + d, peg);                              // pegboard
-            for (int i = 0; i < 9; i++) p.Box(x0 + 0.3f + i * 0.25f, x0 + 0.34f + i * 0.25f, 1.3f + (i % 3) * 0.25f, 1.55f + (i % 3) * 0.25f, zb + d - 0.06f, zb + d - 0.02f, i % 2 == 0 ? black : steel);
-            // rolling tool chest + job box
-            Solid(p, x1 + 0.2f, x1 + 0.9f, 0.1f, 1.1f, zb + 0.1f, zb + d, red);
-            for (int i = 0; i < 6; i++) p.Box(x1 + 0.25f, x1 + 0.85f, 0.25f + i * 0.14f, 0.27f + i * 0.14f, zb + 0.08f, zb + 0.1f, steel);
-            Solid(p, x0 - 1.3f, x0 - 0.1f, 0.1f, 0.75f, zb + 0.1f, zb + d, p.M(SurfaceKind.PaintedSteel, new Color(0.95f, 0.75f, 0.1f)));
+            YardEquipmentModels.PegboardTools(p, new Vector3(x0, 0.1f, zb + d - 0.02f), 0f);
+            // rolling tool chest + job box beside the bench (YardEquipmentModels), drawers/hasp toward the aisle
+            YardEquipmentModels.ToolChest(p, new Vector3(x0 - 0.5f, 0.1f, zb + d - 0.25f), 0f, Col);
+            YardEquipmentModels.JobBox(p, new Vector3(x0 - 1.62f, 0.1f, zb + d - 0.32f), 0f, Col);
         }
 
         void Sign(Transform parent, string text, Vector3 local, float size)
@@ -326,7 +344,8 @@ namespace Groundbreak
             Office(p, bx0 + 0.15f, bx0 + F(10), z0 + 0.15f, z0 + F(12), 2.6f, true);
             PalletRack(p, bx0 + 0.4f, z1 - F(3.5f) - 0.3f, 3);                         // along the back wall
             PalletRack(p, bx0 + F(11), F(18), 2);                                        // a free-standing row
-            Workbench(p, bx1 - F(8) - 0.4f, z1 - F(3.5f) - 0.5f - F(26), false);
+            Workbench(p, bx1 - F(8) - 0.4f, F(39.5f), false);                         // between the free-standing rack and the back rack
+            YardEquipmentModels.SafetyStation(p, shell, new Vector3(bx0 + F(10), 0.1f, 2.7f), -90f);   // on the office wall
             // floor dunnage for long stock along the right wall
             int dun = p.M(SurfaceKind.TreatedLumber);
             for (int i = 0; i < 4; i++) p.Box(bx1 - 1.5f, bx1 - 0.3f, 0.1f, 0.19f, F(16) + i * 2f, F(16) + i * 2f + 0.09f, dun);
@@ -338,6 +357,10 @@ namespace Groundbreak
 
             _streetParking = new Vector3(bx0 - 3 * w, 0.03f, -17f);
             _equipInside = new Vector3(bx1 - 2.0f, 0.1f, F(8)); _equipOutside = new Vector3(bx1 + 6f, 0.03f, -6f);
+            _sawPose = (new Vector3(bx0 + 0.75f, 0.1f, 8.3f), -90f);        // miter bench along the left wall, table saw out front
+            _compPose = (new Vector3(bx0 + 0.46f, 0.1f, 12.8f), -90f);
+            _forkPose = (new Vector3(F(2), 0.1f, 2.2f), 0f);                 // just inside the overhead door, forks toward the back
+            _liftPose = (new Vector3(0.5f, 0.1f, 9.5f), 0f);                // (a bay can't own a lift; kept for safety)
             PlayerSpawn = W(new Vector3(F(4), 0, -3f));
             CameraSpot = W(new Vector3(-24f, 9f, -30f)); CameraLook = W(new Vector3(-4f, 2f, 6f));
             InteriorCameraSpot = W(new Vector3(bx1 - 0.8f, 2.4f, 0.9f)); InteriorCameraLook = W(new Vector3(bx0 + 3f, 1.4f, z1 - 4f));
@@ -365,11 +388,16 @@ namespace Groundbreak
             Office(f, sx0 + 0.15f, sx0 + F(14), sz0 + 0.15f, sz0 + F(12), 2.7f, true);
             PalletRack(f, sx0 + 0.4f, sz1 - F(3.5f) - 0.3f, 6);
             Workbench(f, sx1 - F(8) - 0.6f, sz1 - F(3.5f) - 0.6f - F(14), false);
+            YardEquipmentModels.SafetyStation(f, shell, new Vector3(sx0 + F(14), 0.1f, sz0 + 2.9f), -90f);
             f.Finish(shell, "ShopFitOut");
             Sign(shell, Company.Name, new Vector3(sx0 + F(34), eave - 0.6f, sz0 - 0.08f), 0.07f);
 
             _streetParking = new Vector3(yx0 - 2f, 0.03f, -6f);
             _equipInside = new Vector3(sx1 - 3f, 0.1f, sz0 + 3f); _equipOutside = new Vector3(yx1 - 12f, 0.03f, F(150));
+            _sawPose = (new Vector3(sx0 + 0.75f, 0.1f, sz0 + 6.5f), -90f);
+            _compPose = (new Vector3(sx1 - 0.46f, 0.1f, sz1 - 0.82f), 90f);
+            _forkPose = (new Vector3(sx1 - 1.0f, 0.1f, sz0 + 1.8f), 0f);
+            _liftPose = (new Vector3(sx0 + F(44), 0.1f, sz0 + 8.8f), 0f);   // in line with the right overhead door
             PlayerSpawn = W(new Vector3(F(45), 0, -3f));
             CameraSpot = W(new Vector3(yx1 + 18f, 22f, -22f)); CameraLook = W(new Vector3(-4f, 0f, F(95)));
             InteriorCameraSpot = W(new Vector3(sx0 + F(24), 1.7f, sz0 + 1.0f)); InteriorCameraLook = W(new Vector3(sx0 + F(20), 1.8f, sz1 - 1f));
@@ -416,15 +444,20 @@ namespace Groundbreak
             // loading dock on the right end: 4' high concrete dock with a ramp-free face for box trucks
             Solid(o, wx1, wx1 + F(10), 0, 1.22f, wz0 + F(15), wz0 + F(45), conc);
             Office(o, ox1 - F(14), ox1 - 0.15f, wz0 + F(32), wz1 - 0.15f, 2.8f, false);
-            PalletRack(o, ox1 + 1f, wz1 - F(3.5f) - 0.3f, 12);
-            PalletRack(o, ox1 + 1f, wz1 - F(3.5f) - 0.3f - F(14), 12);
+            PalletRack(o, ox1 + 1f, wz1 - F(3.5f) - 0.3f, 9);                              // 9 bays end ~1.8 m short of the end wall
+            PalletRack(o, ox1 + 1f, wz1 - F(3.5f) - 0.3f - F(14), 9);
             PalletRack(o, ox1 + 1f, wz1 - F(3.5f) - 0.3f - F(28), 6);
             Workbench(o, wx1 - F(8) - 0.6f, wz0 + F(28), false);
+            YardEquipmentModels.SafetyStation(o, shell, new Vector3(ox1, 0.1f, wz0 + 4.4f), -90f);   // on the office demising wall
             o.Finish(shell, "HQFitOut");
             Sign(shell, Company.Name, new Vector3((wx0 + ox1) / 2, F(21.5f), wz0 - 0.15f), 0.09f);
 
             _streetParking = new Vector3(yx0 - 2f, 0.03f, -6f);
             _equipInside = new Vector3(wx1 - 4f, 0.1f, wz0 + F(10)); _equipOutside = new Vector3(yx1 - 18f, 0.03f, F(240));
+            _sawPose = (new Vector3(wx1 - 0.75f, 0.1f, wz0 + 5.4f), 90f);   // miter bench along the end wall
+            _compPose = (new Vector3(wx1 - 0.46f, 0.1f, wz0 + 7.9f), 90f);
+            _forkPose = (new Vector3(ox1 + F(12) + 2.5f * F(19), 0.1f, wz0 + 4.0f), 0f);   // between doors 3 and 4
+            _liftPose = (new Vector3(ox1 + F(12) + F(19), 0.1f, wz0 + 5.0f), 0f);          // in line with door 2
             PlayerSpawn = W(new Vector3(wx0 + F(18), 0, wz0 - 3f));
             CameraSpot = W(new Vector3(yx1 + 25f, 30f, -30f)); CameraLook = W(new Vector3(-10f, 0f, F(150)));
             InteriorCameraSpot = W(new Vector3(ox1 + F(31), 1.7f, wz0 + 1f)); InteriorCameraLook = W(new Vector3(ox1 + F(40), 2f, wz1 - 2f));
@@ -591,66 +624,12 @@ namespace Groundbreak
         void PlaceEquipment()
         {
             var inside = new SitePart(); var outside = new SitePart();
-            int yellow = inside.M(SurfaceKind.PaintedSteel, new Color(0.95f, 0.72f, 0.08f)), black = inside.M(SurfaceKind.MatteBlack), steel = inside.M(SurfaceKind.BrushedSteel);
-            int tire = inside.M(SurfaceKind.Tire), red = inside.M(SurfaceKind.TruckPaint), blue = inside.M(SurfaceKind.PaintedSteel, new Color(0.15f, 0.3f, 0.6f));
-            Vector3 c = _equipInside;
-            if (Yard.HasEquipment("forklift"))
-            {
-                float x = c.x, z = c.z;
-                inside.Box(x - 0.55f, x + 0.55f, c.y + 0.2f, c.y + 1.1f, z - 1.2f, z + 0.6f, yellow);           // body + counterweight
-                inside.Box(x - 0.5f, x + 0.5f, c.y + 1.1f, c.y + 1.15f, z - 0.4f, z + 0.5f, black);
-                inside.Box(x - 0.55f, x + 0.55f, c.y + 0.25f, c.y + 1.2f, z - 1.55f, z - 1.2f, yellow);         // cast counterweight (2.5 m to the fork face)
-                inside.Box(x - 0.25f, x + 0.25f, c.y + 1.15f, c.y + 1.25f, z - 0.75f, z - 0.3f, black);         // seat
-                inside.Box(x - 0.25f, x + 0.25f, c.y + 1.25f, c.y + 1.75f, z - 0.8f, z - 0.7f, black);          // seat back
-                inside.Strut(new Vector3(x, c.y + 1.15f, z + 0.35f), new Vector3(x, c.y + 1.6f, z + 0.1f), 0.03f, 0.03f, black);   // steering column
-                inside.CylY(x, z + 0.1f, c.y + 1.6f, c.y + 1.63f, 0.17f, 16, black);                                              // wheel
-                foreach (float sx in new[] { -0.5f, 0.5f }) foreach (float sz in new[] { -0.3f, 0.45f }) inside.Strut(new Vector3(x + sx, c.y + 1.15f, z + sz), new Vector3(x + sx, c.y + 2.15f, z + sz), 0.05f, 0.05f, black);
-                inside.Box(x - 0.55f, x + 0.55f, c.y + 2.15f, c.y + 2.2f, z - 0.35f, z + 0.5f, black);          // overhead guard
-                inside.Box(x - 0.4f, x - 0.3f, c.y + 0.1f, c.y + 2.6f, z + 0.65f, z + 0.75f, steel);            // mast
-                inside.Box(x + 0.3f, x + 0.4f, c.y + 0.1f, c.y + 2.6f, z + 0.65f, z + 0.75f, steel);
-                inside.Box(x - 0.35f, x - 0.25f, c.y + 0.05f, c.y + 0.1f, z + 0.75f, z + 1.82f, steel);         // forks
-                inside.Box(x + 0.25f, x + 0.35f, c.y + 0.05f, c.y + 0.1f, z + 0.75f, z + 1.82f, steel);
-                foreach (float sx in new[] { -0.5f, 0.5f }) foreach (float sz in new[] { -0.9f, 0.35f }) inside.CylX(c.y + 0.28f, z + sz, x + sx - 0.12f, x + sx + 0.12f, 0.28f, 14, tire);
-                Col(c + new Vector3(0, 1.1f, -0.2f), new Vector3(1.2f, 2.2f, 2f));
-            }
-            if (Yard.HasEquipment("sawstation"))
-            {
-                float x = c.x - 3.5f, z = c.z;
-                inside.Box(x - 1.2f, x + 1.2f, c.y + 0.85f, c.y + 0.9f, z - 0.35f, z + 0.35f, steel);           // miter bench
-                inside.Box(x - 0.25f, x + 0.25f, c.y + 0.9f, c.y + 1.25f, z - 0.25f, z + 0.25f, red);           // miter saw
-                inside.Box(x - 0.6f, x + 0.6f, c.y, c.y + 0.86f, z + 1.2f, z + 1.9f, blue);                     // cabinet saw
-                inside.Box(x - 0.8f, x + 0.8f, c.y + 0.86f, c.y + 0.9f, z + 1.0f, z + 2.1f, steel);
-                Col(new Vector3(x, c.y + 0.45f, z + 0.8f), new Vector3(2.4f, 0.9f, 2.4f));
-            }
-            if (Yard.HasEquipment("compressor"))
-            {
-                float x = c.x - 6f, z = c.z;
-                inside.CylY(x, z, c.y + 0.1f, c.y + 1.6f, 0.26f, 18, red);
-                inside.Box(x - 0.25f, x + 0.25f, c.y + 1.6f, c.y + 1.85f, z - 0.2f, z + 0.2f, black);
-                Col(new Vector3(x, c.y + 0.9f, z), new Vector3(0.55f, 1.8f, 0.55f));
-            }
-            if (Yard.HasEquipment("lift"))
-            {
-                float x = c.x - 3.5f, z = c.z + 5.5f;
-                foreach (float sx in new[] { -1.6f, 1.6f })
-                {
-                    inside.Box(x + sx - 0.15f, x + sx + 0.15f, c.y, c.y + 3.6f, z - 0.2f, z + 0.2f, blue);
-                    inside.Strut(new Vector3(x + sx, c.y + 0.3f, z), new Vector3(x + sx * 0.3f, c.y + 0.3f, z + 1.1f), 0.1f, 0.08f, steel);
-                    inside.Strut(new Vector3(x + sx, c.y + 0.3f, z), new Vector3(x + sx * 0.3f, c.y + 0.3f, z - 1.1f), 0.1f, 0.08f, steel);
-                    Col(new Vector3(x + sx, c.y + 1.8f, z), new Vector3(0.3f, 3.6f, 0.4f));
-                }
-                inside.Box(x - 1.6f, x + 1.6f, c.y + 3.6f, c.y + 3.75f, z - 0.12f, z + 0.12f, blue);
-            }
+            if (Yard.HasEquipment("forklift")) YardEquipmentModels.Forklift(inside, _forkPose.pos, _forkPose.yaw, Col);
+            if (Yard.HasEquipment("sawstation")) YardEquipmentModels.SawStation(inside, _sawPose.pos, _sawPose.yaw, Col);
+            if (Yard.HasEquipment("compressor")) YardEquipmentModels.Compressor(inside, _compPose.pos, _compPose.yaw, Col);
+            if (Yard.HasEquipment("lift")) YardEquipmentModels.TwoPostLift(inside, _liftPose.pos, _liftPose.yaw, Col);
             inside.Finish(_contents, "ShopEquipment");
-            if (Yard.HasEquipment("fueltank"))
-            {
-                var o = _equipOutside;
-                int tank = outside.M(SurfaceKind.PaintedSteel, new Color(0.85f, 0.15f, 0.12f)), st = outside.M(SurfaceKind.Galvanized);
-                for (int i = 0; i < 4; i++) outside.Box(o.x - 1.1f + (i % 2) * 2.0f, o.x - 0.9f + (i % 2) * 2.0f, o.y, o.y + 0.6f, o.z - 0.5f + (i / 2) * 0.8f, o.z - 0.3f + (i / 2) * 0.8f, st);
-                outside.CylX(o.y + 1.2f, o.z, o.x - 1.4f, o.x + 1.4f, 0.6f, 20, tank);
-                outside.Box(o.x + 1.5f, o.x + 1.9f, o.y, o.y + 1.4f, o.z - 0.2f, o.z + 0.2f, st);              // pump
-                Col(o + new Vector3(0, 0.9f, 0), new Vector3(3.4f, 1.8f, 1.3f));
-            }
+            if (Yard.HasEquipment("fueltank")) YardEquipmentModels.FuelTank(outside, _contents, _equipOutside, 0f, Col);
             outside.Finish(_contents, "YardEquipment");
         }
     }
