@@ -251,6 +251,7 @@ namespace Groundbreak.Tests
             int deckPieces = deck.Pieces.Count, deckStage = deck.Stage;
             float deckU0 = deck.U0; var cFace = wC.Face;
             var deckPos = new List<Vector3>(); foreach (var p in deck.Pieces) deckPos.Add(p.transform.position);
+            Vector3 fasciaPos = fascia.transform.position;
             float gutterStart = e.GutterYStart; int hangers = e.Hangers.Count;
             int runs = NetGraph.Runs.Count;
             Vector3 facePtA = wA.Face.World(wA.B.center);
@@ -275,7 +276,7 @@ namespace Groundbreak.Tests
             Assert.Greater(a2.transform.Find("wrap").childCount, 0, "wrap mesh rebuilt");
 
             Assert.AreEqual(eaves, Eaves.All.Count, "eave restored");
-            var e2 = Eaves.All.Find(x => x != null && Vector3.Distance(x.Fascia.transform.position, fascia.transform.position) < 0.01f);
+            var e2 = Eaves.All.Find(x => x != null && x.Fascia != null && Vector3.Distance(x.Fascia.transform.position, fasciaPos) < 0.01f);
             Assert.NotNull(e2, "eave on the restored fascia");
             Assert.IsTrue(e2.Soffit && e2.Wrapped && e2.Gutter && e2.Downspout, "soffit, wrap, gutter, downspout");
             Assert.AreEqual(gutterStart, e2.GutterYStart, 1e-4f); Assert.AreEqual(hangers, e2.Hangers.Count);
@@ -471,7 +472,8 @@ namespace Groundbreak.Tests
             ConcreteElement el2 = null;
             foreach (var x in ConcreteElement.All) if (x != null && x.Contains(c0 + new Vector3(1f, 0f, 1f))) el2 = x;
             Assert.NotNull(el2, "slab restored");
-            Assert.AreEqual(top, el2.TopY, 1e-4f); Assert.AreEqual(poured, el2.PouredAt, 1e-3f); Assert.AreEqual(42f, el2.CureLagMinutes, 1e-3f);
+            Assert.AreEqual(top, el2.TopY, 1e-4f); Assert.AreEqual(poured, el2.PouredAt, 1e-3f); // the cold keeps adding cure lag every frame (SeasonDirector), so only check it carried over (not reset to 0)
+            Assert.That(el2.CureLagMinutes, Is.InRange(42f, 45f), "cure lag kept");
             Assert.IsTrue(el2.Covered);
             Assert.AreEqual(outline.Length, el2.Outline.Length);
             for (int i = 0; i < outline.Length; i++) Assert.Less(Vector2.Distance(outline[i], el2.Outline[i]), 1e-3f);
