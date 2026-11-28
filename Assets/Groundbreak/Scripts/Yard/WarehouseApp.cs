@@ -45,22 +45,32 @@ namespace Groundbreak
 
             // ---- premises
             var cur = Yard.Current;
-            GUILayout.Label(cur != null ? $"{cur.Name}: rent ${cur.RentPerDay:N0}/day · storage {Yard.StoredCuFt:N0}/{cur.StorageCuFt:N0} cu ft · bulk discount {cur.Discount * 100:0}%" : "No warehouse yet. Lease one to store materials, park trucks and become a Contractor.", header);
+            float inbound = Fleet.InboundCuFt;
+            GUILayout.Label(cur != null ? $"{cur.Name}: rent ${cur.RentPerDay:N0}/day · storage {Yard.StoredCuFt:N0}/{cur.StorageCuFt:N0} cu ft" + (inbound > 0f ? $" (+{inbound:N0} on the road)" : "") + $" · bulk discount {cur.Discount * 100:0}%" : "No warehouse yet. Lease one to store materials, park trucks and become a Contractor.", header);
             for (int lv = 1; lv < Yard.Levels.Length; lv++)
             {
                 var info = Yard.Levels[lv];
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{info.Name}: {info.Description} Rent ${info.RentPerDay:N0}/day + insurance ${info.InsurancePerDay}/day.", label, GUILayout.Width(fs * 34));
-                GUI.enabled = lv != Company.WarehouseLevel;
-                if (GUILayout.Button(lv == Company.WarehouseLevel ? "Current" : $"Lease (${info.MoveIn:N0} move-in)", button, GUILayout.Width(fs * 11))) { Yard.Lease(lv, out _msg); GUIUtility.ExitGUI(); }   // the warehouse sections appear: end this GUI event
+                string down = lv < Company.WarehouseLevel ? Yard.DowngradeBlocker(lv) : null;   // Career: not below what the stage needs
+                GUI.enabled = lv != Company.WarehouseLevel && down == null;
+                if (GUILayout.Button(lv == Company.WarehouseLevel ? "Current" : down != null ? "Stage needs more" : $"Lease (${info.MoveIn:N0} move-in)", button, GUILayout.Width(fs * 11))) { Yard.Lease(lv, out _msg); GUIUtility.ExitGUI(); }   // the warehouse sections appear: end this GUI event
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
             }
             GUILayout.BeginHorizontal();
             if (YardSite.I != null && GUILayout.Button("Go to the warehouse", button, GUILayout.Width(fs * 11))) { YardFleetRuntime.GoToYard(out _msg); t.Close(); }
-            if (Company.HasWarehouse && GUILayout.Button("End lease (sell stock 50%)", button, GUILayout.Width(fs * 13))) { int c = Yard.EndLease(); if (c > 0) Game.Wallet.Add(c, "Sold warehouse stock & equipment"); _msg = $"Lease ended, raised ${c:N0}."; }
+            string endBlock = Company.HasWarehouse ? Yard.DowngradeBlocker(0) : null;   // Career: the stage needs the premises
+            GUI.enabled = endBlock == null;
+            if (Company.HasWarehouse && GUILayout.Button("End lease (sell stock 50%)", button, GUILayout.Width(fs * 13)))
+            { bool ended = Yard.TryEndLease(out _, out _msg); if (ended) GUIUtility.ExitGUI(); }   // the warehouse sections disappear: end this GUI event
+            GUI.enabled = true;
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
+            if (endBlock != null) GUILayout.Label(endBlock, label);
+            var lost = Company.WarehouseLevel > 1 ? Yard.EquipmentLostAt(Company.WarehouseLevel - 1) : null;
+            if (lost != null && lost.Count > 0 && Yard.DowngradeBlocker(Company.WarehouseLevel - 1) == null)
+                GUILayout.Label($"Moving to smaller premises sells what won't fit there at 40%: {string.Join(", ", lost.ConvertAll(e => e.Name))}.", label);
             if (!string.IsNullOrEmpty(_msg)) GUILayout.Label(_msg, header);
 
             if (Company.HasWarehouse)
@@ -72,7 +82,7 @@ namespace Groundbreak
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"{e.Name}: {e.Description}", label, GUILayout.Width(fs * 34));
                     GUI.enabled = !Yard.HasEquipment(e.Id) && Company.WarehouseLevel >= e.MinLevel;
-                    if (GUILayout.Button(Yard.HasEquipment(e.Id) ? "Owned" : Company.WarehouseLevel < e.MinLevel ? "Needs yard" : $"Buy ${e.Price:N0}", button, GUILayout.Width(fs * 8))) Yard.BuyEquipment(e.Id, out _msg);
+                    if (GUILayout.Button(Yard.HasEquipment(e.Id) ? "Owned" : Company.WarehouseLevel < e.MinLevel ? "Needs yard" : $"Buy ${e.Price:N0}", button, GUILayout.Width(fs * 8))) { if (Yard.BuyEquipment(e.Id, out _msg)) GUIUtility.ExitGUI(); }   // button turns into "Owned"
                     GUI.enabled = true;
                     GUILayout.EndHorizontal();
                 }

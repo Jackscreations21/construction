@@ -168,6 +168,7 @@ namespace Groundbreak
             s *= Mathf.Lerp(0.75f, 1.1f, Mathf.Clamp01(w.Morale));
             if (Outside && Weather.IsRaining) s *= 0.75f;
             s *= SeasonRules.CrewSpeed(taskTrade);   // Seasons: heat, cold, mud, snow, wind
+            s *= SawStationRules.CrewSpeed(w, taskTrade);   // yard saw station: framing/trim pre-cut at the shop
             return s;
         }
 
@@ -244,9 +245,10 @@ namespace Groundbreak
                     days += d; q += Quality(w, j.RequiredTrade) * d;
                 }
                 if (days <= 0f) continue;
+                days *= SawStationRules.JobSpeed(j);                              // wood jobs pre-cut at the shop's saw station
                 var sim = SimFor(j.Id, true);
                 // the crew needs the job's materials as it goes (the payout includes them): bought pro rata with progress
-                int matDue = Mathf.RoundToInt(j.MaterialBudget * Mathf.Clamp01(sim.Progress + days / LaborDays(j))) - sim.MaterialsCharged;
+                int matDue = Mathf.RoundToInt(j.MaterialBudget * SawStationRules.MaterialFactor(j) * Mathf.Clamp01(sim.Progress + days / LaborDays(j))) - sim.MaterialsCharged;
                 if (matDue > 0 && GameSettings.IsCareer && !GameSettings.UnlimitedMoney)
                 {
                     if (!Game.Wallet.TrySpend(matDue, $"Materials (crew job): {j.Title}")) { Game.Toast($"{j.Title}: no money for materials (${matDue:N0}), the crew waited"); continue; }

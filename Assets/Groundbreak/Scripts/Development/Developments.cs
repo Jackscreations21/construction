@@ -131,6 +131,8 @@ namespace Groundbreak
             int cost = SiteWorkCostFor(d);
             if (!GameSettings.UnlimitedMoney && !Game.Wallet.TrySpend(cost, $"Site work: {d.Name} ({d.StreetLengthFt:0} lf street + utilities)")) { msg = $"Need ${cost:N0}"; return false; }
             d.SiteWorkCost = cost; d.SiteWorkStartDay = Projects.Day;
+            // spec houses permitted before the site work got a land share without it: add their share now (LandShare = all-in / lots)
+            if (d.Lots.Count > 0) foreach (var h in d.Houses) if (!h.Sold) h.CostSpent += cost / d.Lots.Count;
             msg = $"Site work started: ${cost:N0}, {d.SiteWorkDays} days";
             DevVisuals.Refresh();
             return true;
@@ -207,7 +209,12 @@ namespace Groundbreak
             int net = price - commission - closing - p.LoanBalance;
             p.CostSpent += commission + closing;
             Game.Wallet.Add(price - commission - closing, $"Sale closed: {p.Lot.Address} ${price:N0} (less {CommissionPct:P1} commission, {ClosingPct:P1} closing)");
-            if (p.LoanBalance > 0) Game.Wallet.TrySpend(Mathf.Min(p.LoanBalance, Game.Wallet.Money), $"Construction loan payoff: {p.Lot.Address}");
+            if (p.LoanBalance > 0)
+            {
+                int paid = Mathf.Min(p.LoanBalance, Mathf.Max(0, Game.Wallet.Money));
+                if (paid > 0) Game.Wallet.TrySpend(paid, $"Construction loan payoff: {p.Lot.Address}");
+                Finance.AddShortfallNote(p.Lot.Address, p.LoanBalance - paid);     // the unpaid rest stays owed as company debt
+            }
             p.LoanBalance = 0; p.Sold = true; p.Listed = false; p.SoldDay = day; p.SalePrice = price; p.NetProceeds = net;
             Company.LifetimeRevenue += price; if (d != null) d.Revenue += price;
             Company.Reputation += 1;

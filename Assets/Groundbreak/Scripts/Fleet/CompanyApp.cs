@@ -104,7 +104,7 @@ namespace Groundbreak
                 if (GUILayout.Toggle(_loanTerm == i, $" {Finance.BankTerms[i]} d", button, GUILayout.Width(fs * 4.5f))) _loanTerm = i;
             int term = Finance.BankTerms[_loanTerm];
             int pay = Finance.PaymentFor(_loanAmount, Finance.CurrentBankApr, term);
-            if (GUILayout.Button($"Borrow (${pay:N0}/day)", button, GUILayout.Width(fs * 10))) Finance.TakeBankLoan(_loanAmount, term, out _msg);
+            if (GUILayout.Button($"Borrow (${pay:N0}/day)", button, GUILayout.Width(fs * 10))) { if (Finance.TakeBankLoan(_loanAmount, term, out _msg)) GUIUtility.ExitGUI(); }   // a loan row appears: end this GUI event
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             GUILayout.Label($"  Total interest over the term: ${Finance.TotalInterest(_loanAmount, Finance.CurrentBankApr, term):N0}", label);
@@ -114,7 +114,7 @@ namespace Groundbreak
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"  {l.Label}: balance ${l.Balance:N0} · {l.Apr * 100:0.0}% · ${l.Payment:N0}/day · {l.DaysLeft} days left" + (l.Missed > 0 ? $" · {l.Missed} MISSED" : ""), label, GUILayout.Width(fs * 30));
-                if (GUILayout.Button($"Pay off ${Mathf.CeilToInt(l.Balance):N0}", button, GUILayout.Width(fs * 9))) Finance.PayOff(l, out _msg);
+                if (GUILayout.Button($"Pay off ${Mathf.CeilToInt(l.Balance):N0}", button, GUILayout.Width(fs * 9))) { if (Finance.PayOff(l, out _msg)) GUIUtility.ExitGUI(); }   // the row disappears
                 GUILayout.EndHorizontal();
             }
         }

@@ -168,6 +168,14 @@ namespace Groundbreak
             return l != null && l.TasksMade && l.Tasks.TrueForAll(t => t.Done);
         }
 
+        /// <summary>Work units the sub's hands finished on their live tasks (since the tasks were made).</summary>
+        public static int UnitsOf(SubContract k)
+        {
+            var l = L(k, false); int n = 0;
+            if (l != null) foreach (var t in l.Tasks) n += t.UnitsDone;
+            return n;
+        }
+
         public static int MistakesOf(SubContract k)
         {
             var l = L(k, false); int m = 0;
