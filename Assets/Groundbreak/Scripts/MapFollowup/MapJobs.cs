@@ -90,24 +90,39 @@ namespace Groundbreak
         }
 
         /// <summary>Free town lots for a build of this plan: matching category first (weighted by travel), then any other free lot.</summary>
+        /// <para>Commercial and industrial builds also use the map's commercial / industrial <b>tracts</b> (every strip and industrial lot
+        /// is one): the build claims the tract and the building goes on a pad site with a real setback and a clear parking side
+        /// (<see cref="CommercialSites"/>). Development land (category "land") is never used for a client build.</para>
         public static IEnumerable<DevLot> BuildLotsFor(HousePlan plan)
         {
             string cat = CategoryFor(plan);
-            var match = new List<TownLot>();
+            if (cat != "residential") CommercialSites.Install();
+            var primary = new List<(TownLot lot, DevLot site)>();
+            var secondary = new List<(TownLot lot, DevLot site)>();
             foreach (var l in Town.FreeLots)
             {
-                if (LotBroker.IsTract(l) || LotBroker.Reserved(l)) continue;
-                bool ok = l.Category == cat || (cat == "industrial" && l.Category == "commercial" && l.District == "strip");
-                if (ok) match.Add(l);
+                if (LotBroker.Reserved(l)) continue;
+                bool exact = l.Category == cat, strip = cat == "industrial" && l.Category == "commercial" && l.District == "strip";
+                if (!exact && !strip) continue;
+                DevLot site;
+                if (LotBroker.IsTract(l))
+                {
+                    if (cat == "residential") continue;              // tracts are development land for houses
+                    site = CommercialSites.PadFor(l, plan);
+                    if (site == null) continue;                      // too small for this building with its setbacks
+                }
+                else site = DevLots.Provider?.Find(l.Id);
+                if (site == null) continue;
+                (exact ? primary : secondary).Add((l, site));
             }
             var seen = new HashSet<string>();
-            while (match.Count > 0)
-            {
-                var l = Pick(match, x => x.Center);
-                match.Remove(l);
-                var d = DevLots.Provider?.Find(l.Id);
-                if (d != null && seen.Add(d.Id)) yield return d;
-            }
+            foreach (var match in new[] { primary, secondary })
+                while (match.Count > 0)
+                {
+                    var m = Pick(match, x => x.lot.Center);
+                    match.Remove(m);
+                    if (seen.Add(m.site.Id)) yield return m.site;
+                }
             if (DevLots.Provider == null) yield break;
             // fallback: houses may go on any free lot that is not commercial / industrial; a diner or warehouse never lands in a subdivision
             foreach (var d in DevLots.Provider.FreeLots())

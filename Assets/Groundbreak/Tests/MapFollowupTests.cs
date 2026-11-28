@@ -137,7 +137,7 @@ namespace Groundbreak.Tests
             {
                 var first = MapJobs.BuildLotsFor(dinerPlan).FirstOrDefault();
                 Assert.NotNull(first);
-                Assert.AreEqual("commercial", Town.Find(first.Id).Category, "diner build on a commercial lot");
+                Assert.AreEqual("commercial", CommercialSites.TownLotOf(first).Category, "diner build on a commercial lot (or a pad site on a commercial tract)");
             }
             // a real service call at a far-out house, played at that house
             var far = Town.Addresses.Where(l => l.External && l.House != null && JobCatalog.Fits(l.House, svc)).OrderByDescending(l => (l.Center - Town.Home.Center).sqrMagnitude).First();

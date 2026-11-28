@@ -8,18 +8,32 @@ Code: `Assets/Groundbreak/Scripts/Blueprints/`. Tests: `Assets/Groundbreak/Tests
   `Find(category, minSqFt, maxSqFt, maxWidthFt, maxDepthFt)`, `Pick(category, seed)`, `Categories`, `Info(plan)` (Blueprint view of a plain HousePlan).
 - Every `HousePlan` now has `Category` (type id), `Group` (Residential / Outbuilding / Commercial / Industrial) and `MinStage` (lowest `CompanyStage` that may build it).
 
-## Plans (46)
+## Plans (50)
 | group | ids |
 |---|---|
 | Residential (Builder) | starter-900 (Development, plain), starter-1008, ranch-1500, ranch-1600, ranch-1650-1car, ranch-1650-2car, ranch-1770-2car, ranch-1770-3car, cottage-1200, craftsman-1920, twostory-2240, twostory-2400, estate-3500, splitlevel-2280 |
 | Residential (Developer) | duplex-1664, townhome-row4, townhome-row6 |
 | Residential (Crew) | adu-480, adu-carriage-672 |
 | Outbuilding | garage-1car, garage-2car, garage-2car-shop, garage-3car (Contractor); shed-8x10 (Handyman), shed-10x12, shed-12x16 (Contractor); polebarn-30x40 (Contractor), polebarn-40x60, polebarn-60x80, barn-36x48 (Crew); workshop-30x40 (Contractor), workshop-40x60 (Crew) |
-| Commercial | retail-2400, retail-5000, diner-3000, office-3000 (Builder); stripmall-6000, gasstation-3200 (Developer) |
+| Commercial | retail-2400, retail-5000, diner-3000, office-3000, storefront-24, storefront-30, bank-2800 (Builder); stripmall-6000, gasstation-3200, grocery-20000 (Developer) |
 | Industrial | warehouse-6000, warehouse-12000, flex-6000, yard-shop-2400, yard-hq-7200 (Builder); warehouse-24000, warehouse-50000 (Developer); yard-bay-1500 (Contractor) |
 
 Development's ranch-1600, cottage-1200, craftsman-1920, twostory-2400 and estate-3500 are redrawn as Blueprints under the same id, name and footprint.
 The originals had unreachable rooms, baths under 5' wide and two-stories with no stair.
+
+## Downtown plans (map-commercial)
+- **storefront-24 / storefront-30**: two-story Main Street row building 24'/30' x 70' (fits the 25'-33' downtown lots). Shop below (storefront glazing,
+  sales floor, storage, ADA restroom, janitor, mech, stockroom, rear exit corridor); two-bedroom apartment above with its **own street door** into an
+  entry hall that is walled off from the shop (`Blueprint.Private`), a straight 48" stair (24 risers @ 6-3/4", 11" treads, 3' landing at the bottom,
+  the upstairs hall at the top, handrails both sides in the takeoff), bedrooms with egress windows on the back wall. `PartyWalls = true`: no windows
+  on the side walls. 12' floors, 16" open-web floor trusses on two bearing lines, type X ceiling at the 1-hr occupancy separation. Only two-story
+  map storefronts get these (`MapPlans.StoriesFit`); 1- and 3-story ones keep retail-2400 / no plan.
+- **bank-2800**: 40'x70' branch: 14' banking lobby, teller line behind a secured door, manager / loan / conference offices, safe deposit storage,
+  break room, two ADA restrooms, staff corridor to a rear exit. On the downtown First State Bank.
+- **grocery-20000**: 200'x100': 14,000 sq ft sales floor with entrance + exit, receiving stockroom with a dock door, walk-in cooler and freezer behind
+  the cases, offices / break room / restrooms / mech off a back corridor, sprinklered (M fire area > 12,000 sq ft). On Harvest Foods.
+- Format additions: `Blueprint.Private(room)` (walled off except to stairs), `Blueprint.PartyWalls`; building takeoffs of full upper floors
+  (no mezzanine) now include floor framing, subfloor, girders, the type X separation ceiling and the stairs. Both flags copy into the Plan Designer.
 
 ## Format additions (`Blueprint : HousePlan`, all additive)
 - Systems: `WallFrame` (WoodStud / PostFrame / SteelFrame / Cmu), `RoofFrame` (Trusses / Rafters / PostFrameTrusses / RigidFrame / BarJoist), `Covering`,

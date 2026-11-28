@@ -44,6 +44,8 @@ namespace Groundbreak
         public List<DesignOpening> openings = new List<DesignOpening>();
         public List<DesignPoint> suppressed = new List<DesignPoint>();
         public List<string> stairsDown = new List<string>();
+        public List<string> privateRooms = new List<string>();   // Blueprint.Private (apartment street entry beside a shop)
+        public bool partyWalls;                                   // Blueprint.PartyWalls (row building: no side windows)
         public List<DesignLevel> levels = new List<DesignLevel>();
 
         public PlanGroup Group { get => (PlanGroup)group; set => group = (int)value; }
@@ -61,7 +63,7 @@ namespace Groundbreak
         public void Fix()
         {
             rooms ??= new List<DesignRoom>(); openings ??= new List<DesignOpening>(); suppressed ??= new List<DesignPoint>();
-            stairsDown ??= new List<string>(); levels ??= new List<DesignLevel>();
+            stairsDown ??= new List<string>(); levels ??= new List<DesignLevel>(); privateRooms ??= new List<string>();
             if (string.IsNullOrEmpty(name)) name = "My plan";
             floors = Mathf.Clamp(floors, 1, 3); units = Mathf.Max(1, units);
         }
@@ -206,6 +208,8 @@ namespace Groundbreak
                 else b.DoorAt(o.x, o.y, o.product, o.floor);
             }
             foreach (var s in stairsDown) b.StairDown(s);
+            foreach (var s in privateRooms) b.Private(s);
+            b.PartyWalls = partyWalls;
             foreach (var l in levels) b.Level(l.room, l.offset);
             foreach (var p in suppressed) b.Suppressed.Add((p.floor, new Vector2(p.x, p.y)));
             b.Finish();
@@ -231,6 +235,8 @@ namespace Groundbreak
                 d.joist = bp.FloorJoist; d.bearingLines = bp.BearingLines; d.rafter = bp.RafterSize; d.columnLines = bp.InteriorColumnLines; d.slabIn = bp.SlabIn;
                 d.mezzanine = bp.MezzanineFt; d.finished = bp.Finished; d.conditioned = bp.Conditioned; d.occupancy = bp.Occupancy; d.construction = bp.ConstructionType;
                 foreach (var s in bp.ReversedStairs) d.stairsDown.Add(s);
+                foreach (var s in bp.PrivateRooms) d.privateRooms.Add(s);
+                d.partyWalls = bp.PartyWalls;
                 foreach (var kv in bp.LevelOffsetFt) d.levels.Add(new DesignLevel { room = kv.Key, offset = kv.Value });
             }
             foreach (var r in plan.Rooms) d.rooms.Add(new DesignRoom { name = r.Name, floor = r.Floor, x0 = r.Ft.xMin, y0 = r.Ft.yMin, x1 = r.Ft.xMax, y1 = r.Ft.yMax });

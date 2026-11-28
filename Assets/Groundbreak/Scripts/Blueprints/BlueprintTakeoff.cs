@@ -217,6 +217,22 @@ namespace Groundbreak
                 L(Fr, "Loft beam: 3-ply LVL + posts", Mathf.Ceil(mezz / FloorSpanFt), "lf", 18);
                 t.Joists = perSpan; t.SubfloorSheets = Mathf.CeilToInt(mezz / 32f * 1.05f);
             }
+            else if (Floors > 1)
+            {   // full upper floors (shop + apartment above): floor framing, subfloor, fire separation between the uses and the stairs
+                float upper = 0f; foreach (var r in Rooms) if (r.Floor > 0 && KindOf(r.Name) != RoomKind.Void && KindOf(r.Name) != RoomKind.Stair) upper += r.Ft.width * r.Ft.height;
+                float spanFt = Mathf.Max(1f, FloorSpanFt);
+                int joists = Mathf.FloorToInt(upper / spanFt * 12f / 16f) + 1;
+                L(Fr, $"{FloorJoist} floor joists/trusses @ 16\" ({spanFt:0.#}' spans, upper floors)", joists, "pcs", JoistUnitCost(spanFt));
+                L(Fr, "3/4\" T&G subfloor 4x8 (upper floors)", Mathf.Ceil(upper / 32f * 1.05f), "sheets", 48);
+                L(Fr, "Floor girders / bearing lines: 3-ply LVL + steel columns", Mathf.Max(1, BearingLines) * WidthFt * (Floors - 1), "lf", 22);
+                L(Dw, "5/8\" type X ceiling at the occupancy separation (1-hr, IBC 508.4)", Mathf.Ceil(upper / 32f * 1.1f), "sheets", 18);
+                foreach (var s in Stairs)
+                {
+                    L(Fr, $"Stair: 3 x 2x12 stringers, {s.Risers} risers {s.RiserIn:0.##}\" ({s.Name}, {s.WidthFt * 12f:0}\" wide)", 1, "flight", 160 + s.Treads * 12);
+                    L(Fi, $"Stair treads, risers + handrails both sides 34-38\" ({s.Name})", s.Treads, "treads", 95);
+                }
+                t.Joists = joists; t.SubfloorSheets = Mathf.CeilToInt(upper / 32f * 1.05f);
+            }
 
             // ---------------- framing / shell
             switch (WallFrame)

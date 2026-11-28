@@ -54,12 +54,12 @@ namespace Groundbreak
         }
 
         /// <summary>Registers (or, with problems, unregisters) one saved design. Returns true when it is buildable.</summary>
-        static bool Register(PlanDesign d, out int errors)
+        static bool Register(PlanDesign d, out int errors, bool keepDraft = false)
         {
             Blueprints.Ensure();   // library first so "My plans" list after it
             var plan = d.Build();
             errors = 0; foreach (var i in BlueprintValidator.Validate(plan)) if (i.Error) errors++;
-            if (errors > 0) { if (!InUse(d.id, out _)) HousePlans.Unregister(d.id); else HousePlans.Register(plan); return false; }
+            if (errors > 0) { if (!keepDraft && !InUse(d.id, out _)) HousePlans.Unregister(d.id); else HousePlans.Register(plan); return false; }
             HousePlans.Register(plan);
             return true;
         }
@@ -156,15 +156,39 @@ namespace Groundbreak
                 }
                 catch (Exception e) { Debug.LogWarning("[PlanDesigner] couldn't read saved plans: " + e.Message); }
             }
-            foreach (var d in _saved) Register(d, out _);
+            // During a save-game load this extension runs before the projects/jobs that may build a draft: keep drafts with problems
+            // registered until the whole save is in (SaveSystem.AfterLoad), then drop the ones nothing uses.
+            foreach (var d in _saved) Register(d, out _, _loading);
             Changed?.Invoke();
+        }
+
+        static bool _loading;
+
+        /// <summary>After a load: drafts with problems that no project, offer or job uses are unregistered again.</summary>
+        public static void PruneDrafts()
+        {
+            _loading = false;
+            foreach (var d in _saved)
+            {
+                var p = HousePlans.Get(d.id);
+                if (!IsCustom(p) || InUse(d.id, out _)) continue;
+                bool bad = false; foreach (var i in BlueprintValidator.Validate(p)) if (i.Error) { bad = true; break; }
+                if (bad) HousePlans.Unregister(d.id);
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void HookLoad()
+        {
+            SaveSystem.BeforeLoad += () => _loading = true;
+            SaveSystem.AfterLoad += PruneDrafts;
         }
 
         // Registered at SubsystemRegistration so this extension loads before the ones whose projects refer to custom plan ids.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void StaticReset()
         {
-            _saved.Clear(); Changed = null;
+            _saved.Clear(); Changed = null; _loading = false;
             SaveSystem.RegisterExtension(SaveKey, SaveJson, LoadJson);
         }
     }

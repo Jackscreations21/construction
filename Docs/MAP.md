@@ -52,6 +52,18 @@ Jobs: every map building except the water tower is a `LotUse.Customer` address w
 `Category == "residential"`). Free lots: house lots in every residential district, downtown/strip/industrial commercial lots, and
 `devland` tracts (> 30,000 sq ft → the Development app's land for sale). Their meadow + for-sale dressing hides as soon as the lot is claimed.
 
+Commercial / industrial client builds (map-commercial, `MapFollowup/CommercialSites.cs`): every strip and industrial map lot is a tract
+(> 30,000 sq ft), so a commercial build claims a **commercial** tract and an industrial build an **industrial** tract (strip tracts as a fallback),
+never development land. The building goes on a pad site inside it: facing the road, 70' back from the street for stores/restaurants/offices/gas
+stations (landscape strip + 60' parking bay + walk), 40' for warehouses; 15' / 10' off the left side line so the right side stays clear (60' parking
+bay / 30' truck drive), 20' rear setback. The pad is a `DevLot` with id `tractId@c60x50` that `CommercialSites.Provider` (wrapping
+`DevLots.Provider`) finds, claims and releases through the tract, so the tract's dressing hides on claim and comes back on release, and projects
+find their pad after a load. `CommercialSites.TownLotOf(devLot)` gives the town lot of any DevLot.
+
+Ridge Rd: the overflow house lots of Development's `FallbackLotProvider` (x 430-567, z 373-467, only used once every town lot is taken) now front
+a real residential street "Ridge Rd" off Mill Rd; woods / hedgerows / crop patches there are cut back (`MapLayout.Carve`) to mown ground, and the
+Mill Rd devland tract `mill-7003` ends at z 360 so it no longer overlaps them.
+
 Parking: houses park on the driveway (right side), businesses in their lot, downtown lots share a loading-zone stall every 25 m in the
 parking lane, farms in the farmyard; parked scenery cars never sit on a lot's `Parking` spot.
 

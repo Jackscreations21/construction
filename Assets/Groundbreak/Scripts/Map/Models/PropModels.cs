@@ -685,7 +685,7 @@ namespace Groundbreak
         static void TrashCan(MapBuild b, MapBuildingSpec s)
         {
             Color[] cols = { new Color(0.13f, 0.27f, 0.18f), new Color(0.08f, 0.08f, 0.08f), new Color(0.3f, 0.2f, 0.12f) };
-            Color c = cols[Mathf.Abs(s.Seed) % cols.Length];
+            Color c = cols[MapModels.Pick(s.Seed, cols.Length)];
             int body = b.K.M(MapMaterials.MetalPanel(c)), lid = G(b, c * 0.8f, 0.35f, 0.3f);
             b.B.AddLathe(Vector3.zero, Quaternion.identity, new[] { new Vector2(0.27f, 0f), new Vector2(0.29f, 0.86f) }, 12, body);
             b.B.AddLathe(Vector3.zero, Quaternion.identity, new[]
@@ -830,7 +830,7 @@ namespace Groundbreak
 
         static void Bleachers(MapBuild b, MapBuildingSpec s)
         {
-            int rows = 3 + Mathf.Abs(s.Seed) % 3;
+            int rows = 3 + MapModels.Pick(s.Seed, 3);
             int alu = G(b, new Color(0.78f, 0.79f, 0.8f), 0.55f, 0.7f), galv = b.K.M(SurfaceKind.Galvanized);
             const float L = 4.57f, rise = 0.22f, depth = 0.61f, seat0 = 0.43f, zFront = 0.9f;
             const int noBottom = MeshBuilder.AllFaces;
@@ -958,7 +958,7 @@ namespace Groundbreak
         static void MailboxCluster(MapBuild b, MapBuildingSpec s)
         {
             Color[] cols = { new Color(0.76f, 0.7f, 0.58f), new Color(0.5f, 0.52f, 0.54f), new Color(0.3f, 0.24f, 0.18f) };
-            Color c = cols[Mathf.Abs(s.Seed) % cols.Length];
+            Color c = cols[MapModels.Pick(s.Seed, cols.Length)];
             int body = G(b, c, 0.4f, 0.3f), line = G(b, c * 0.55f, 0.3f), conc = b.K.M(SurfaceKind.Concrete), lockM = G(b, new Color(0.7f, 0.7f, 0.68f), 0.7f, 0.9f);
             // USPS-style CBU (16 tenant doors + 2 parcel lockers), ~62" tall on its pedestal
             Box(b, new Vector3(0f, 0.04f, 0f), new Vector3(1.0f, 0.08f, 0.7f), conc);
@@ -1281,7 +1281,7 @@ namespace Groundbreak
 
         static void Tractor(MapBuild b, MapBuildingSpec s)
         {
-            int scheme = Mathf.Abs(s.Seed) % 3;
+            int scheme = MapModels.Pick(s.Seed, 3);
             Color body = scheme == 0 ? new Color(0.15f, 0.42f, 0.16f) : scheme == 1 ? new Color(0.72f, 0.1f, 0.08f) : new Color(0.1f, 0.25f, 0.6f);
             Color wheel = scheme == 0 ? new Color(0.95f, 0.78f, 0.1f) : scheme == 1 ? new Color(0.25f, 0.25f, 0.25f) : new Color(0.85f, 0.85f, 0.82f);
             int paint = b.K.M(GlossMat(body, 0.75f, 0.25f)), rim = G(b, wheel, 0.55f, 0.3f);
