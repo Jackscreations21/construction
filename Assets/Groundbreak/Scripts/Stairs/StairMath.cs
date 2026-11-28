@@ -25,6 +25,14 @@ namespace Groundbreak
         /// <summary>Wood left between the notch (inner corner) and the bottom edge of the board.</summary>
         public float ThroatIn;
         public bool ThroatOk, RiseOk, RunOk;
+        /// <summary>The cut stringer fits on a 16' 2x12 (the longest stringer stock the yard sells). False = add a landing.</summary>
+        public bool LengthOk;
+        /// <summary>Nosing 3/4"..1 1/4" (IRC R311.7.5.3), or none needed because the tread is 11" or deeper.</summary>
+        public bool NosingOk;
+        /// <summary>The asked-for unit run was deeper than two 2x6 treads cover (11 1/4") and was capped.</summary>
+        public bool RunCapped;
+        /// <summary>IRC R311.7.8: a handrail is required on stairs with four or more risers.</summary>
+        public bool HandrailRequired => Valid && Risers >= StairMath.HandrailMinRisers;
         public float TreadDepthIn, NosingIn, TreadThicknessIn, RiserThicknessIn, BoardWidthIn;
         /// <summary>Catalog id of the stringer stock that fits (pt2x12x12, or 2x12x16 when 12' is too short).</summary>
         public string StockId;
@@ -34,11 +42,16 @@ namespace Groundbreak
         public float UnitRiseM => Units.In(UnitRiseIn);
         public float UnitRunM => Units.In(UnitRunIn);
         public float TotalRunM => Units.In(TotalRunIn);
-        public bool CodeOk => Valid && ThroatOk && RiseOk && RunOk;
+        public bool CodeOk => Valid && ThroatOk && RiseOk && RunOk && LengthOk && NosingOk;
+        /// <summary>Why the stair can't be built as one flight from stock (empty when it can).</summary>
+        public string BuildProblem => !Valid ? "rise too small or too large for a stair"
+            : !LengthOk ? "the stringer needs " + StairMath.FormatFtIn(StringerLengthIn) + " of 2x12 - longer than a 16' board. Add a landing and build two shorter flights."
+            : "";
     }
 
-    /// <summary>Stair layout math (IRC R311.7): risers max 7-3/4", treads min 10" (default 10-1/4"),
-    /// stringers cut from 2x12 with at least 5" of throat. All inputs/outputs in inches.</summary>
+    /// <summary>Stair layout math (IRC 2021 R311.7): risers max 7-3/4", treads min 10" (default 10-1/4", max 11-1/4" = two 2x6),
+    /// 36" min width, handrail 34"-38" above the nosings on 4+ risers, stringers cut from 2x12 (16' max) with at least 5" of throat.
+    /// All inputs/outputs in inches.</summary>
     public static class StairMath
     {
         public const float MaxRiserIn = 7.75f;
@@ -52,6 +65,14 @@ namespace Groundbreak
         public const float MinWidthIn = 36f;
         public const float MinHeadroomIn = 80f;       // 6' 8"
         public const float StockLength12In = 144f;
+        public const float StockLength16In = 192f;    // longest 2x12 the yard sells: longer stringers need a landing
+        public const float MaxRunIn = TreadDepthIn;   // two 2x6 + 1/4" gap: a deeper run would leave the tread short of the riser
+        public const float MinNosingIn = 0.75f, MaxNosingIn = 1.25f, NoNosingTreadIn = 11f; // IRC R311.7.5.3
+        // IRC R311.7.8 handrails
+        public const int HandrailMinRisers = 4;
+        public const float HandrailMinHeightIn = 34f, HandrailMaxHeightIn = 38f, HandrailHeightIn = 36f;
+        public const float HandrailMinDiaIn = 1.25f, HandrailMaxDiaIn = 2f;  // Type I circular grip
+        public const float HandrailClearIn = 1.5f;     // R311.7.8.5: 1 1/2" min from the wall / post
 
         public static int RiserCount(float totalRiseIn) => Mathf.Max(1, Mathf.CeilToInt(totalRiseIn / MaxRiserIn - 1e-4f));
 
@@ -67,7 +88,8 @@ namespace Groundbreak
             };
             if (!(totalRiseIn > 0.5f) || totalRiseIn > 400f) { r.StockId = "pt2x12x12"; r.HeadroomNote = ""; return r; }
             r.Valid = true;
-            r.UnitRunIn = Mathf.Max(MinRunIn, unitRunIn);
+            r.UnitRunIn = Mathf.Clamp(unitRunIn, MinRunIn, MaxRunIn);
+            r.RunCapped = unitRunIn > MaxRunIn + 1e-4f;
             r.Risers = RiserCount(totalRiseIn);
             r.UnitRiseIn = totalRiseIn / r.Risers;
             r.Treads = r.Risers - 1;                      // the top "tread" is the landing / upper floor
@@ -79,10 +101,13 @@ namespace Groundbreak
             r.ThroatOk = r.ThroatIn >= MinThroatIn - 1e-3f;
             r.RiseOk = r.UnitRiseIn <= MaxRiserIn + 1e-4f;
             r.RunOk = r.UnitRunIn >= MinRunIn - 1e-4f;
-            r.NosingIn = TreadDepthIn - r.UnitRunIn;   // tread overhang past the riser face below
+            r.NosingIn = Mathf.Max(0f, TreadDepthIn - r.UnitRunIn);   // tread overhang past the riser face below (never negative: run is capped)
+            r.NosingOk = r.UnitRunIn >= NoNosingTreadIn - 1e-4f ? r.NosingIn <= MaxNosingIn + 1e-4f
+                       : r.NosingIn >= MinNosingIn - 1e-4f && r.NosingIn <= MaxNosingIn + 1e-4f;
             var lay = new StringerLayout(r);
             r.StringerLengthIn = lay.LengthIn;
             r.StockId = r.StringerLengthIn + 1f <= StockLength12In ? "pt2x12x12" : "2x12x16";
+            r.LengthOk = r.StringerLengthIn + 1f <= StockLength16In;
             float lowNose = r.UnitRiseIn + MinHeadroomIn, topNose = r.Treads * r.UnitRiseIn + MinHeadroomIn;
             r.HeadroomNote = "Headroom: 6' 8\" min, measured plumb from the nosing line (IRC R311.7.2) - nothing lower than "
                              + FormatFtIn(lowNose) + " above the bottom floor at the first step, " + FormatFtIn(topNose) + " at the top step.";

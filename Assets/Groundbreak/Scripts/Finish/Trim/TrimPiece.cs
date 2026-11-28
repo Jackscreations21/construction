@@ -144,7 +144,7 @@ namespace Groundbreak
                 {
                     var uv = Face.ToUV(p);
                     hit = Face.MemberAt(uv, Units.In(0.1f)) != null;
-                    if (!hit && Kind == TrimKind.Crown) hit = Physics.Raycast(p + Out * 0.01f + Across * 0.0f, -Out, 0.12f) ; // crown top nails go into ceiling joists/top plate
+                    if (!hit && Kind == TrimKind.Crown) hit = HitsFraming(p + Out * 0.01f, -Out, 0.12f); // crown top nails go into ceiling joists/top plate
                 }
                 if (hit) inFraming++;
             }
@@ -152,6 +152,14 @@ namespace Groundbreak
             Nails = pts.Count + brads;
             NailsInFraming = inFraming + brads;
             return Nails;
+        }
+
+        /// <summary>A nail driven from 'from' along 'dir' lands in a framing member (not drywall, the trim itself or anything else).</summary>
+        static bool HitsFraming(Vector3 from, Vector3 dir, float len)
+        {
+            foreach (var h in Physics.RaycastAll(from, dir, len))
+                if (h.collider != null && h.collider.GetComponentInParent<StructuralMember>() != null) return true;
+            return false;
         }
 
         /// <summary>Painter's caulk: bead where the trim meets the wall (top of base, both edges of crown, outer edge of casing)

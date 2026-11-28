@@ -68,8 +68,11 @@ namespace Groundbreak
                         var mid = new Vector2(u, sh.R.center.y);
                         bool onHole = false; foreach (var h in sh.Holes) if (Mathf.Abs(h.xMin - u) < 0.01f || Mathf.Abs(h.xMax - u) < 0.01f) onHole = true;
                         if (onHole) continue;
-                        var m = s.Fp.MemberAt(mid, -Units.In(0.25f));
-                        if (m == null || !m.AlongV) yield return new V("dw-ends", At(s, mid), "Butt end floats between framing — end it on a stud/joist center");
+                        // any stud/joist under the joint counts (MemberAt could return a crosswise block or plate first)
+                        bool onFraming = false; float tol = -Units.In(0.25f);
+                        foreach (var m in s.Fp.Members)
+                            if (m.AlongV && mid.x >= m.R.xMin - tol && mid.x <= m.R.xMax + tol && mid.y >= m.R.yMin - tol && mid.y <= m.R.yMax + tol) { onFraming = true; break; }
+                        if (!onFraming) yield return new V("dw-ends", At(s, mid), "Butt end floats between framing — end it on a stud/joist center");
                     }
             }
         }

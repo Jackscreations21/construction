@@ -507,7 +507,7 @@ namespace Groundbreak
             return n;
         }
 
-        /// <summary>Loose-fill bags for an R target over an area (bag label coverage: ~40 sq ft at R-38).</summary>
+        /// <summary>Loose-fill bags for an R target over an area (bag label coverage: ~40 sq ft at R-38, ~31 sq ft at R-49).</summary>
         public static int BagsFor(float sqft, float r) => Mathf.CeilToInt(sqft / (40f * 38f / Mathf.Max(1f, r)));
     }
 }

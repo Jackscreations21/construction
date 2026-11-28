@@ -49,7 +49,18 @@ namespace Groundbreak
         public Tube Active => _tubes.Count == 0 ? null : _tubes[Mathf.Clamp(Mode, 0, _tubes.Count - 1)];
         public override string Hint => Active == null ? "No caulk tubes available" : $"[{Active.Name}] {FeetLeft:F0} ft left in tube · LMB bead · RMB swap tube";
 
-        public override void Secondary() { base.Secondary(); FeetLeft = 0f; }
+        /// <summary>Partly used tubes set aside on a swap (by tube name): swapping back reloads the same tube, nothing is thrown away.</summary>
+        public readonly Dictionary<string, float> PartialTubes = new Dictionary<string, float>();
+
+        public override void Secondary()
+        {
+            var was = Active;
+            if (was != null && FeetLeft > 0.01f) PartialTubes[was.Name] = FeetLeft;
+            base.Secondary();
+            var now = Active;
+            FeetLeft = 0f;
+            if (now != null && PartialTubes.TryGetValue(now.Name, out float left)) { FeetLeft = left; PartialTubes.Remove(now.Name); }
+        }
 
         protected override void Use(RaycastHit hit)
         {

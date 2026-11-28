@@ -206,7 +206,7 @@ namespace Groundbreak
             GUILayout.Space(6);
             var items = new List<(string id, string name, int price, int units)>();
             foreach (var i in LandCatalog.Items) if (i.Group == Groups[_group]) items.Add((i.Id, i.Name, i.Price, i.Units));
-            if (Groups[_group] == "Fence") { foreach (var id in new[] { "4x4x8", "pt2x4x8" }) { var d = Catalog.Get(id); if (d != null) items.Add((d.Id, d.Name, d.Price, 1)); } }
+            if (Groups[_group] == "Fence") { foreach (var id in new[] { LandscapeFeature.PostStock, "pt2x4x8" }) { var d = Catalog.Get(id); if (d != null) items.Add((d.Id, d.Name, d.Price, 1)); } }
             foreach (var (id, name, price, units) in items)
             {
                 if (!Career.IsUnlocked(id)) { GUILayout.Label($"{name}  - locked ({Career.UnlockHint(id)})", label); continue; }

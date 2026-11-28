@@ -236,7 +236,7 @@ namespace Groundbreak
             float facePlane = Vector3.Dot(hit.point, n);
             pos += n * (facePlane + hn - Vector3.Dot(pos, n));
 
-            bool free = GInput.Ctrl || SmartSnapOff;
+            bool free = (!Game.UIOpen && GInput.Ctrl) || SmartSnapOff; // a Ctrl held for a UI shortcut doesn't toggle free placement
             Piece hitPiece = hit.collider != null ? hit.collider.GetComponentInParent<Piece>() : null;
             if (!free && hitPiece != null) pos = SnapToPiece(hitPiece, pos, rot, half, n);
 

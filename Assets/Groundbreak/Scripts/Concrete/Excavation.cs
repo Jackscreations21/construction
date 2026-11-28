@@ -22,12 +22,50 @@ namespace Groundbreak
             return m3 * CubicFeetPerM3;
         }
 
+        /// <summary>Spreads a level gravel base up to topY over a rectangle, limited by gravel on site: when there isn't enough
+        /// for the full depth, the base only comes up as far as the gravel on hand reaches (level, low spots first). Returns cubic feet placed.</summary>
         public static float SpreadRect(Vector3 min, Vector3 max, float topY)
         {
             var g = SiteGround.I; if (g == null) return 0;
-            float cf = g.RaiseRect(min, max, topY, GroundCover.Gravel) * CubicFeetPerM3;
+            float haveCf = Game.Stock.Count(SiteGround.GravelId) - _owedCf;
+            if (haveCf <= 0.01f) { Game.Toast("No gravel on site - order 3/4\" crushed stone in the Supply Store (Fasteners & bags)"); return 0; }
+            float needCf = RectFillM3(g, min, max, topY) * CubicFeetPerM3;
+            float target = topY;
+            if (needCf > haveCf + 0.01f)
+            {
+                // highest level the gravel on hand fills (bisection between the lowest ground point and topY)
+                float lo = float.MaxValue;
+                ForRectVertices(min, max, (x, z) => lo = Mathf.Min(lo, g.H[SiteGround.VI(x, z)]));
+                if (lo >= topY) lo = topY;
+                float hi = topY;
+                for (int it = 0; it < 30; it++)
+                {
+                    float mid = (lo + hi) * 0.5f;
+                    if (RectFillM3(g, min, max, mid) * CubicFeetPerM3 <= haveCf) lo = mid; else hi = mid;
+                }
+                target = lo;
+                Game.Toast($"Gravel ran out: base only partly spread - order about {Mathf.CeilToInt(needCf - haveCf)} cu ft more");
+            }
+            float cf = g.RaiseRect(min, max, target, GroundCover.Gravel) * CubicFeetPerM3;
             Consume(cf);
             return cf;
+        }
+
+        /// <summary>Same vertex range SiteGround.RaiseRect touches.</summary>
+        static void ForRectVertices(Vector3 min, Vector3 max, System.Action<int, int> f)
+        {
+            int N = SiteGround.N; float c = SiteGround.Cell; var o = SiteGround.Origin;
+            int x0 = Mathf.Clamp(Mathf.RoundToInt((min.x - o.x) / c), 1, N - 1), x1 = Mathf.Clamp(Mathf.RoundToInt((max.x - o.x) / c), 1, N - 1);
+            int z0 = Mathf.Clamp(Mathf.RoundToInt((min.z - o.z) / c), 1, N - 1), z1 = Mathf.Clamp(Mathf.RoundToInt((max.z - o.z) / c), 1, N - 1);
+            for (int z = z0; z <= z1; z++) for (int x = x0; x <= x1; x++) f(x, z);
+        }
+
+        /// <summary>m³ RaiseRect would add to bring the rectangle up to y.</summary>
+        static float RectFillM3(SiteGround g, Vector3 min, Vector3 max, float y)
+        {
+            float v = 0f, a = SiteGround.Cell * SiteGround.Cell;
+            ForRectVertices(min, max, (x, z) => { float h = g.H[SiteGround.VI(x, z)]; if (h < y) v += (y - h) * a; });
+            return v;
         }
 
         static void Consume(float cf)

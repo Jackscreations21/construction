@@ -190,9 +190,12 @@ namespace Groundbreak
         {
             _started = true;
             if (order != null) { SetRate = order.SetRate; Psi = order.Psi; Slump = order.SlumpIn; Fiber = order.Fiber; }
-            if (RebarSystem.Crossings.Count > 0 && RebarSystem.TiedFraction < 0.5f)
-                Defects.Add($"Rebar only {RebarSystem.TiedFraction * 100:0}% tied: the mat got walked down to the bottom of the slab");
-            if (RebarSystem.Bars.Count == 0 && !Fiber) Defects.Add("No reinforcement: cracks will open up instead of staying tight");
+            // only the steel inside THIS outline counts (another slab's mat elsewhere on site does nothing for this one)
+            int crossIn = RebarSystem.CrossingsIn(Outline, out int tiedIn);
+            float tiedFrac = crossIn > 0 ? tiedIn / (float)crossIn : 1f;
+            if (crossIn > 0 && tiedFrac < 0.5f)
+                Defects.Add($"Rebar only {tiedFrac * 100:0}% tied: the mat got walked down to the bottom of the slab");
+            if (RebarSystem.BarsIn(Outline) == 0 && !Fiber) Defects.Add("No reinforcement: cracks will open up instead of staying tight");
             if (Outline.Poly == null) Defects.Add("No vapor barrier: ground moisture will wick through the slab");
             if (SiteGround.I != null && SiteGround.I.CompactedFraction(Outline.Polygon) < 0.8f)
                 Defects.Add("Subgrade/gravel not compacted: the slab will settle and crack");
@@ -406,6 +409,12 @@ namespace Groundbreak
             foreach (var r in Outline.Runs)
             {
                 float a = 12f * Units.Inch, span = r.Length - 2 * a;
+                if (span <= 0f)
+                {
+                    // a jog shorter than 24": one bolt at its middle is within 12" of both corners (never outside the run)
+                    if (WetSetAnchor(r.PointAt(r.Length * 0.5f) - r.Out * 0.05f) != null) n++;
+                    continue;
+                }
                 int k = Mathf.Max(1, Mathf.CeilToInt(span / (72f * Units.Inch) - 1e-4f));
                 for (int i = 0; i <= k; i++) if (WetSetAnchor(r.PointAt(a + span * i / k) - r.Out * 0.05f) != null) n++;
             }

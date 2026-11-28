@@ -222,7 +222,7 @@ namespace Groundbreak.Tests
             // put the takeoff on site (plus a little spare so rounding never starves a step)
             var takeoff = ContractorJobs.Takeoff(job);
             var stockBefore = new Dictionary<string, int>();
-            foreach (var id in new[] { "4x4x8", "postmix-50", "pt2x4x8", "picket-cedar", "gate-kit" })
+            foreach (var id in new[] { LandscapeFeature.PostStock, "postmix-50", "pt2x4x8", "picket-cedar", "gate-kit" })
             {
                 Assert.IsTrue(takeoff.ContainsKey(id), "fence takeoff lists " + id);
                 stockBefore[id] = Game.Stock.Count(id);

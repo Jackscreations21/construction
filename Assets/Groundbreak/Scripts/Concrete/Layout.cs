@@ -74,7 +74,7 @@ namespace Groundbreak
             Lines.Add(line);
         }
 
-        /// <summary>String height: at the laser's top-of-form mark if set, else 8" above grade (nail height).</summary>
+        /// <summary>String height: at the laser's top-of-form mark if set, else at the stake top, 12" above grade (nail height); never above the stake top.</summary>
         static Vector3 StringPoint(int i)
         {
             var s = Stakes[i];

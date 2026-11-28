@@ -136,18 +136,28 @@ namespace Groundbreak
                 Vector2 d2 = w.b - w.a; float len = d2.magnitude; Vector3 dir = (AX * d2.x + AZ * d2.y).normalized;
                 Vector3 across = Vector3.Cross(Vector3.up, dir);
                 Vector3 mid = P((w.a.x + w.b.x) / 2, 0f, (w.a.y + w.b.y) / 2);
-                job.Add("Wing wall (" + w.name + "): PT plate on the slab, studs 16\" O.C., top + cap plates", ToolSets.Fasten, () =>
+                // plates longer than a 16' board are spliced: bottom anywhere, top on a stud, cap 24" off the top plate joints
+                int nStuds = Mathf.Max(2, Mathf.CeilToInt(len / I(16f)) + 1);
+                var studAt = new List<float>();
+                for (int i = 0; i < nStuds; i++) studAt.Add(Mathf.Min(i * I(16f), len - t) + t / 2);
+                var botSegs = Splice.Segments(len, Splice.LongestStock("pt2x4"));
+                var topSegs = Splice.Segments(len, Splice.LongestStock("2x4"), studAt);
+                var capSegs = Splice.Segments(len, Splice.LongestStock("2x4"), studAt, Splice.Joints(topSegs), I(24f));
+                var step = job.Add("Wing wall (" + w.name + "): PT plate on the slab, studs 16\" O.C., top + cap plates", ToolSets.Fasten, () =>
                 {
-                    Framer.Make("pt2x4x16", len, root, mid + Vector3.up * (slab + t / 2), dir, Vector3.up, MemberRole.BottomPlate, Connector.Nailed | Connector.AnchorBolt, "wing");
-                    int n = Mathf.Max(2, Mathf.CeilToInt(len / I(16f)) + 1);
-                    for (int i = 0; i < n; i++)
-                    {
-                        float s = Mathf.Min(i * I(16f), len - t) + t / 2 - len / 2;
-                        Framer.Make("2x4x12", studLen, root, mid + dir * s + Vector3.up * (slab + t + studLen / 2), Vector3.up, dir, MemberRole.Stud, Connector.Nailed, "wing");
-                    }
-                    Framer.Make("2x4x16", len, root, mid + Vector3.up * (PT - t * 1.5f), dir, Vector3.up, MemberRole.TopPlate, Connector.Nailed, "wing");
-                    Framer.Make("2x4x16", len, root, mid + Vector3.up * (PT - t * 0.5f), dir, Vector3.up, MemberRole.CapPlate, Connector.Nailed, "wing");
-                }, ghost(mid + Vector3.up * (PT / 2 + slab / 2), new Vector3(wd, PT - slab, len), dir)).Use("pt2x4x16").Use("2x4x12", Mathf.CeilToInt(len / I(16f)) + 1).Use("2x4x16", 2).Nails = 40;
+                    foreach (var (a, b) in botSegs)
+                        Framer.Make(FloorPlan.PickStock("pt2x4", b - a), b - a, root, mid + dir * ((a + b) / 2 - len / 2) + Vector3.up * (slab + t / 2), dir, Vector3.up, MemberRole.BottomPlate, Connector.Nailed | Connector.AnchorBolt, "wing");
+                    foreach (var sa in studAt)
+                        Framer.Make("2x4x12", studLen, root, mid + dir * (sa - len / 2) + Vector3.up * (slab + t + studLen / 2), Vector3.up, dir, MemberRole.Stud, Connector.Nailed, "wing");
+                    foreach (var (a, b) in topSegs)
+                        Framer.Make(FloorPlan.PickStock("2x4", b - a), b - a, root, mid + dir * ((a + b) / 2 - len / 2) + Vector3.up * (PT - t * 1.5f), dir, Vector3.up, MemberRole.TopPlate, Connector.Nailed, "wing");
+                    foreach (var (a, b) in capSegs)
+                        Framer.Make(FloorPlan.PickStock("2x4", b - a), b - a, root, mid + dir * ((a + b) / 2 - len / 2) + Vector3.up * (PT - t * 0.5f), dir, Vector3.up, MemberRole.CapPlate, Connector.Nailed, "wing");
+                }, ghost(mid + Vector3.up * (PT / 2 + slab / 2), new Vector3(wd, PT - slab, len), dir)).Use("2x4x12", nStuds);
+                foreach (var (a, b) in botSegs) step.Use(FloorPlan.PickStock("pt2x4", b - a));
+                foreach (var (a, b) in topSegs) step.Use(FloorPlan.PickStock("2x4", b - a));
+                foreach (var (a, b) in capSegs) step.Use(FloorPlan.PickStock("2x4", b - a));
+                step.Nails = 40;
             }
 
             // --- valley lines + flat 2x10 valley boards on the main deck

@@ -130,7 +130,7 @@ namespace Groundbreak
             }
             if (!f.Done && topF > 0)
             {
-                float t = Units.In(2);
+                float t = Units.In(4); // 4" #57 top course over the 4" base
                 float len = L * topF;
                 k.B.AddBox(new Vector3(0, -t / 2, -L / 2 + len / 2), new Vector3(W, t, len), Quaternion.identity, k.M(SurfaceKind.Gravel));
             }
@@ -180,7 +180,8 @@ namespace Groundbreak
                 if (i < postsSet)
                 {
                     float above = gate ? 6 * Units.Foot : LandscapeFeature.FenceHeight;
-                    k.B.AddBox(new Vector3(0, gy + (above - Units.In(24)) / 2, z), new Vector3(post, above + Units.In(24), post), Quaternion.identity, wood, Vector3.up);
+                    float below = LandscapeFeature.PostDepth;
+                    k.B.AddBox(new Vector3(0, gy + (above - below) / 2, z), new Vector3(post, above + below, post), Quaternion.identity, wood, Vector3.up);
                 }
                 if (i < poured)
                     k.B.AddFrustum(new Vector3(0, gy + Units.In(0.75f), z), Quaternion.identity, Units.In(5.5f), Units.In(2.4f), Units.In(1.5f), 16, conc, false);

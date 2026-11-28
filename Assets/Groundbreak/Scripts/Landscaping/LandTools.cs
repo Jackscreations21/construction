@@ -243,7 +243,7 @@ namespace Groundbreak
     {
         public override string Id => "posthole";
         public override string Name => "Post-hole Digger";
-        public override string Hint => "LMB dig post holes on a fence/gate layout (2 bites per 24\" hole)";
+        public override string Hint => "LMB dig post holes on a fence/gate layout (2 bites per hole, " + Units.Format(LandscapeFeature.PostDepth) + " deep: below frost, 30\" min)";
         protected override void GroundPrimary(RaycastHit hit, LandscapeFeature f) => Say(f != null ? f.Hint : "Lay out a fence first (Landscaping hands)");
     }
 

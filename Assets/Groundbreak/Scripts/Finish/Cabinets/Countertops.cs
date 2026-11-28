@@ -153,13 +153,13 @@ namespace Groundbreak
             for (float y = 0f; y < height - Units.In(0.5f); y += th + j, row++)
             {
                 float ya = y, yb = Mathf.Min(y + th, height);
-                if (yb < th - 1e-4f + ya) cuts++;
+                bool ripped = yb < th - 1e-4f + ya;   // ripped top row: every tile in it goes through the wet saw
                 float shift = (row % 2) * (tw + j) * 0.5f;
                 for (float x = x0 - shift; x < x1; x += tw + j)
                 {
                     float xa = Mathf.Max(x, x0), xb = Mathf.Min(x + tw, x1);
                     if (xb - xa < Units.In(0.5f)) continue;
-                    if (xa > x + 1e-4f || xb < x + tw - 1e-4f) cuts++;
+                    if (ripped || xa > x + 1e-4f || xb < x + tw - 1e-4f) cuts++;
                     tiles++;
                     mb.UvOffset = new Vector2((float)rnd.NextDouble(), (float)rnd.NextDouble());
                     // tile local (x, thickness, z) -> wall local (x, -z, thickness) under Euler(90,0,0)

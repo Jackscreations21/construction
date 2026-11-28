@@ -29,7 +29,9 @@ namespace Groundbreak
                 f = " " + num + "/" + den;
             }
             string sign = negative ? "-" : "";
-            return feet > 0 ? $"{sign}{feet}' {whole}{f}\"" : $"{sign}{whole}{f}\"";
+            if (feet > 0) return $"{sign}{feet}' {whole}{f}\"";
+            // under 1": 1/2", not 0 1/2"
+            return whole == 0 && frac != 0 ? $"{sign}{f.TrimStart()}\"" : $"{sign}{whole}{f}\"";
         }
     }
 }

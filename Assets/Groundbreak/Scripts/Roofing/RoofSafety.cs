@@ -10,7 +10,10 @@ namespace Groundbreak
         public static bool ClippedIn;
         public static RoofAnchor Anchor;
         public const int SteepRise = 6;
-        public const float LanyardLength = 15f, JackRange = 2.5f;
+        /// <summary>Reach from the ridge anchor: a 50' rope lifeline with a rope grab (the harness kit's 6' shock-absorbing lanyard
+        /// clips to the grab). One ridge anchor with a 25' lanyard would not reach the eave corners of a typical 40' roof.</summary>
+        public const float LanyardLength = 50f * Units.Foot;
+        public const float JackRange = 2.5f;
         public static bool Slipping { get; private set; }
         public static RoofSafety I;
 

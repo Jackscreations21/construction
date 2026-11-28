@@ -11,6 +11,7 @@ namespace Groundbreak
         WallSheathing, Truss, Rafter, HipRafter, ValleyRafter, JackRafter, RidgeBoard, CeilingJoist, CollarTie,
         SubFascia, Fascia, GableStud, RoofSheathing, Stringer, Tread, Riser, Ledger, Lookout, Product,
         SquashBlock,
+        Handrail,   // stair handrail on brackets (rules registered by Stairs/StairHandrail.cs)
     }
 
     [Flags]
@@ -119,6 +120,7 @@ namespace Groundbreak
         {
             var role = Classify(def, rot, size);
             if (role != MemberRole.BottomPlate) return role;
+            Physics.SyncTransforms(); // members placed this frame must be visible to the overlap query
             Vector3 half = size * 0.5f;
             float bottom = center.y - (Mathf.Abs((rot * Vector3.right).y) * half.x + Mathf.Abs((rot * Vector3.up).y) * half.y + Mathf.Abs((rot * Vector3.forward).y) * half.z);
             bool onTop = false, onWallFraming = false;

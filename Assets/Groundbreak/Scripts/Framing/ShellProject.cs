@@ -171,7 +171,12 @@ namespace Groundbreak
                     int cost = (j.Steps.Count - j.Next) * 6;
                     if (GUILayout.Button("Crew $" + cost, btn, GUILayout.Width(110)))
                     {
-                        if (Game.Wallet.TrySpend(cost, "Framing crew: " + j.Title)) j.RunAll(); else t?.ShowMessage("Not enough money");
+                        if (Game.Wallet.TrySpend(cost, "Framing crew: " + j.Title))
+                        {
+                            j.RunAll();
+                            GUIUtility.ExitGUI(); // RunAll builds the whole job: end this IMGUI event so Layout/Repaint don't mismatch
+                        }
+                        else t?.ShowMessage("Not enough money");
                     }
                 }
                 GUILayout.EndHorizontal();

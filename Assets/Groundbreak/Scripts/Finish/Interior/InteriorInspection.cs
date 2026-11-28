@@ -48,12 +48,16 @@ namespace Groundbreak
             }
         }
 
+        /// <summary>Nails into framing a trim piece needs at 16" o.c.: one at every 16" framing line inside the piece
+        /// (ceil(L/16) - 1), at least 2; 1 on a piece under 16".</summary>
+        public static int NailsNeeded(float lengthM) => lengthM < Units.In(16f) ? 1 : Mathf.Max(2, Mathf.CeilToInt(lengthM / Units.In(16f) - 1e-3f) - 1);
+
         static IEnumerable<CloseupInspection.Violation> Nailed()
         {
             foreach (var t in TrimPiece.All)
             {
                 if (t == null) continue;
-                int need = t.Length < Units.In(16f) ? 1 : Mathf.Max(2, Mathf.FloorToInt(t.Length / Units.In(24f)));
+                int need = NailsNeeded(t.Length);
                 if (!t.Nailed || t.NailsInFraming < need)
                     yield return new CloseupInspection.Violation("fin-trim-nailed", t.At(t.Length * 0.5f, 0.03f, t.Profile.MaxY * 0.5f), $"{t.Kind} not nailed into framing ({t.NailsInFraming}/{need})");
             }

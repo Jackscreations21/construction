@@ -20,7 +20,7 @@ namespace Groundbreak
             CloseupInspection.Register("ins-firestop", P, "IRC R302.11", "Plate penetrations (pipes, wires) fire-blocked with fire caulk", FireStop);
             CloseupInspection.Register("ins-airseal", P, "IRC Table N1102.4.1.1", "Electrical boxes in exterior walls air-sealed", AirSeal);
             CloseupInspection.Register("ins-vapor", P, "IRC R702.7", "Class I/II vapor retarder on exterior walls where the climate zone requires it", Vapor);
-            CloseupInspection.Register("ins-attic-r", P, "IRC Table N1102.1.2", "Attic insulation meets the minimum R-value everywhere (data: InsulationRules.AtticMinR)", AtticR);
+            CloseupInspection.Register("ins-attic-r", P, "IRC 2021 Table N1102.1.3", "Attic insulation meets the minimum R-value everywhere: R-49 in climate zone 4 (data: InsulationRules.AtticMinR)", AtticR);
             CloseupInspection.Register("ins-rulers", P, "IRC N1101.10.1.1", "Attic depth markers: one per 300 sq ft of blown insulation", AtticRulers);
             CloseupInspection.Register("ins-baffles", P, "IRC R806.3", "Eave baffles in every insulated eave bay (vent channel kept open)", Baffles);
         }

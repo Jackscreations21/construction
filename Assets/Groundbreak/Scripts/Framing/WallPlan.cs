@@ -112,6 +112,9 @@ namespace Groundbreak
 
         struct Stick { public float X0, X1, Y0, Y1; public MemberRole Role; public string Label; }
 
+        /// <summary>Header label: the lumber actually built (2x by depth), so a header bumped to 11-1/4" (no room for cripples) reads 2x12.</summary>
+        public static string HeaderLumberLabel(float depthIn) => "2x" + HeaderNominal(depthIn);
+
         /// <summary>Everything the wall is made of, in wall-local inches (studs vertical).</summary>
         static List<Stick> Layout(WallSpec s, out List<float> marks)
         {
@@ -154,7 +157,7 @@ namespace Groundbreak
                 float ka = a - 1.5f * hd.jacks, kb = b + 1.5f * hd.jacks;
                 list.Add(new Stick { X0 = ka - 1.5f, X1 = ka, Y0 = 1.5f, Y1 = top, Role = MemberRole.KingStud, Label = "king stud" });
                 list.Add(new Stick { X0 = kb, X1 = kb + 1.5f, Y0 = 1.5f, Y1 = top, Role = MemberRole.KingStud, Label = "king stud" });
-                list.Add(new Stick { X0 = ka, X1 = kb, Y0 = hb, Y1 = hb + depth, Role = MemberRole.Header, Label = "header " + hd.lumber + " (" + Mathf.RoundToInt(o.RoughWidthIn) + "\" span)" });
+                list.Add(new Stick { X0 = ka, X1 = kb, Y0 = hb, Y1 = hb + depth, Role = MemberRole.Header, Label = "header " + HeaderLumberLabel(depth) + " (" + Mathf.RoundToInt(o.RoughWidthIn) + "\" span)" });
                 if (top - (hb + depth) >= 3f)
                     foreach (var m in marks)
                         if (m - 0.75f > ka && m + 0.75f < kb)
@@ -194,13 +197,22 @@ namespace Groundbreak
                 ChalkLine.SnapWorld(a, b);
             }, G(new Vector3(L / 2, 0.75f, d / 2), new Vector3(L, 1.5f, d)));
 
-            string plateStock = FloorPlan.PickStock(s.StudSize, I(L));
-            job.Add("Cut plates to " + Units.Format(I(L)) + ", tack together, mark layout (X at " + s.OCIn + "\" O.C.)", ToolSets.Layout, () =>
+            // plates longer than the longest board are spliced, joints centered on a stud (both plates nail off there)
+            var plateSegs = PlateSegments(s, sticks);
+            var plateStep = job.Add("Cut plates to " + Units.Format(I(L)) + (plateSegs.Count > 1 ? " (" + plateSegs.Count + " pieces, joints on studs)" : "") +
+                                    ", tack together, mark layout (X at " + s.OCIn + "\" O.C.)", ToolSets.Layout, () =>
             {
-                var bp = Framer.Make(plateStock, I(L), root, new Vector3(L / 2, 0.75f, d / 2) * Units.Inch, X, Y, MemberRole.BottomPlate, Connector.Nailed, s.Name);
-                var tp = Framer.Make(plateStock, I(L), root, new Vector3(L / 2, 1.5f + s.StudIn + 0.75f, d / 2) * Units.Inch, X, Y, MemberRole.TopPlate, Connector.Nailed, s.Name);
+                StructuralMember bp = null, tp = null;
+                foreach (var (a, b) in plateSegs)
+                {
+                    string id = FloorPlan.PickStock(s.StudSize, I(b - a));
+                    var bm = Framer.Make(id, I(b - a), root, new Vector3((a + b) / 2, 0.75f, d / 2) * Units.Inch, X, Y, MemberRole.BottomPlate, Connector.Nailed, s.Name);
+                    var tm = Framer.Make(id, I(b - a), root, new Vector3((a + b) / 2, 1.5f + s.StudIn + 0.75f, d / 2) * Units.Inch, X, Y, MemberRole.TopPlate, Connector.Nailed, s.Name);
+                    if (bp == null) { bp = bm; tp = tm; }
+                }
                 LayoutMarks.Draw(bp.transform, tp.transform, root, s, marks, sticks.ConvertAll(k => (k.X0, k.X1, k.Role)));
-            }, G(new Vector3(L / 2, 0.75f, d / 2), new Vector3(L, 1.5f, d))).Use(plateStock, 2);
+            }, G(new Vector3(L / 2, 0.75f, d / 2), new Vector3(L, 1.5f, d)));
+            foreach (var (a, b) in plateSegs) plateStep.Use(FloorPlan.PickStock(s.StudSize, I(b - a)), 2);
 
             foreach (var k in sticks)
             {
@@ -269,6 +281,17 @@ namespace Groundbreak
             return job;
         }
 
+        /// <summary>Bottom/top plate pieces (wall inches): one board when it fits, else joints centered on full-height studs.</summary>
+        static List<(float a, float b)> PlateSegments(WallSpec s, List<Stick> sticks)
+        {
+            var studs = new List<float>();
+            foreach (var k in sticks) if (k.Role == MemberRole.Stud || k.Role == MemberRole.KingStud) studs.Add((k.X0 + k.X1) / 2);
+            return Splice.Segments(s.LengthIn, Units.ToInches(Splice.LongestStock(s.StudSize)), studs);
+        }
+
+        /// <summary>Plate joints of a wall (wall inches) - the cap plate keeps its own joints 24" away from these.</summary>
+        public static List<float> PlateJoints(WallSpec s) => Splice.Joints(PlateSegments(s, Layout(s, out _)));
+
         static string HeaderNominal(float depthIn) => depthIn <= 5.6f ? "6" : depthIn <= 7.3f ? "8" : depthIn <= 9.3f ? "10" : "12";
 
         static void AddBrace(WallAssembly w)
@@ -309,8 +332,8 @@ namespace Groundbreak
                 m.enabled = false;
                 if (a - x0 > 0.01f) Framer.Make(id, a - x0, w.transform, new Vector3((x0 + a) / 2, lp.y, lp.z), X, Y, MemberRole.BottomPlate, Connector.Nailed, w.Spec.Name);
                 if (x1 - b > 0.01f) Framer.Make(id, x1 - b, w.transform, new Vector3((b + x1) / 2, lp.y, lp.z), X, Y, MemberRole.BottomPlate, Connector.Nailed, w.Spec.Name);
-                Game.Stock.Scrap.Add((id, b - a));
-                break;
+                Game.Stock.Scrap.Add((id, Mathf.Min(b, x1) - Mathf.Max(a, x0)));
+                // (no break: a spliced plate may have its joint inside the opening - both pieces get cut)
             }
         }
 
@@ -350,11 +373,21 @@ namespace Groundbreak
                 bool endWall = !s.CornerBackerStart && !s.CornerBackerEnd;
                 float x0 = endWall ? -s.DepthIn : s.DepthIn, x1 = endWall ? s.LengthIn + s.DepthIn : s.LengthIn - s.DepthIn;
                 float len = x1 - x0;
-                string stock = FloorPlan.PickStock(s.StudSize, I(len));
                 var c = new Vector3((x0 + x1) / 2, s.PlateHeightIn + 0.75f, s.DepthIn / 2) * Units.Inch;
-                job.Add("Cap plate on " + s.Name + (endWall ? " (laps the corners)" : ""), ToolSets.Fasten,
-                    () => Framer.Make(stock, I(len), ww.transform, c, X, Y, MemberRole.CapPlate, Connector.Nailed, s.Name),
-                    () => (ww.transform.TransformPoint(c), new Vector3(I(len), I(1.5f), I(s.DepthIn)), ww.transform.rotation)).Use(stock).Nails = Mathf.CeilToInt(len / 16f) * 2;
+                // longer than one board: splice over a stud, 24" min from the top plate joints (IRC R602.3.2)
+                var studs = new List<float>();
+                foreach (var k in Layout(s, out _)) if (k.Role == MemberRole.Stud || k.Role == MemberRole.KingStud) studs.Add((k.X0 + k.X1) / 2 - x0);
+                var below = PlateJoints(s).ConvertAll(j => j - x0);
+                var segs = Splice.Segments(len, Units.ToInches(Splice.LongestStock(s.StudSize)), studs, below, 24f);
+                var step = job.Add("Cap plate on " + s.Name + (endWall ? " (laps the corners)" : "") + (segs.Count > 1 ? " - " + segs.Count + " pieces, joints 24\" off the top plate joints" : ""), ToolSets.Fasten,
+                    () =>
+                    {
+                        foreach (var (a, b) in segs)
+                            Framer.Make(FloorPlan.PickStock(s.StudSize, I(b - a)), I(b - a), ww.transform, new Vector3(x0 + (a + b) / 2, s.PlateHeightIn + 0.75f, s.DepthIn / 2) * Units.Inch, X, Y, MemberRole.CapPlate, Connector.Nailed, s.Name);
+                    },
+                    () => (ww.transform.TransformPoint(c), new Vector3(I(len), I(1.5f), I(s.DepthIn)), ww.transform.rotation));
+                foreach (var (a, b) in segs) step.Use(FloorPlan.PickStock(s.StudSize, I(b - a)));
+                step.Nails = Mathf.CeilToInt(len / 16f) * 2;
             }
             return job;
         }

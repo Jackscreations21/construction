@@ -208,7 +208,7 @@ namespace Groundbreak
                     s.lengthFt = Pick(rng, 100f, 120f, 140f, 160f, 180f); s.gates = 1;
                     title = $"{s.lengthFt:0} LF cedar privacy fence";
                     desc = $"Install {s.lengthFt:0} linear feet of 6' cedar privacy fence around the back yard with one 4' gate: " +
-                           "4x4 posts 8' O.C. set 24\" deep in concrete, three 2x4 rails per bay, dog-ear pickets. " +
+                           "PT 4x4 posts 8' O.C. set below the 36\" frost line in concrete, three 2x4 rails per bay, dog-ear pickets. " +
                            "Stakes mark the fence corners.";
                     payout = Mathf.RoundToInt(38f * s.lengthFt + 450f * s.gates);
                     vehicle = "pickup";
@@ -455,8 +455,8 @@ namespace Groundbreak
                     int bays = 2 * baysA + baysB;
                     int posts = 2 * (baysA + 1) + (baysB + 1) + 2 * s.gates;
                     int pickets = 2 * baysA * Mathf.CeilToInt(a * 12f / baysA / 5.5f) + baysB * Mathf.CeilToInt(b * 12f / baysB / 5.5f);
-                    Need(t, "4x4x8", posts);
-                    Need(t, "postmix-50", posts * 2);
+                    Need(t, LandscapeFeature.PostStock, posts);
+                    Need(t, "postmix-50", posts * LandscapeFeature.PostMixBags);
                     Need(t, "pt2x4x8", bays * 3);
                     Need(t, "picket-cedar", Mathf.CeilToInt(pickets * 1.05f));
                     Need(t, "gate-kit", s.gates);

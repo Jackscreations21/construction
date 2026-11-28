@@ -147,7 +147,9 @@ namespace Groundbreak.Tests
             Assert.AreEqual(3, members.Count(m => m.Role == MemberRole.Stringer), "stringers");
             Assert.AreEqual(2 * r.Treads, members.Count(m => m.Role == MemberRole.Tread), "tread boards");
             Assert.AreEqual(r.Treads, members.Count(m => m.Role == MemberRole.Riser), "risers");
-            Assert.AreEqual(4, members.Count(m => m.Role == MemberRole.Post), "posts");
+            Assert.AreEqual(4, members.Count(m => m.Role == MemberRole.Post && m.Group == "landing"), "landing posts");
+            Assert.GreaterOrEqual(members.Count(m => m.Role == MemberRole.Post && m.Group == "stairs"), 2, "handrail posts (7 risers need a handrail)");
+            Assert.AreEqual(1, members.Count(m => m.Role == MemberRole.Handrail), "handrail");
             Assert.AreEqual(4, members.Count(m => m.Role == MemberRole.Beam), "beam plies");
             Assert.AreEqual(1, members.Count(m => m.Role == MemberRole.Ledger), "hanger board");
             Assert.GreaterOrEqual(members.Count(m => m.Role == MemberRole.Joist), 2, "joists");

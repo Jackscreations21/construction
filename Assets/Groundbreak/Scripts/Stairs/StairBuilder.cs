@@ -17,7 +17,7 @@ namespace Groundbreak
     /// <summary>Builds stairs and a small landing as FramingJobs in real order with real lumber.
     /// Stair frame: local +Z runs up the stairs, +X is to the right going up, Y up; origin = bottomCenter
     /// (on the floor, at the face of the first riser cut of the stringers).</summary>
-    public static class StairBuilder
+    public static partial class StairBuilder
     {
         static float M(float inches) => inches * Units.Inch;
         static Vector3 P(float xIn, float yIn, float zIn) => new Vector3(M(xIn), M(yIn), M(zIn));
@@ -50,20 +50,41 @@ namespace Groundbreak
 
         // ================================================================== stairs
 
-        /// <summary>Straight stair: 3 stringers cut from 2x12 (PT 12' if it fits), hung from a 3/4" hanger board on the landing rim
-        /// with galvanized stringer connectors (when supportTop is given), 1x8 risers, two PT 2x6 per tread (1/4" gap, 1" nosing).</summary>
+        /// <summary>Why the last <see cref="Stairs"/> call was refused (empty when it was built).</summary>
+        public static string LastError = "";
+
+        /// <summary>Straight stair: 3 stringers cut from 2x12 (PT 12' if it fits, 16' max), hung from a 3/4" hanger board on the landing rim
+        /// with galvanized stringer connectors (when supportTop is given), 1x8 risers, two PT 2x6 per tread (1/4" gap, 1" nosing), and on
+        /// 4+ risers a handrail (PT 4x4 posts bolted to the right stringer, 1 5/8" round rail on brackets 36" above the nosings).
+        /// Refused (empty job, <see cref="LastError"/> + toast) when narrower than 36" (IRC R311.7.1) or when a stringer would need more
+        /// than a 16' 2x12 (add a landing).</summary>
         public static FramingJob Stairs(Vector3 bottomCenter, float yaw, float totalRiseM, float widthM = 0.9144f, Transform supportTop = null)
         {
             var r = StairMath.Calculate(Units.ToInches(totalRiseM));
             var lay = new StringerLayout(r);
             int n = r.Risers;
-            float R = r.UnitRiseIn, T = r.UnitRunIn, t = r.TreadThicknessIn, W = Mathf.Max(24f, Units.ToInches(widthM));
+            float R = r.UnitRiseIn, T = r.UnitRunIn, t = r.TreadThicknessIn, W = Units.ToInches(widthM);
             float H = r.TotalRiseIn;
+            LastError = "";
 
-            var job = FramingJob.Create("Stairs (" + n + " risers @ " + StairMath.FormatIn(R) + ")");
+            string refuse = null;
+            if (W < StairMath.MinWidthIn - 0.01f)
+                refuse = "Stairs must be at least 36\" wide (IRC R311.7.1) - " + StairMath.FormatIn(W) + " is too narrow";
+            else if (r.Valid && n >= 2 && !r.LengthOk)
+                refuse = "Stringer too long: " + r.BuildProblem;
+            var job = FramingJob.Create(refuse != null ? "Stairs refused" : "Stairs (" + n + " risers @ " + StairMath.FormatIn(R) + ")");
             var root = job.transform;
             root.SetPositionAndRotation(bottomCenter, Quaternion.Euler(0f, yaw, 0f));
-            if (!r.Valid || n < 2) { Debug.LogWarning("[StairBuilder] rise too small for a stair: " + H + "\""); return job; }
+            if (refuse != null)
+            {
+                LastError = refuse;
+                Debug.LogWarning("[StairBuilder] " + refuse);
+                Game.Toast(refuse);
+                return job;
+            }
+            if (!r.Valid || n < 2) { LastError = "rise too small for a stair"; Debug.LogWarning("[StairBuilder] rise too small for a stair: " + H + "\""); return job; }
+            var asm = job.gameObject.AddComponent<StairAssembly>();
+            asm.Result = r; asm.WidthIn = W;
 
             string stock = r.StockId;
             float[] lats = { -(W * 0.5f - 0.75f), 0f, W * 0.5f - 0.75f };
@@ -151,6 +172,9 @@ namespace Groundbreak
                             Ghost(root, c, new Vector3(M(W), M(1.5f), M(5.5f)))).Use("pt2x6x16", treadCut.Take(W)).Nails = 6;
                 }
             }
+
+            // 6. handrail (IRC R311.7.8: required on 4 or more risers)
+            if (r.HandrailRequired) AddHandrail(job, asm, lay, W);
             return job;
         }
 

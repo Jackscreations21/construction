@@ -276,10 +276,12 @@ namespace Groundbreak
             face.Normalize();
             Vector3 up = Mathf.Abs(d.y) > 0.9f ? Vector3.forward : Vector3.up;
             float off = Mathf.Abs(Vector3.Dot(face, (up - d * Vector3.Dot(up, d)).normalized)) > 0.7f ? spec.Height * 0.5f : spec.Width * 0.5f;
-            if (!MepStock.Free && !Game.Stock.TryTake(HvacSpecs.Takeoff6, 1) && !Game.Wallet.TrySpend(9, "Starting collar")) { Game.Toast("No starting collars on site"); return null; }
+            // check first, charge only once the trunk is actually cut (a failed SplitAt must not eat a collar)
+            if (!MepStock.Free && Game.Stock.Count(HvacSpecs.Takeoff6) <= 0 && Game.Wallet.Money < 9) { Game.Toast("No starting collars on site"); return null; }
 
             var second = trunk.SplitAt(c);
             if (second == null) return null;
+            if (!MepStock.Free && !Game.Stock.TryTake(HvacSpecs.Takeoff6, 1)) Game.Wallet.TrySpend(9, "Starting collar");
             var go = new GameObject($"Takeoff {collarIn:0}\"");
             go.transform.SetPositionAndRotation(c, Quaternion.LookRotation(d, face));
             var node = go.AddComponent<NetNode>();

@@ -282,7 +282,7 @@ namespace Groundbreak.Tests
             res = CloseupInspection.Run(CloseupInspection.Drywall);
             Assert.IsTrue(res.Passed, Violations(res));
 
-            // ---------------- attic: baffles, blown loose fill to R-38, depth rulers
+            // ---------------- attic: baffles, blown loose fill to R-49, depth rulers
             var cf = Insulation.CeilingFace(ceil);
             foreach (var (bay, end) in Insulation.EaveBays(cf, InsulationInspection.ExteriorWalls())) Insulation.InstallBaffle(cf, bay, end);
             Assert.Greater(Insulation.Baffles.Count, 5, "eave baffles along the exterior wall");
@@ -291,7 +291,7 @@ namespace Groundbreak.Tests
             Insulation.InstallRulers(ceil);
             res = CloseupInspection.Run(CloseupInspection.Insulation);
             Assert.IsTrue(res.Passed, Violations(res));
-            Assert.GreaterOrEqual(af.RValue, 38f);
+            Assert.GreaterOrEqual(af.RValue, 49f);
             yield return Frames(2);
             Shot(Cam(In(120f, 128f, 100f), In(40f, 104f, 10f), 60f), "idw_10_attic_loosefill");
 

@@ -26,8 +26,20 @@ namespace Groundbreak
             var piece = hit.collider != null ? hit.collider.GetComponentInParent<Piece>() : null;
             if (piece == null || piece.Def == null) return;
             if (piece.State != PieceState.Loose) { Game.Toast("It's nailed down - use the pry bar"); return; }
+            PickUp(piece);
+        }
 
-            if (piece.Size.z >= piece.Def.Size.z - 0.0005f)
+        /// <summary>Returns a loose piece to the stock pile: a full-length stick goes back into stock, a shorter one into scrap,
+        /// a cut stringer to the waste pile (nothing reusable).</summary>
+        public static void PickUp(Piece piece)
+        {
+            if (piece == null || piece.Def == null) return;
+            if (piece.GetComponent<CutStringer>() != null)
+            {
+                // a notched stringer is not a 2x12 any more: its offcuts already went to scrap when it was cut
+                Game.Toast("Cut stringer tossed on the waste pile - a notched board can't go back into stock");
+            }
+            else if (piece.Size.z >= piece.Def.Size.z - 0.0005f)
             {
                 Game.Stock.Add(piece.Def.Id, 1);
                 Game.Toast("Picked up " + piece.Def.Name);
