@@ -98,7 +98,7 @@ namespace Groundbreak
             {
                 var p = m != null ? m.Piece : null;
                 if (p == null || p.Def == null || !p.gameObject.activeInHierarchy || !m.enabled) continue;
-                if (ShellSave.IsShellPiece(p) || p.GetComponent<CutStringer>() != null || p.GetComponent<FormPart>() != null || p.GetComponent<DeckPart>() != null) continue;
+                if (ShellSave.IsShellPiece(p) || JobSave.IsJobPiece(p) || p.GetComponent<CutStringer>() != null || p.GetComponent<FormPart>() != null || p.GetComponent<DeckPart>() != null) continue;
                 if (p.GetComponentInParent<MaterialPile>() != null || p.GetComponentInParent<HungDoor>() != null) continue;
                 d.members.Add(new MemberD { piece = SaveGaps.Ref(p), role = (int)m.Role, connectors = (int)m.Connectors, group = m.Group });
             }

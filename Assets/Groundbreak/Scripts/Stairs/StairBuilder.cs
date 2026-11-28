@@ -63,6 +63,7 @@ namespace Groundbreak
             var job = FramingJob.Create("Stairs (" + n + " risers @ " + StairMath.FormatIn(R) + ")");
             var root = job.transform;
             root.SetPositionAndRotation(bottomCenter, Quaternion.Euler(0f, yaw, 0f));
+            JobRecipe.Attach(job, "stairs", bottomCenter, yaw, supportTop, totalRiseM, widthM);   // save/load replays it (SaveGaps/JobSave)
             if (!r.Valid || n < 2) { Debug.LogWarning("[StairBuilder] rise too small for a stair: " + H + "\""); return job; }
 
             string stock = r.StockId;
@@ -261,6 +262,7 @@ namespace Groundbreak
             root.SetPositionAndRotation(center, Quaternion.Euler(0f, yaw, 0f));
             var info = job.gameObject.AddComponent<StairLanding>();
             info.SizeM = sizeM; info.HeightM = heightM;
+            JobRecipe.Attach(job, "landing", center, yaw, null, sizeM, heightM);   // save/load replays it (SaveGaps/JobSave)
             if (postH < 6f) { Debug.LogWarning("[StairBuilder] landing too low for posts + 2x8 framing"); return job; }
 
             // 1. posts
