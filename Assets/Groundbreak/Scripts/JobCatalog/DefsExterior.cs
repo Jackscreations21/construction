@@ -86,7 +86,7 @@ namespace Groundbreak
                 .Diag("check", "Push the posts and look at the rails", null, 2f)
                 .Fix("rail-new", "Cut a new rail and screw it to the posts with rail brackets", C.Saw, 4f).Mat(JP.Rail2x4).Mat(JP.ExtScrews, 6)
                 .Fix("post-out", "Unscrew the rails, dig out the broken post and its old footing", "posthole", 6f)
-                .Fix("post-set", "Set a new PT post 24\" deep, plumb both ways", C.Level, 4f).After("post-out").Mat(JP.Post4x4)
+                .Fix("post-set", "Set a new PT post 36\" deep, plumb both ways", C.Level, 4f).After("post-out").Mat(JP.Post4x4)
                 .Fix("concrete", "Fill with fast-setting post concrete and water, reattach the rails", "posthole", 4f).After("post-set").Mat(JP.PostMix, 2).Wait(30f)
                 .Finish("test", "Push on it", null, 1f).Test();
 

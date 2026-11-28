@@ -611,7 +611,7 @@ namespace Groundbreak
             b.R("Office 5", 0, 20, 16, 32, 1).R("Office 6", 0, 32, 16, 44, 1).R("Records storage", 0, 44, 16, 60, 1);
             b.R("Conference room 2", 24, 20, 40, 40, 1).R("File storage", 24, 40, 40, 60, 1).R("Open to below", 40, 0, 120, 60, 1);
             b.Door(0, 12f, "door-storefront36").Door(0, 60f, "oh-14x14").Door(0, 90f, "oh-14x14").Door(2, 70f, "oh-dock-9x10").Door(2, 100f, "oh-dock-9x10").Door(1, 30f, "door-hm36");
-            b.Notes = "Like the company's own yard building: two-level office wing (mezzanine at 12' on a 22' IBC stair, 21 risers @ 6-7/8\") beside a 80x60 warehouse with drive-in and dock doors.";
+            b.Notes = "Like the company's own yard building: two-level office wing (mezzanine at 12' on a 22' IBC stair: two flights, 11 + 10 risers @ 6-7/8\", with a 44\" landing between them) beside a 80x60 warehouse with drive-in and dock doors.";
             return b;
         }
     }
