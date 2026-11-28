@@ -235,6 +235,7 @@ namespace Groundbreak
             foreach (var j in Company.ActiveJobs.ToArray())
             {
                 if (j.Id == HereJobId || !CanSimulate(j)) continue;
+                if (!JobVehicleLock.Met(j)) continue;                             // on hold: the job's vehicle isn't in the fleet
                 float days = 0f, q = 0f;
                 foreach (var w in Company.Workers)
                 {

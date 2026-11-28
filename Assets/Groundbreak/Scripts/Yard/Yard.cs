@@ -142,9 +142,12 @@ namespace Groundbreak
             if (r.VolumeCuFt <= 0) { msg = "Nothing to order."; return false; }
             if (r.VolumeCuFt > FreeCuFt) { msg = $"The warehouse has {FreeCuFt:N0} cu ft free; this order is {r.VolumeCuFt:N0}."; return false; }
             int cost = Fleet.MaterialCost(cart, true) + Fleet.DeliveryFee;
-            if (!Game.Wallet.TrySpend(cost, "Bulk order (delivered to warehouse)")) { msg = $"Order is ${cost:N0} incl. ${Fleet.DeliveryFee} delivery."; return false; }
+            int handling = ForkliftRules.HandlingFee(cart);                      // no forklift: the crew hand-unloads the drop
+            if (Game.Wallet.Money < cost + handling || !Game.Wallet.TrySpend(cost, "Bulk order (delivered to warehouse)"))
+            { msg = $"Order is ${cost:N0} incl. ${Fleet.DeliveryFee} delivery" + (handling > 0 ? $" + ${handling:N0} hand unloading." : "."); return false; }
+            if (handling > 0) Game.Wallet.TrySpend(handling, ForkliftRules.UnloadReason);
             foreach (var kv in cart) if (kv.Value > 0) Stock.Add(kv.Key, kv.Value * Cargo.UnitsPerPurchase(kv.Key));
-            msg = $"Bulk order delivered to the warehouse: ${cost:N0}."; Game.Toast(msg); MarkDirty();
+            msg = $"Bulk order delivered to the warehouse: ${cost:N0}" + (handling > 0 ? $" + ${handling:N0} hand unloading (no forklift)." : "."); Game.Toast(msg); MarkDirty();
             return true;
         }
 

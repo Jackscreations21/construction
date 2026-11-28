@@ -652,6 +652,7 @@ namespace Groundbreak
         {
             if (j == null || !Company.ActiveJobs.Contains(j)) { msg = "That job is not active."; return false; }
             if (!IsContractorJob(j)) { msg = "Not a contractor job."; return false; }
+            if (!JobVehicleLock.Met(j)) { msg = JobVehicleLock.PausedLine(j); return false; }   // paused until the vehicle is back
             var c = Verify(j);
             if (!c.Ok)
             {
