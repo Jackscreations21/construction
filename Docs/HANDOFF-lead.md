@@ -83,3 +83,8 @@ Operating notes that still apply:
 - Shell project + roofing, wet concrete/forms/rebar/layout, drywall/paint/insulation, interior finish, cut stringers, leftovers now save. Save version 3, v1/v2 saves load. See `Docs/SAVEGAPS.md` for the short list still not saved.
 - Full suite on the merged tree: 250 total, 245 passed, 0 failed, 5 skipped by design.
 - Known waste: an unfinished shell project left from earlier gets replayed on load (harmless).
+
+## Update: forklift + job-vehicle sale block merged
+- Forklift: no hand-unloading labor on warehouse loads over 2,000 lb ($45/ton without it), 3% off warehouse stock, warehouse runs half time. Not drivable. `Scripts/Forklift/`.
+- Can't sell the last vehicle of a type an active job needs. Full suite: 255 total, 250 passed, 0 failed, 5 skipped.
+- Open decisions left: saw station has no effect, same weather seed each career, stair width/handrail, R-38 vs R-49, pacing.
