@@ -202,7 +202,8 @@ namespace Groundbreak.Tests
             ("duplex-1664", 0, true), ("townhome-row4", 0, false), ("townhome-row4", 1, false), ("adu-480", 0, true), ("adu-carriage-672", 1, false),
             ("garage-3car", 0, true), ("garage-2car-shop", 0, false), ("shed-12x16", 0, true), ("polebarn-40x60", 0, false), ("barn-36x48", 0, true), ("barn-36x48", 1, false),
             ("workshop-40x60", 0, false), ("retail-2400", 0, true), ("diner-3000", 0, true), ("office-3000", 0, false), ("stripmall-6000", 0, false),
-            ("gasstation-3200", 0, false), ("warehouse-12000", 0, true), ("warehouse-50000", 0, false), ("flex-6000", 0, false), ("yard-hq-7200", 0, true), ("yard-hq-7200", 1, false),
+            ("gasstation-3200", 0, false), ("storefront-24", 0, true), ("storefront-24", 1, false), ("bank-2800", 0, false), ("grocery-20000", 0, false),
+            ("warehouse-12000", 0, true), ("warehouse-50000", 0, false), ("flex-6000", 0, false), ("yard-hq-7200", 0, true), ("yard-hq-7200", 1, false),
         };
 
         [UnityTest]

@@ -53,6 +53,10 @@ namespace Groundbreak
             l.Add(Office3000());
             l.Add(StripMall6000());
             l.Add(GasStation3200());
+            l.Add(Storefront("storefront-24", "Main Street storefront 24' (shop + apartment above)", 24f));
+            l.Add(Storefront("storefront-30", "Main Street storefront 30' (shop + apartment above)", 30f));
+            l.Add(Bank2800());
+            l.Add(Grocery20000());
             // ------------------------------------------------------------ industrial
             l.Add(Warehouse("warehouse-6000", "Warehouse 100x60", 100, 60, 20, 24, 0, CompanyStage.Builder,
                 front: new[] { 50f, 75f }, frontDoor: "oh-12x14", docks: new float[0]));
@@ -470,6 +474,68 @@ namespace Groundbreak
             b.R("Storage", 28, 40, 64, 50);
             b.Door(0, 32f, "door-storefront72").Door(2, 46f, "door-hm36");
             b.Notes = "C-store with a walk-in beer cave; the fuel canopy, tanks and dispensers are a separate site package.";
+            return b;
+        }
+
+        /// <summary>Two-story downtown row building, W' wide x 70' deep between party walls: a shop on the ground floor (storefront, stockroom,
+        /// ADA restroom, rear exit) and a two-bedroom apartment upstairs reached from its own street door. The apartment entry is walled off
+        /// from the shop; the stair is 48" wide (IBC 1011.2 minimum 36" for under 50 occupants), 7" max risers / 11" treads, a 3' landing at
+        /// the bottom and the upstairs hall at the top, with blocking for handrails on both sides.</summary>
+        static Blueprint Storefront(string id, string name, float W)
+        {
+            const float D = 70f, sx = 4f;     // stair / entry column on the right, 4' wide
+            float c = W - sx;
+            var b = Commercial(id, name, "Main Street storefront", "storefront", W, D, "IBC M (shop) / R-3 (dwelling above, 1-hr separation per IBC 508.4)", CompanyStage.Builder);
+            b.Floors = 2; b.WallHeightFt = 12f; b.FloorJoist = "Open-web 16"; b.BearingLines = 2; b.PartyWalls = true;
+            b.ConstructionType = "III-B (brick/CMU party walls, wood floor trusses)";
+            // ground floor: the shop
+            b.R("Sales floor", 0, 0, c, 46).R("Entry (apartment)", c, 0, W, 6).R("Stair", c, 6, W, 31).R("Storage", c, 31, W, 46);
+            b.R("Restroom", 0, 46, 10, 54).R("Janitor", 0, 54, 10, 59).R("Mech", 0, 59, 10, D).R("Corridor", 10, 46, 14, D).R("Stockroom", 14, 46, W, D);
+            b.Private("Entry (apartment)");
+            // storefront: shop door near the apartment door, display windows across the rest of the front (head 8'-6")
+            b.Door(0, c - 3f, "door-storefront36").Door(0, c + sx / 2f, "door-ext-steel36").Door(2, 12f, "door-hm36-panic");
+            for (float x = 4f; x <= c - 3f - 5.2f; x += 7f) b.Window(0, x, "win-storefront-7284");
+            // upper floor: the apartment
+            b.R("Living", 0, 0, c, 18, 1).R("Coat closet", c, 0, W, 6, 1).R("Stair", c, 6, W, 31, 1).R("Kitchen", 0, 18, c, 31, 1);
+            b.R("Pantry", 0, 31, 8, 40, 1).R("Bath", 8, 31, c, 40, 1).R("Hall", c, 31, W, 50, 1);
+            b.R("Study", 0, 40, 12, 50, 1).R("Laundry", 12, 40, c, 50, 1);
+            b.R("Hall 2", 0, 50, W, 54, 1).R("Bed 2", 0, 54, 11, D, 1).R("Master", 11, 54, W, D, 1);
+            b.Notes = $"Zero-lot-line row building {W}'x{D}': storefront below, two-bedroom apartment above with its own street door and a straight " +
+                      "48\" stair (24 risers @ 6-3/4\", 11\" treads, handrails both sides); 12' floors, 16\" open-web floor trusses on two bearing lines, " +
+                      "type X ceiling over the shop, bedrooms with egress windows on the back wall.";
+            return b;
+        }
+
+        /// <summary>Small bank branch 40'x70': banking lobby and teller line up front, offices, a safe deposit room, staff corridor to the back.</summary>
+        static Blueprint Bank2800()
+        {
+            var b = Commercial("bank-2800", "Bank branch (2,800 sq ft)", "Bank", "bank", 40, 70, "IBC B (business)", CompanyStage.Builder);
+            b.WallHeightFt = 14f;
+            b.R("Banking lobby", 0, 0, 28, 30).R("Manager office", 28, 0, 40, 15).R("Loan office", 28, 15, 40, 30);
+            b.R("Teller line", 0, 30, 24, 44).R("Corridor", 24, 30, 28, 70);
+            b.R("Safe deposit storage", 0, 44, 24, 56).R("Break room", 0, 56, 24, 64).R("Records storage", 0, 64, 24, 70);
+            b.R("Conference room", 28, 30, 40, 44).R("Restroom", 28, 44, 40, 52).R("Restroom 2", 28, 52, 40, 60).R("Janitor", 28, 60, 40, 64).R("Mech", 28, 64, 40, 70);
+            b.Door(0, 14f, "door-storefront72").Door(2, 26f, "door-hm36-panic");
+            b.Notes = "Masonry bank branch: 14' banking hall, teller line behind a secured door, reinforced safe deposit / cash room (UL vault door by the bank's vendor), " +
+                      "two ADA restrooms, staff exit at the back. The night drop and ATM are a separate package.";
+            return b;
+        }
+
+        /// <summary>Neighborhood grocery 200'x100' (20,000 sq ft): sales floor, receiving + stockroom with a dock, walk-in cooler and freezer
+        /// behind the cases, offices / break room / restrooms off a back corridor. Sprinklered (IBC 903.2.7: M fire area over 12,000 sq ft).</summary>
+        static Blueprint Grocery20000()
+        {
+            var b = Commercial("grocery-20000", "Grocery store (20,000 sq ft)", "Grocery", "grocery", 200, 100, "IBC M (mercantile)", CompanyStage.Developer);
+            b.WallHeightFt = 18f; b.InteriorColumnLines = 1; b.SlabIn = 5f;
+            b.R("Sales floor", 0, 0, 200, 70);
+            b.R("Receiving stockroom", 0, 70, 70, 100).R("Walk-in cooler", 70, 70, 100, 100).R("Walk-in cooler (freezer)", 100, 70, 120, 100).R("Corridor", 120, 70, 124, 100);
+            b.R("Office", 124, 70, 140, 86).R("Cash office", 140, 70, 152, 86).R("Break room", 152, 70, 176, 86).R("Mech", 176, 70, 200, 86);
+            b.R("Corridor 2", 124, 86, 200, 90);
+            b.R("Restroom (men)", 124, 90, 136, 100).R("Restroom (women)", 136, 90, 148, 100).R("Janitor", 148, 90, 156, 100).R("Supply storage", 156, 90, 200, 100);
+            b.Door(0, 60f, "door-storefront72").Door(0, 140f, "door-storefront72");
+            b.Door(2, 30f, "oh-dock-9x10").Door(2, 50f, "door-hm36").Door(2, 122f, "door-hm36-panic").Door(1, 88f, "door-hm36-panic");
+            b.Notes = "CMU and steel bar-joist grocery, 18' clear, one interior column line; entrance and exit vestibules, dock door with leveler at receiving, " +
+                      "walk-in cooler and freezer loaded from the stockroom behind the dairy/frozen cases, NFPA 13 sprinklers.";
             return b;
         }
 

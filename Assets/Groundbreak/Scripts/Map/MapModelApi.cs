@@ -74,6 +74,9 @@ namespace Groundbreak
         public static bool Has(string type) => type != null && _types.ContainsKey(type);
         public static IEnumerable<string> Types => _types.Keys;
 
+        /// <summary>Seed → index in 0..n-1 for any seed (Mathf.Abs(int.MinValue) is still negative, so Abs(seed) % n can index out of range).</summary>
+        public static int Pick(int seed, int n) => n <= 0 ? 0 : (int)(((long)seed % n + n) % n);
+
         /// <summary>Draws a building (spec) into b. Catches model errors and falls back to a plain box.</summary>
         public static void Draw(MapBuild b, MapBuildingSpec s)
         {

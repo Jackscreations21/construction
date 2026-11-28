@@ -589,7 +589,7 @@ namespace Groundbreak
             // outbuildings placed as extra parcels sharing the farm lot (not separate addresses)
             void Out(string type, float x, float depthBack, float bw, float bd, int units = 1)
             {
-                var spec = new MapBuildingSpec { Type = type, Width = bw, Depth = bd, Units = units, Seed = seed + type.GetHashCode(), Color = type == "barn" ? new Color(0.62f, 0.14f, 0.10f) : Metals[(seed + bw.GetHashCode()) % Metals.Length], Accent = Color.white };
+                var spec = new MapBuildingSpec { Type = type, Width = bw, Depth = bd, Units = units, Seed = seed + type.GetHashCode(), Color = type == "barn" ? new Color(0.62f, 0.14f, 0.10f) : Metals[MapModels.Pick(seed + bw.GetHashCode(), Metals.Length)], Accent = Color.white };
                 Parcels.Add(new MapParcel { Lot = lot, Spec = spec, Setback = depthBack, OffsetX = x, Site = MapSite.None, Road = r });
             }
             Out("barn", -w / 2f + 40f, 40f, 14f, 24f);
@@ -658,7 +658,7 @@ namespace Groundbreak
         {
             // Developer-stage land along Mill Rd (Town tracts, LotUse.Free, > 30,000 sq ft → "land for sale" in the Development app)
             Vacant(mill, 1, -40f, 140f, 150f, 7001, "devland", "land", FieldKind.Hay);
-            Vacant(mill, 1, 160f, 400f, 150f, 7003, "devland", "land", FieldKind.Pasture);
+            Vacant(mill, 1, 160f, 360f, 150f, 7003, "devland", "land", FieldKind.Pasture);   // ends short of Ridge Rd's lots (z 372+)
             Vacant(rt9, 1, 680f, 860f, 150f, 7101, "devland", "land", FieldKind.Pasture);
             Vacant(rt9, -1, 680f, 900f, 160f, 7102, "devland", "land", FieldKind.Hay);
             // the Development feature's own tracts on County Rd 9 (x 430-1040, z 610-810): pasture with fence lines, no trees inside
@@ -673,6 +673,49 @@ namespace Groundbreak
             Fields(Rect.MinMaxRect(430f, 820f, 1170f, 965f), 401, 150f);
             Areas.Add(new MapArea { Kind = AreaKind.Woods, R = Rect.MinMaxRect(1045f, 612f, 1168f, 815f), Density = 1.4f, Seed = 61 });
             Areas.Add(new MapArea { Kind = AreaKind.Woods, R = Rect.MinMaxRect(432f, 400f, 590f, 410f), Density = 1.0f, Seed = 62 });
+            BuildRidgeRd();
+        }
+
+        /// <summary>Ridge Rd: the short residential street east of Mill Rd where Development's overflow house lots are
+        /// (<see cref="FallbackLotProvider"/>, used only once every town lot is taken). The street is built and the woods, hedgerows and
+        /// crop patches that overlapped those lots are cut back, so the lots are open mown ground fronting a real street.</summary>
+        static void BuildRidgeRd()
+        {
+            var fb = new FallbackLotProvider();
+            bool any = false; Rect box = default;
+            foreach (var l in fb.FreeLots()) { box = any ? Rect.MinMaxRect(Mathf.Min(box.xMin, l.Rect.xMin), Mathf.Min(box.yMin, l.Rect.yMin), Mathf.Max(box.xMax, l.Rect.xMax), Mathf.Max(box.yMax, l.Rect.yMax)) : l.Rect; any = true; }
+            if (!any) return;
+            float z = FallbackLotProvider.RidgeZ;
+            var ridge = EW("Ridge Rd", z, 420f, box.xMax + 3f, RoadClass.Residential);
+            var clear = Rect.MinMaxRect(box.xMin - 2f, box.yMin - 3f, box.xMax + 4f, box.yMax + 3f);
+            Carve(clear);
+            // mown ground on both sides of the street (not tied to a lot: it stays when a lot is built on)
+            float row = ridge.RowHalf;
+            Areas.Add(new MapArea { Kind = AreaKind.Meadow, R = Rect.MinMaxRect(clear.xMin, z + row + 0.3f, clear.xMax, clear.yMax), Field = FieldKind.Pasture, Seed = 63 });
+            Areas.Add(new MapArea { Kind = AreaKind.Meadow, R = Rect.MinMaxRect(clear.xMin, clear.yMin, clear.xMax, z - row - 0.3f), Field = FieldKind.Pasture, Seed = 64 });
+        }
+
+        /// <summary>Cuts a rect out of every woods / field / orchard area (the parts outside it are kept as up to four pieces).</summary>
+        static void Carve(Rect cut)
+        {
+            for (int i = Areas.Count - 1; i >= 0; i--)
+            {
+                var a = Areas[i];
+                if (a.Kind != AreaKind.Woods && a.Kind != AreaKind.Field && a.Kind != AreaKind.Orchard) continue;
+                if (!a.R.Overlaps(cut)) continue;
+                Areas.RemoveAt(i);
+                var r = a.R;
+                float y0 = Mathf.Max(r.yMin, cut.yMin), y1 = Mathf.Min(r.yMax, cut.yMax);
+                foreach (var piece in new[]
+                {
+                    Rect.MinMaxRect(r.xMin, r.yMin, r.xMax, cut.yMin), Rect.MinMaxRect(r.xMin, cut.yMax, r.xMax, r.yMax),
+                    Rect.MinMaxRect(r.xMin, y0, cut.xMin, y1), Rect.MinMaxRect(cut.xMax, y0, r.xMax, y1),
+                })
+                {
+                    if (piece.width < 3f || piece.height < 3f) continue;
+                    Areas.Add(new MapArea { Kind = a.Kind, R = piece, Field = a.Field, RowsAlongX = a.RowsAlongX, Density = a.Density, Height = a.Height, LotId = a.LotId, Seed = a.Seed, Patch = a.Patch });
+                }
+            }
         }
 
         static void BuildCoreFill()

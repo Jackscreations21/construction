@@ -258,7 +258,7 @@ namespace Groundbreak
                 GUILayout.EndVertical();
                 GUILayout.FlexibleSpace();
                 GUI.enabled = block == null;
-                if (GUILayout.Button("Accept", button, GUILayout.Width(fs * 7))) { Company.Accept(job, out var msg); t.ShowMessage(msg); }
+                if (GUILayout.Button("Accept", button, GUILayout.Width(fs * 7))) { Company.Accept(job, out var msg); t.ShowMessage(msg); GUIUtility.ExitGUI(); }   // the job moves lists: end this GUI event
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
                 GUILayout.Space(4);

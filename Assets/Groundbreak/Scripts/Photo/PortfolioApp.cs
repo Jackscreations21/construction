@@ -49,7 +49,8 @@ namespace Groundbreak
             GUILayout.Label("Before photos are taken automatically when you first reach a job; the after photo from the same spot when it's done. " +
                             "Press P anywhere for photo mode.", label);
             GUILayout.Space(4);
-            _tab = GUILayout.Toolbar(_tab, new[] { $"Jobs ({PhotoStore.Albums.Count})", $"My photos ({mine})", $"Favourites ({favs})" }, button, GUILayout.Height(fs * 2f));
+            int tab = GUILayout.Toolbar(_tab, new[] { $"Jobs ({PhotoStore.Albums.Count})", $"My photos ({mine})", $"Favourites ({favs})" }, button, GUILayout.Height(fs * 2f));
+            if (tab != _tab) { _tab = tab; GUIUtility.ExitGUI(); }   // a different list below: end this GUI event
             GUILayout.Space(6);
 
             if (_viewing != null)
@@ -80,7 +81,8 @@ namespace Groundbreak
             if (PhotoStore.Albums.Count == 0) { GUILayout.Label("No jobs yet. Accept a job on the job board and drive there.", label); return; }
             GUILayout.BeginHorizontal();
             GUILayout.Label("Compare:", label, GUILayout.Width(fs * 6));
-            _sliderView = GUILayout.Toolbar(_sliderView ? 1 : 0, new[] { "Side by side", "Slider" }, button, GUILayout.Width(fs * 16)) == 1;
+            bool slider = GUILayout.Toolbar(_sliderView ? 1 : 0, new[] { "Side by side", "Slider" }, button, GUILayout.Width(fs * 16)) == 1;
+            if (slider != _sliderView) { _sliderView = slider; GUIUtility.ExitGUI(); }
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             GUILayout.Space(4);

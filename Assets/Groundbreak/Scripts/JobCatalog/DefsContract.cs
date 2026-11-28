@@ -443,8 +443,11 @@ namespace Groundbreak
             var pl = ReadBuild(j);
             if (pl == null || !string.IsNullOrEmpty(pl.project)) return;
             var lot = DevLots.Provider.Find(pl.lot); var plan = HousePlans.Get(pl.plan);
-            if (lot == null || plan == null) return;
-            DevLots.Provider.Claim(lot, Company.Name);
+            string why = plan == null ? $"the plan \"{pl.plan}\" is no longer on file"
+                       : lot == null ? "its lot no longer exists"
+                       : lot.Claimed && lot.Owner != Company.Name ? $"the lot at {lot.Address} was taken by someone else" : null;
+            if (why == null && !DevLots.Provider.Claim(lot, Company.Name) && lot.Owner != Company.Name) why = $"the lot at {lot.Address} couldn't be secured";
+            if (why != null) { Unaccept(j, why); return; }
             var p = Projects.Create(ProjectKind.Client, lot, plan);
             j.DueDay = Today + 10 + plan.TotalDays;   // the schedule starts at signing (as Builder does), not when the offer was posted
             p.JobId = j.Id; p.Client = j.Client; p.ContractPrice = j.Payout; p.DueDay = j.DueDay;
@@ -454,6 +457,19 @@ namespace Groundbreak
             Company.LifetimeRevenue += deposit;
             Game.Toast($"Signed {j.Title}. Deposit ${deposit:N0}. Lot: {lot.Address}");
             DevVisuals.Refresh();
+        }
+
+        /// <summary>Undoes an accept that can't be honoured (Company.Accept has no veto hook): the job leaves the active list and the board
+        /// (its lot or plan is gone, so the offer is dead) and the player is told why. Nothing was paid or claimed yet.</summary>
+        static void Unaccept(Job j, string why)
+        {
+            j.Accepted = false;
+            Company.ActiveJobs.Remove(j);
+            Company.Offers.Remove(j);
+            string msg = $"Couldn't sign \"{j.Title}\": {why}. The client withdrew the offer.";
+            Game.Toast(msg);
+            if (Tablet.I != null) Tablet.I.ShowMessage(msg);
+            Company.NotifyChanged();
         }
     }
 }

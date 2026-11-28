@@ -196,7 +196,22 @@ namespace Groundbreak
         /// <summary>Dwelling unit / tenant space a room belongs to (units sit side by side along x).</summary>
         public int UnitOf(PlanRoom r) => Units <= 1 ? 0 : Mathf.Clamp(Mathf.FloorToInt(r.Ft.center.x / (WidthFt / Units)), 0, Units - 1);
         /// <summary>Open-plan connection inside one unit (no wall between them).</summary>
-        public bool Connected(PlanRoom a, PlanRoom b) => UnitOf(a) == UnitOf(b) && OpenPair(KindOf(a.Name), KindOf(b.Name));
+        public bool Connected(PlanRoom a, PlanRoom b) => UnitOf(a) == UnitOf(b) && OpenPair(KindOf(a.Name), KindOf(b.Name)) && PrivateOk(a, b);
+
+        /// <summary>Rooms (by name) walled off from the rest of their floor: open only to stairs and other private rooms, e.g. the street
+        /// entry of an upstairs apartment beside a shop (it is a hall, but must not open onto the sales floor).</summary>
+        public readonly HashSet<string> PrivateRooms = new HashSet<string>();
+        public Blueprint Private(string name) { PrivateRooms.Add(name); return this; }
+        bool PrivateOk(PlanRoom a, PlanRoom b)
+        {
+            if (PrivateRooms.Count == 0) return true;
+            bool pa = PrivateRooms.Contains(a.Name), pb = PrivateRooms.Contains(b.Name);
+            if (pa == pb) return true;
+            return KindOf((pa ? b : a).Name) == RoomKind.Stair;
+        }
+
+        /// <summary>Row building: the left and right walls are party walls / zero-lot-line walls against the neighbours, so no windows go there.</summary>
+        public bool PartyWalls;
         /// <summary>Stairs (by room name) that climb toward plan y = 0 / x = 0 instead of away from it.</summary>
         public readonly HashSet<string> ReversedStairs = new HashSet<string>();
         public Blueprint StairDown(string name) { ReversedStairs.Add(name); return this; }
@@ -375,6 +390,7 @@ namespace Groundbreak
             foreach (var (side, a, b) in ExteriorEdges(r))
             {
                 float len = b - a; if (len < 6f) continue;
+                if (PartyWalls && (side == 1 || side == 3)) continue;
                 if ((k == RoomKind.Garage || k == RoomKind.Shop || k == RoomKind.Barn) && WallHasOverhead(r.Floor, side)) continue;
                 if ((k == RoomKind.Sales || k == RoomKind.Lobby) && side == 2) continue;
                 string w = win;

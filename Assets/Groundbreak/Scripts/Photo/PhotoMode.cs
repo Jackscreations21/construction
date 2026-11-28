@@ -265,7 +265,8 @@ namespace Groundbreak
             if (GameClock.I != null) Slider("Time of day: " + HoursLabel(Hours), ref Hours, MinHours, MaxHours);
             Slider($"Exposure: {S.Exposure:0.00}x", ref S.Exposure, 0.4f, 2f);
             Slider($"Vignette: {S.Vignette * 100f:0}%", ref S.Vignette, 0f, 1f);
-            S.Dof = GUILayout.Toggle(S.Dof, "Depth of field", W);
+            bool dof = GUILayout.Toggle(S.Dof, "Depth of field", W);
+            if (dof != S.Dof) { S.Dof = dof; GUIUtility.ExitGUI(); }   // the aperture/focus rows appear or go: end this GUI event
             if (S.Dof)
             {
                 Slider($"Aperture: f/{S.FStop:0.0}", ref S.FStop, 1.4f, 16f);

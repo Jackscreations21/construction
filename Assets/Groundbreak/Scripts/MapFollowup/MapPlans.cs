@@ -21,10 +21,10 @@ namespace Groundbreak
             { "farmhouse", new[] { "twostory-2400", "estate-3500" } },
             { "duplex", new[] { "duplex-1664" } },
             { "townhomes", new[] { "townhome-row4", "townhome-row6" } },
-            { "storefront", new[] { "retail-2400", "retail-5000" } },
-            { "grocery", new[] { "retail-5000" } },
+            { "storefront", new[] { "storefront-24", "storefront-30", "retail-2400", "retail-5000" } },
+            { "grocery", new[] { "grocery-20000", "retail-5000" } },
             { "office", new[] { "office-3000" } },
-            { "bank", new[] { "office-3000" } },
+            { "bank", new[] { "bank-2800", "office-3000" } },
             { "postoffice", new[] { "retail-2400" } },
             { "diner", new[] { "diner-3000" } },
             { "fastfood", new[] { "diner-3000" } },
@@ -120,11 +120,14 @@ namespace Groundbreak
         public static bool Agrees(float w, float d, float pw, float pd, float tol = Tolerance) =>
             Mathf.Abs(w - pw) <= tol * pw + 0.01f && Mathf.Abs(d - pd) <= tol * pd + 0.01f;
 
-        static List<HousePlan> Ranked(string type, float w, float d)
+        /// <summary>A multi-story plan only goes on a building with that many stories (a one-story shop never gets the apartment-above plan).</summary>
+        public static bool StoriesFit(HousePlan pl, int stories) => pl == null || stories <= 0 || pl.Floors <= 1 || pl.Floors == stories || (pl is Blueprint bp && bp.MezzanineFt > 0f);
+
+        static List<HousePlan> Ranked(string type, float w, float d, int stories = 0)
         {
             var l = new List<HousePlan>();
             if (type == null || !Candidates.TryGetValue(type, out var ids)) return l;
-            foreach (var id in ids) { var pl = HousePlans.Get(id); if (pl != null) l.Add(pl); }
+            foreach (var id in ids) { var pl = HousePlans.Get(id); if (pl != null && StoriesFit(pl, type == "storefront" ? stories : 0)) l.Add(pl); }
             l.Sort((a, b) => Err(w, d, a).CompareTo(Err(w, d, b)));
             return l;
         }
@@ -141,7 +144,7 @@ namespace Groundbreak
         {
             var s = p.Spec;
             var body = MapBodies.Body(s);
-            var ranked = Ranked(s.Type, body.width, body.height);
+            var ranked = Ranked(s.Type, body.width, body.height, s.Stories);
             if (ranked.Count == 0) return null;
             foreach (var pl in ranked)
             {
@@ -223,7 +226,7 @@ namespace Groundbreak
         {
             if (s == null) return null;
             var b = MapBodies.Body(s);
-            var r = Ranked(s.Type, b.width, b.height);
+            var r = Ranked(s.Type, b.width, b.height, s.Stories);
             return r.Count > 0 ? r[0].Id : null;
         }
 

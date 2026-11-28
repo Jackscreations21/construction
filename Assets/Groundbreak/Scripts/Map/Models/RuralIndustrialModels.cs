@@ -300,7 +300,7 @@ namespace Groundbreak
         // =====================================================================================================
         static void Warehouse(MapBuild b, MapBuildingSpec s)
         {
-            float W = s.Width, D = s.Depth, hw = W * 0.5f, H = 9.1f;                     // 30' clear + parapet
+            float W = Mathf.Max(8f, s.Width), D = Mathf.Max(8f, s.Depth), hw = W * 0.5f, H = 9.1f;                     // 30' clear + parapet
             var tint = Color.Lerp(s.Color, new Color(0.86f, 0.84f, 0.79f), 0.7f);
             int wall = b.K.M(SurfaceKind.Concrete, tint * 1.08f), band = Paint(b, s.Accent == Color.white ? new Color(0.18f, 0.32f, 0.52f) : s.Accent);
             int dark = Dark(b), door = Paint(b, new Color(0.86f, 0.86f, 0.84f)), seal = Flat(b, new Color(0.05f, 0.05f, 0.05f));
@@ -359,6 +359,7 @@ namespace Groundbreak
 
         static void Shop(MapBuild b, MapBuildingSpec s, float W, float D, bool sign)
         {
+            W = Mathf.Max(4f, W); D = Mathf.Max(4f, D);
             float hw = W * 0.5f, eave = W > 22f ? 5.5f : 4.9f, rise = hw / 12f;
             int wall = Panel(b, s.Color), wains = Panel(b, s.Color * 0.55f + new Color(0.05f, 0.05f, 0.05f, 0.45f));
             int roof = Panel(b, new Color(0.62f, 0.63f, 0.62f)), trim = Paint(b, new Color(0.15f, 0.17f, 0.2f));
@@ -399,7 +400,7 @@ namespace Groundbreak
         // =====================================================================================================
         static void LumberYard(MapBuild b, MapBuildingSpec s)
         {
-            float W = s.Width, D = s.Depth, hw = W * 0.5f;
+            float W = Mathf.Max(20f, s.Width), D = Mathf.Max(20f, s.Depth), hw = W * 0.5f;
             int wood = b.K.M(SurfaceKind.PineLumber), treated = b.K.M(SurfaceKind.TreatedLumber), band = b.K.M(SurfaceKind.BrushedSteel);
             int post = Paint(b, new Color(0.2f, 0.36f, 0.22f)), roof = Panel(b, new Color(0.25f, 0.42f, 0.28f)), dark = Dark(b);
             int conc = Conc(b), block = b.K.M(SurfaceKind.ConcreteBlock), osb = b.K.M(SurfaceKind.Osb), ply = b.K.M(SurfaceKind.Plywood);
@@ -463,7 +464,7 @@ namespace Groundbreak
         // =====================================================================================================
         static void ConcretePlant(MapBuild b, MapBuildingSpec s)
         {
-            float W = s.Width, D = s.Depth, hw = W * 0.5f;
+            float W = Mathf.Max(20f, s.Width), D = Mathf.Max(20f, s.Depth), hw = W * 0.5f;
             int steel = Paint(b, new Color(0.82f, 0.82f, 0.78f)), blue = Paint(b, new Color(0.2f, 0.36f, 0.58f)), dark = Dark(b);
             int galv = Galv(b), conc = Conc(b), block = b.K.M(SurfaceKind.Concrete, new Color(0.9f, 0.88f, 0.84f));
             int gravel = b.K.M(MapMaterials.Gravel), sand = b.K.M(SurfaceKind.Dirt, new Color(1.25f, 1.1f, 0.85f)), stone = b.K.M(SurfaceKind.Gravel, new Color(0.8f, 0.8f, 0.82f));
@@ -546,12 +547,12 @@ namespace Groundbreak
         // =====================================================================================================
         static void SelfStorage(MapBuild b, MapBuildingSpec s)
         {
-            float W = s.Width, D = s.Depth, hw = W * 0.5f;
+            float W = Mathf.Max(6f, s.Width), D = Mathf.Max(6f, s.Depth), hw = W * 0.5f;
             int rows = Mathf.Clamp(s.Units, 1, 6);
             float bw = 6.1f, aisle = rows > 1 ? (W - rows * bw) / (rows - 1) : 0f;
             if (rows > 1 && aisle < 6f) { aisle = 6f; bw = (W - aisle * (rows - 1)) / rows; }
             var doorColors = new[] { new Color(0.85f, 0.38f, 0.08f), new Color(0.15f, 0.36f, 0.66f), new Color(0.7f, 0.12f, 0.1f), new Color(0.2f, 0.5f, 0.3f) };
-            int door = Paint(b, doorColors[Mathf.Abs(s.Seed) % doorColors.Length]);
+            int door = Paint(b, doorColors[MapModels.Pick(s.Seed, doorColors.Length)]);
             int wall = Panel(b, new Color(0.88f, 0.86f, 0.8f)), roof = Panel(b, new Color(0.7f, 0.7f, 0.68f)), trim = Paint(b, new Color(0.88f, 0.86f, 0.8f) * 0.8f);
             float zf = -6f, zb = -D + 0.5f, eave = 2.9f;
             for (int r = 0; r < rows; r++)
@@ -595,7 +596,7 @@ namespace Groundbreak
         // =====================================================================================================
         static void ContractorYard(MapBuild b, MapBuildingSpec s)
         {
-            float W = s.Width, D = s.Depth, hw = W * 0.5f;
+            float W = Mathf.Max(10f, s.Width), D = Mathf.Max(10f, s.Depth), hw = W * 0.5f;
             var sz = MapBodies.YardShop(s); float sw = sz.x, sd = sz.y;
             var shop = new MapBuildingSpec { Type = "metalshop", Width = sw, Depth = sd, Color = s.Color, Sign = s.Sign, Seed = s.Seed };
             float scx = -hw + sw * 0.5f + 0.5f;
@@ -670,7 +671,7 @@ namespace Groundbreak
         // =====================================================================================================
         static void Barn(MapBuild b, MapBuildingSpec s)
         {
-            float W = s.Width, D = s.Depth, hw = W * 0.5f, eave = 4.6f;
+            float W = Mathf.Max(6f, s.Width), D = Mathf.Max(6f, s.Depth), hw = W * 0.5f, eave = 4.6f;
             int boards = b.K.M(SurfaceKind.PineLumber, s.Color * 1.4f), white = Paint(b, new Color(0.95f, 0.94f, 0.9f));
             int roof = Panel(b, new Color(0.55f, 0.56f, 0.56f)), stone = b.K.M(SurfaceKind.Concrete, new Color(0.85f, 0.83f, 0.8f)), dark = Dark(b);
             // gambrel profile: lower slope ~60°, upper ~25°
@@ -739,7 +740,7 @@ namespace Groundbreak
         // =====================================================================================================
         static void Silo(MapBuild b, MapBuildingSpec s)
         {
-            float r = Mathf.Min(s.Width, s.Depth) * 0.5f - 0.1f, h = 18.3f, zc = -s.Depth * 0.5f;
+            float r = Mathf.Max(0.5f, Mathf.Min(s.Width, s.Depth) * 0.5f - 0.1f), h = 18.3f, zc = -s.Depth * 0.5f;
             int stave = b.K.M(SurfaceKind.Concrete, new Color(0.88f, 0.86f, 0.82f)), dome = Galv(b), hoop = Paint(b, new Color(0.35f, 0.3f, 0.26f));
             Cyl(b, 0f, 0f, zc, r, h, 24, stave, false);
             for (float y = 1.2f; y < h; y += 1.5f) b.B.AddRing(new Vector3(0f, y, zc), Quaternion.identity, r + 0.03f, r - 0.02f, 0.05f, 24, hoop);
@@ -758,7 +759,7 @@ namespace Groundbreak
         static void GrainBins(MapBuild b, MapBuildingSpec s)
         {
             int n = Mathf.Clamp(s.Units, 1, 6);
-            float pitch = s.Width / n, r = Mathf.Min(pitch - 1.2f, s.Depth - 0.6f) * 0.5f, eave = Mathf.Clamp(r * 1.75f, 5f, 9f), zc = -s.Depth * 0.5f;
+            float pitch = Mathf.Max(2f, s.Width) / n, r = Mathf.Max(0.8f, Mathf.Min(pitch - 1.2f, s.Depth - 0.6f) * 0.5f), eave = Mathf.Clamp(r * 1.75f, 5f, 9f), zc = -s.Depth * 0.5f;
             int galv = Galv(b), conc = Conc(b), dark = Dark(b), steel = Paint(b, new Color(0.55f, 0.56f, 0.55f));
             for (int i = 0; i < n; i++)
             {
@@ -792,7 +793,7 @@ namespace Groundbreak
         // =====================================================================================================
         static void MachineShed(MapBuild b, MapBuildingSpec s)
         {
-            float W = s.Width, D = s.Depth, hw = W * 0.5f, eave = 4.9f, hd = D * 0.5f, rise = hd * 4f / 12f;
+            float W = Mathf.Max(6f, s.Width), D = Mathf.Max(6f, s.Depth), hw = W * 0.5f, eave = 4.9f, hd = D * 0.5f, rise = hd * 4f / 12f;
             int wall = Panel(b, s.Color), roof = Panel(b, new Color(0.62f, 0.63f, 0.62f)), trim = Paint(b, new Color(0.95f, 0.95f, 0.92f));
             int post = b.K.M(SurfaceKind.TreatedLumber), dark = Dark(b), dirt = b.K.M(MapMaterials.Dirt);
             // walls: back + both ends, front open between posts; ridge along X (eave faces the street)

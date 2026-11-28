@@ -63,6 +63,7 @@ namespace Groundbreak
             if (GUILayout.Button("Lay the blueprint over the building")) { ShowOver(lot, _floor); Game.Toast("Blueprint laid over " + lot.Address); }
             if (plan.Floors > 1 && GUILayout.Button($"Floor {_floor + 1} of {plan.Floors}")) { _floor = (_floor + 1) % plan.Floors; if (PlanOverlay.Root != null) ShowOver(lot, _floor); }
             if (overlayShown && GUILayout.Button("Hide")) PlanOverlay.Hide();
+            if (GUILayout.Button("Edit a copy in the Plan Designer")) { PlanDesignerApp.EditCopy(plan); GUIUtility.ExitGUI(); }   // the tablet switches apps
             GUILayout.EndHorizontal();
             float w = Tablet.I != null ? Tablet.I.ContentWidth - 30f : 600f;
             var r = GUILayoutUtility.GetRect(w, w * 0.5f);

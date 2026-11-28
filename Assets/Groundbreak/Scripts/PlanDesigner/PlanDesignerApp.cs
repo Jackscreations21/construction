@@ -61,6 +61,17 @@ namespace Groundbreak
         /// <summary>Opens a design in the editor (used by the start screen and tests).</summary>
         public static void Open(DesignEditor ed) { Editor = ed; Floor = 0; _start = false; _selected = null; Tool = DTool.Move; }
 
+        /// <summary>"Edit in designer" from another plans app: opens a copy of the plan (the original is untouched) and switches the tablet
+        /// to the Plan Designer. Returns false when there is nothing to copy.</summary>
+        public static bool EditCopy(HousePlan plan)
+        {
+            if (plan == null) return false;
+            Open(DesignEditor.CopyOf(plan));
+            if (Tablet.I != null) Tablet.I.ShowApp(AppName);
+            Msg($"Copied {plan.Name} into the Plan Designer: change anything, then Save. The original plan stays as it was.");
+            return true;
+        }
+
         static void Styles()
         {
             if (_small != null && _small.fontSize == Mathf.RoundToInt(Fs * 0.78f)) return;

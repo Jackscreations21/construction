@@ -15,7 +15,10 @@ namespace Groundbreak
         static readonly List<(string name, System.Action draw)> _extApps = new List<(string, System.Action)>();
         static readonly List<string> _extHelp = new List<string>();
         static string[] _appNames;
-        int _app = -1; // -1 = Home screen
+        // The open app is tracked by NAME: the visible app list changes (SetAppVisible, RegisterApp), so an index would switch apps.
+        string _open; // null = Home screen
+        int AppIndex(string[] names) { int i = _open == null ? -1 : System.Array.IndexOf(names, _open); if (i < 0) _open = null; return i; }
+        void Select(string[] names, int i) { string n = i >= 0 && i < names.Length ? names[i] : null; if (n != _open) { _open = n; _scroll = Vector2.zero; _message = ""; } }
 
         /// <summary>Extension point: feature modules add a tablet app (drawn with IMGUI inside the tablet's scroll view).
         /// Registering "Concrete Dispatch" replaces the built-in placeholder. Call from [RuntimeInitializeOnLoadMethod].</summary>
@@ -50,13 +53,14 @@ namespace Groundbreak
         /// <summary>Open the tablet on the named app (e.g. from a tutorial's "show me where"). Unknown names just open the tablet.</summary>
         public void ShowApp(string name)
         {
-            int i = name == "Home" ? -1 : System.Array.IndexOf(AppNames(), name);
-            if ((i >= 0 || name == "Home") && i != _app) { _app = i; _scroll = Vector2.zero; _message = ""; }
+            var names = AppNames();
+            int i = name == "Home" ? -1 : System.Array.IndexOf(names, name);
+            if (i >= 0 || name == "Home") Select(names, i);
             if (!IsOpen) Open();
         }
 
         /// <summary>Name of the app currently shown ("Home" for the home screen).</summary>
-        public string CurrentApp { get { var n = AppNames(); return _app >= 0 && _app < n.Length ? n[_app] : "Home"; } }
+        public string CurrentApp { get { var n = AppNames(); int i = AppIndex(n); return i >= 0 ? n[i] : "Home"; } }
 
         /// <summary>Show a status message at the bottom of the tablet.</summary>
         public void ShowMessage(string m) => _message = m;
@@ -104,7 +108,7 @@ namespace Groundbreak
 
         void Update()
         {
-            if (GInput.GetKeyDown(KeyCode.T) && !(IsOpen && GUIUtility.keyboardControl != 0)) { if (IsOpen) Close(); else Open(); }   // T typed into a text field doesn't close
+            if (GInput.GetKeyDown(KeyCode.T)) ToggleFromKey();
             else if (IsOpen && GInput.GetKeyDown(KeyCode.Escape)) Close();
 
             // Release UIOpen one frame after closing so the closing key/click (Esc, T, mouse) isn't also seen by gameplay.
@@ -121,6 +125,15 @@ namespace Groundbreak
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
+        }
+
+        /// <summary>The T key: closes the tablet (unless T is being typed into a text field) or opens it, but never over another
+        /// full-screen UI that holds <see cref="Game.UIOpen"/> (main menu, photo mode, pause...).</summary>
+        public void ToggleFromKey()
+        {
+            if (IsOpen) { if (GUIUtility.keyboardControl == 0) Close(); return; }
+            if (Game.UIOpen && _releaseFrame == 0) return;
+            Open();
         }
 
         public void Open()
@@ -258,11 +271,11 @@ namespace Groundbreak
             }
 
             var names = AppNames();
-            if (_app >= names.Length) _app = -1;
-            string appName = _app >= 0 ? names[_app] : "Home";
-            // The sidebar below can change _app during a click event; the content must still draw the app this event's
+            int app = AppIndex(names);
+            string appName = app >= 0 ? names[app] : "Home";
+            // The sidebar below can change the open app during a click event; the content must still draw the app this event's
             // Layout pass measured, or IMGUI's control count changes between Layout and the click (layout errors).
-            int shownApp = _app;
+            int shownApp = app;
 
             // header
             float pad = 12f, headH = Mathf.Round(_header.fontSize * 2.1f);
@@ -286,8 +299,8 @@ namespace Groundbreak
             UISkin.Panel(sideRect, new Color(1f, 1f, 1f, 0.05f * k));
             GUILayout.BeginArea(new Rect(sideRect.x + 4, sideRect.y + 4, sideRect.width - 8, sideRect.height - 8));
             _sideScroll = GUILayout.BeginScrollView(_sideScroll, false, false, GUIStyle.none, GUI.skin.verticalScrollbar);
-            int pick = _app;
-            if (GUILayout.Toggle(_app < 0, "  Home", _side) && _app >= 0) pick = -1;
+            int pick = app;
+            if (GUILayout.Toggle(app < 0, "  Home", _side) && app >= 0) pick = -1;
             foreach (var g in Groups())
             {
                 bool any = false;
@@ -295,12 +308,12 @@ namespace Groundbreak
                 {
                     if (GroupOf(names[i]) != g) continue;
                     if (!any) { GUILayout.Label(g.ToUpperInvariant(), _groupHead); any = true; }
-                    if (GUILayout.Toggle(i == _app, names[i], _side) && i != _app) pick = i;
+                    if (GUILayout.Toggle(i == app, names[i], _side) && i != app) pick = i;
                 }
             }
             GUILayout.EndScrollView();
             GUILayout.EndArea();
-            if (pick != _app) { _app = pick; _scroll = Vector2.zero; _message = ""; }
+            if (pick != app) Select(names, pick);
 
             // content
             float msgH = string.IsNullOrEmpty(_message) ? 0f : _header.fontSize * 2f;
@@ -362,7 +375,7 @@ namespace Groundbreak
                         UISkin.Panel(icon, GroupColor(g));
                         GUI.Label(icon, Initials(names[i]), _tileGlyph);
                         GUI.Label(new Rect(tr.x + 4, icon.yMax + 6, tr.width - 8, tr.yMax - icon.yMax - 8), names[i], _tileName);
-                        if (GUI.Button(tr, GUIContent.none, GUIStyle.none)) { _app = i; _scroll = Vector2.zero; _message = ""; }
+                        if (GUI.Button(tr, GUIContent.none, GUIStyle.none)) Select(names, i);
                     }
                 }
                 GUILayout.Space(4);

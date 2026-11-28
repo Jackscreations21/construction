@@ -170,6 +170,7 @@ namespace Groundbreak
                 if (GUILayout.Button(why == null ? "Buy land" : why, button, GUILayout.Width(fs * 9)))
                 {
                     Company.Accept(j, out var m); t.ShowMessage(m);
+                    GUIUtility.ExitGUI();   // the offer leaves this list: end this GUI event
                 }
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
